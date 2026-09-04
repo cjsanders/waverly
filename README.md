@@ -1,0 +1,53 @@
+# Waverly
+
+Bun and Turborepo monorepo for the Waverly affiliate network.
+
+## Apps
+
+- `apps/affiliate` — TanStack Start, Convex, WorkOS AuthKit, TanStack Charts, Tailwind CSS, and shadcn/ui
+- `apps/website` — Astro marketing site
+- `apps/docs` — Nimbus documentation site
+- `apps/e2e` — Stagehand browser tests run by Vitest
+
+All three web apps are configured for Cloudflare Workers. The website and docs apps deploy as static Worker assets; the affiliate app runs through the Cloudflare Vite plugin. Oxfmt formats supported repository files, with Prettier handling Astro files that Oxfmt does not yet support. Nimbus's generated `DocsLayout.astro` is excluded because the Astro plugin cannot parse its inline restoration script.
+
+## Setup
+
+```sh
+bun install
+cp apps/affiliate/.env.example apps/affiliate/.env.local
+bun run dev
+```
+
+Fill in the affiliate app's Convex and WorkOS values before starting it. Create the Convex development deployment from `apps/affiliate` with `bunx convex dev`.
+
+### Amp orb portal
+
+The affiliate development server is declared in `.amp/services.yaml`. In an Amp orb, start it with:
+
+```sh
+amp orb services ensure
+```
+
+Use the exact portal URL printed by that command; do not save or construct it. Amp injects the current URL as `PUBLIC_URL`, and the service uses it for the WorkOS callback URL. The same callback URL must be allowed in the WorkOS development environment before testing sign-in.
+
+For E2E tests, set `E2E_BASE_URL` at runtime to either the current portal URL or a Cloudflare preview URL. Browserbase runs outside the orb, so a private portal also requires a freshly minted one-use login URL in `E2E_PORTAL_LOGIN_URL`. Do not save that login URL as an Amp variable. Cloudflare preview runs do not need `E2E_PORTAL_LOGIN_URL`.
+
+## Commands
+
+```sh
+bun run dev          # run all development servers
+bun run build        # build every app
+bun run check        # lint, formatting, types, and unit tests
+bun run test:e2e     # Stagehand smoke test (requires BROWSERBASE_API_KEY and E2E_BASE_URL)
+```
+
+Deploy an individual app only after authenticating Wrangler:
+
+```sh
+bun run --cwd apps/affiliate deploy
+bun run --cwd apps/website deploy
+bun run --cwd apps/docs deploy
+```
+
+Cloudflare and Convex are separate deployments. Deploy Convex functions from `apps/affiliate` before deploying an affiliate build that depends on schema changes.

@@ -1,0 +1,37 @@
+---
+import { config } from "virtual:nimbus/config";
+import Header from "../components/Header.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+export const prerender = true;
+---
+
+<BaseLayout title={config.title} description={config.description}>
+  <div class="flex min-h-screen flex-col">
+    <Header />
+    <main
+      id="main-content"
+      tabindex="-1"
+      class="mx-auto w-full max-w-2xl flex-1 px-6 py-24"
+    >
+      <h1
+        class="text-foreground leading-tight"
+        style="font-size: var(--nb-h1-size); font-weight: var(--nb-h1-weight); letter-spacing: var(--nb-h1-tracking);"
+      >
+        {config.title}
+      </h1>
+      <p class="text-muted-foreground mt-2 text-[1.0625rem] leading-relaxed">
+        {config.description}
+      </p>
+      <a
+        href="/getting-started"
+        class="border-border hover:border-border-strong mt-8 block rounded-lg border p-4 no-underline transition-colors"
+      >
+        <div class="text-foreground font-medium">Getting started</div>
+        <div class="text-muted-foreground mt-0.5 text-sm">
+          Read the project documentation
+        </div>
+      </a>
+    </main>
+  </div>
+</BaseLayout>

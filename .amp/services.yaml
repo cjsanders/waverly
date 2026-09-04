@@ -1,0 +1,12 @@
+services:
+  affiliate:
+    command: >-
+      WORKOS_REDIRECT_URI="$PUBLIC_URL"api/auth/callback
+      bunx vite dev --host 0.0.0.0 --port "$PORT"
+    cwd: apps/affiliate
+    health: /
+    portal:
+      url: /
+      title: Affiliate app
+    review: true
+    agent: control

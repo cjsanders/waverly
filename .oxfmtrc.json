@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "proseWrap": "preserve",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/.turbo/**",
+    "**/dist/**",
+    "**/.astro/**",
+    "**/.nimbus/**",
+    "**/.output/**",
+    "**/coverage/**",
+    "**/_generated/**",
+    "**/*.gen.*",
+    "**/*.d.ts",
+    "**/*.astro"
+  ]
+}

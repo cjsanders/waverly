@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "waverly-affiliate",
+  "compatibility_date": "2026-09-03",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "secrets": {
+    "required": [
+      "WORKOS_CLIENT_ID",
+      "WORKOS_API_KEY",
+      "WORKOS_COOKIE_PASSWORD",
+      "WORKOS_REDIRECT_URI",
+    ],
+  },
+  "observability": {
+    "enabled": true,
+  },
+}

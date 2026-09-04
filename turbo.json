@@ -1,0 +1,37 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".astro/**", ".output/**"]
+    },
+    "@waverly/affiliate#build": {
+      "cache": false,
+      "env": [
+        "CONVEX_DEPLOYMENT",
+        "VITE_CONVEX_URL",
+        "WORKOS_API_HOSTNAME",
+        "WORKOS_API_KEY",
+        "WORKOS_CLIENT_ID",
+        "WORKOS_COOKIE_PASSWORD",
+        "WORKOS_REDIRECT_URI",
+        "TINYBIRD_API_URL",
+        "TINYBIRD_PIPE_READ_TOKEN"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "test:e2e": {
+      "cache": false,
+      "env": ["BROWSERBASE_API_KEY", "E2E_BASE_URL", "E2E_PORTAL_LOGIN_URL"]
+    }
+  }
+}

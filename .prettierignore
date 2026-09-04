@@ -1,0 +1,2 @@
+# prettier-plugin-astro cannot parse Nimbus's inline sidebar restoration script.
+apps/docs/src/layouts/DocsLayout.astro

@@ -1,0 +1,21 @@
+{
+  "name": "@waverly/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@browserbasehq/stagehand": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "dotenv": "^17.0.0",
+    "typescript": "^6.0.2",
+    "vitest": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}
