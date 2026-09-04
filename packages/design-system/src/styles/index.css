@@ -1,0 +1,15 @@
+/* Waverly — drop-in stylesheet for a Tailwind v4 (+ shadcn/ui) app.
+
+   In your app's CSS:
+     @import 'tailwindcss';
+     @import '@waverly/design-system/styles.css';
+
+   Apps that keep their own Tailwind theme (the Nimbus docs site) import `tokens.css` and
+   `fonts.css` individually instead. */
+@import 'tw-animate-css';
+@import './fonts.css';
+@import './tokens.css';
+@import './theme.css';
+
+/* Let each app's Tailwind build see the classes used inside the shared components. */
+@source '../components';

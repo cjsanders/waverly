@@ -1,0 +1,43 @@
+---
+/**
+ * Full Waverly lockup for Astro apps. Swaps to the white wordmark in dark mode,
+ * whether the app toggles `.dark` (shadcn convention) or `[data-mode="dark"]` (Nimbus).
+ */
+import logoSrc from "../../brand/waverly-logo.svg?url";
+import logoWhiteSrc from "../../brand/waverly-logo-white.svg?url";
+
+interface Props {
+  /** Rendered height in pixels. Width follows the 3192×475 aspect ratio. */
+  height?: number;
+  class?: string;
+}
+
+const { height = 24, class: className } = Astro.props;
+---
+
+<span class:list={["logo", className]} style={`height:${height}px`}>
+  <img class="logo-light" src={logoSrc} alt="Waverly" />
+  <img class="logo-dark" src={logoWhiteSrc} alt="Waverly" />
+</span>
+
+<style>
+  .logo {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+  .logo img {
+    height: 100%;
+    width: auto;
+  }
+  .logo-dark {
+    display: none;
+  }
+  :global(.dark) .logo-light,
+  :global([data-mode="dark"]) .logo-light {
+    display: none;
+  }
+  :global(.dark) .logo-dark,
+  :global([data-mode="dark"]) .logo-dark {
+    display: inline;
+  }
+</style>

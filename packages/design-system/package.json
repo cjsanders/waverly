@@ -1,0 +1,57 @@
+{
+  "name": "@waverly/design-system",
+  "private": true,
+  "description": "Waverly design tokens, Tailwind theme, brand assets, and shadcn/ui component overrides shared by every app.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": {
+      "style": "./src/styles/index.css",
+      "default": "./src/styles/index.css"
+    },
+    "./tokens.css": {
+      "style": "./src/styles/tokens.css",
+      "default": "./src/styles/tokens.css"
+    },
+    "./theme.css": {
+      "style": "./src/styles/theme.css",
+      "default": "./src/styles/theme.css"
+    },
+    "./fonts.css": {
+      "style": "./src/styles/fonts.css",
+      "default": "./src/styles/fonts.css"
+    },
+    "./lib/utils": "./src/lib/utils.ts",
+    "./ui/*": "./src/components/ui/*.tsx",
+    "./brand": "./src/components/brand/logo.tsx",
+    "./astro/*.astro": "./src/components/astro/*.astro",
+    "./brand/*.svg": "./src/brand/*.svg"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/figtree": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/quicksand": "^5.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "radix-ui": "^1.6.7",
+    "tailwind-merge": "^3.0.2",
+    "tw-animate-css": "^1.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "react": "^19.2.0",
+    "typescript": "^6.0.2"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "tailwindcss": "^4.1.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

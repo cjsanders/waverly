@@ -9,6 +9,10 @@ Bun and Turborepo monorepo for the Waverly affiliate network.
 - `apps/docs` — Nimbus documentation site
 - `apps/e2e` — Stagehand browser tests run by Vitest
 
+## Packages
+
+- `packages/design-system` — `@waverly/design-system`: Waverly tokens, Tailwind v4 theme, self-hosted fonts, brand assets, and shadcn/ui component overrides shared by every app. See its README for usage.
+
 All three web apps are configured for Cloudflare Workers. The website and docs apps deploy as static Worker assets; the affiliate app runs through the Cloudflare Vite plugin. Oxfmt formats supported repository files, with Prettier handling Astro files that Oxfmt does not yet support. Nimbus's generated `DocsLayout.astro` is excluded because the Astro plugin cannot parse its inline restoration script.
 
 ## Setup
