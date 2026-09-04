@@ -79,6 +79,20 @@ For authorization in loaders and server functions, use `getAuth()` from
 `WORKOS_COOKIE_PASSWORD` server-only, and replace the local callback and sign-in URLs
 with their production equivalents when deploying.
 
+### Workspaces and organizations
+
+Every workspace is a WorkOS organization. Its `metadata.kind` (`creator`, `brand`, or `operator`)
+decides which mode of the app it opens in, and organizations without a valid `kind` are ignored.
+The app mirrors users, organizations, and memberships into Convex at sign-in (see `convex/viewer.ts`).
+
+In the WorkOS dashboard for the environment:
+
+1. Create environment roles with the slugs `owner`, `admin`, and `member`, and make `member` the default.
+2. Enable Email + Password sign-in so seeded dev users can sign in.
+
+Onboarding creates brand and creator organizations through the API. Operator organizations are
+provisioned by Waverly (for example by the dev seed script), never through onboarding.
+
 ## Shadcn
 
 Add components using the latest version of [Shadcn](https://ui.shadcn.com/).

@@ -1,9 +1,10 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouteContext } from '@tanstack/react-router'
 import { Logo } from '@waverly/design-system/brand'
 import { Button } from '@waverly/design-system/ui/button'
 import { Input } from '@waverly/design-system/ui/input'
 import {
   Bell,
+  Building2,
   ChartColumn,
   Globe,
   House,
@@ -20,41 +21,67 @@ import {
 import type { ReactNode } from 'react'
 
 import { UserMenu } from '#/components/user-menu'
+import { WorkspaceSwitcher } from '#/components/workspace-switcher'
 import { cn } from '#/lib/utils'
+import { homePaths, useWorkspace, type HomePath, type OrganizationKind } from '#/lib/workspace'
 
 type NavItem = {
   label: string
   icon: LucideIcon
   /** Omit while the page does not exist yet; the item renders disabled. */
-  to?: '/dashboard'
+  to?: HomePath
 }
 
-const primaryNav: NavItem[] = [
-  { label: 'Overview', icon: House, to: '/dashboard' },
-  { label: 'Campaigns', icon: Megaphone },
-  { label: 'Creators', icon: Users },
-  { label: 'Links', icon: Link2 },
-  { label: 'Payouts', icon: Wallet },
-  { label: 'Reports', icon: ChartColumn },
-]
+/** Each mode gets its own navigation; only the overview exists so far. */
+const primaryNav: Record<OrganizationKind, NavItem[]> = {
+  creator: [
+    { label: 'Overview', icon: House, to: homePaths.creator },
+    { label: 'Campaigns', icon: Megaphone },
+    { label: 'Links', icon: Link2 },
+    { label: 'Payouts', icon: Wallet },
+    { label: 'Reports', icon: ChartColumn },
+  ],
+  brand: [
+    { label: 'Overview', icon: House, to: homePaths.brand },
+    { label: 'Campaigns', icon: Megaphone },
+    { label: 'Creators', icon: Users },
+    { label: 'Links', icon: Link2 },
+    { label: 'Reports', icon: ChartColumn },
+  ],
+  operator: [
+    { label: 'Overview', icon: House, to: homePaths.operator },
+    { label: 'Brands', icon: Building2 },
+    { label: 'Creators', icon: Users },
+    { label: 'Payouts', icon: Wallet },
+    { label: 'Reports', icon: ChartColumn },
+  ],
+}
 
 const secondaryNav: NavItem[] = [{ label: 'Settings', icon: Settings }]
 
+const primaryAction: Record<OrganizationKind, string> = {
+  creator: 'New link',
+  brand: 'New campaign',
+  operator: 'Invite brand',
+}
+
 /** Signed-in layout: fixed sidebar with navigation and the user menu, a top bar, and a content area. */
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
+  const workspace = useWorkspace()
+  const { viewer } = useRouteContext({ from: '/_app' })
+  const kind = workspace.organization.kind
+
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6">
-        <Link to="/dashboard" className="mb-8 flex items-center px-2" aria-label="Overview">
+        <Link to={homePaths[kind]} className="mb-6 flex items-center px-2" aria-label="Overview">
           <Logo height={28} />
         </Link>
 
-        <p className="mb-3 px-4 text-[11px] font-semibold tracking-[0.14em] text-sand-500 uppercase">
-          Your workspace
-        </p>
+        <WorkspaceSwitcher viewer={viewer} workspace={workspace} className="mb-4" />
 
         <nav className="flex flex-1 flex-col gap-1" aria-label="Primary">
-          {primaryNav.map((item) => (
+          {primaryNav[kind].map((item) => (
             <NavLink key={item.label} item={item} />
           ))}
           <div className="mt-auto flex flex-col gap-1">
@@ -97,7 +124,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
           </Button>
           <Button>
             <Plus />
-            New campaign
+            {primaryAction[kind]}
           </Button>
         </header>
 
