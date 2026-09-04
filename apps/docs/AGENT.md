@@ -51,7 +51,7 @@ Rules:
 - **Partials use `<Render file="..." />`.** Don't import `.mdx` directly. Shared content lives in `src/content/partials/<slug>.mdx`.
 - **Icons use `astro-icon` + Phosphor.** `<Icon name="ph:<glyph>" class="w-4 h-4" />` from `astro-icon/components`. Glyphs: [phosphoricons.com](https://phosphoricons.com).
 - **Don't remove `<AgentDirective />` from `BaseLayout.astro`.** It points agents at `/llms.txt`.
-- **Screenshots and screencasts live in `public/docs/`.** Wrap them in `<Frame>` (registered in `src/components.ts`). See `.cursor/skills/nimbus-docs-sync/SKILL.md`.
+- **Screenshots and screencasts live in `public/docs/`.** Wrap them in `<Frame>` (registered in `src/components.ts`). See `.cursor/skills/nimbus-docs-sync/SKILL.md`. For signed-in affiliate UI, open `/api/auth/test-login` when `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are set.
 
 ```mdx
 <Frame caption="Affiliate dashboard home" aspect="16/9">
