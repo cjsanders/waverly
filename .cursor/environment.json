@@ -15,7 +15,7 @@
     {
       "name": "affiliate",
       "description": "Affiliate app on http://localhost:5173. Open /api/auth/test-login after TEST_USER_EMAIL and TEST_USER_PASSWORD are set.",
-      "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; cd apps/affiliate; export WORKOS_REDIRECT_URI=\"${WORKOS_REDIRECT_URI:-http://localhost:5173/api/auth/callback}\"; ./node_modules/.bin/vite dev --host --port 5173"
+      "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; cd apps/affiliate; export WORKOS_REDIRECT_URI=\"${WORKOS_REDIRECT_URI:-http://localhost:5173/api/auth/callback}\"; export CLOUDFLARE_ENV=\"${CLOUDFLARE_ENV:-dev}\"; ./node_modules/.bin/vite dev --host --port 5173"
     }
   ],
   "ports": [

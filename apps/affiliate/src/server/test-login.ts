@@ -37,6 +37,12 @@ export function sanitizeTestLoginReturnPath(input: string | null | undefined): s
   return TEST_LOGIN_DEFAULT_RETURN_PATH
 }
 
+export function workosErrorCode(error: unknown): string | undefined {
+  if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
+    return error.code
+  }
+}
+
 function jsonError(status: number, message: string) {
   return new Response(JSON.stringify({ error: message }), {
     status,
@@ -62,6 +68,94 @@ function applySessionCookies(
   }
 }
 
+type PasswordAuth = {
+  authenticateWithPassword: (payload: {
+    clientId: string
+    email: string
+    password: string
+  }) => Promise<{
+    accessToken: string
+    refreshToken: string
+    user: unknown
+    impersonator?: unknown
+  }>
+  authenticateWithOrganizationSelection: (payload: {
+    clientId: string
+    organizationId: string
+    pendingAuthenticationToken: string
+  }) => Promise<{
+    accessToken: string
+    refreshToken: string
+    user: unknown
+    impersonator?: unknown
+  }>
+  listUsers: (options: { email: string }) => Promise<{ data: Array<{ id: string }> }>
+  updateUser: (options: { userId: string; emailVerified: boolean }) => Promise<unknown>
+}
+
+function workosPendingAuth(error: unknown): { token?: string; organizationId?: string } {
+  if (!error || typeof error !== 'object') return {}
+  const token =
+    'pendingAuthenticationToken' in error && typeof error.pendingAuthenticationToken === 'string'
+      ? error.pendingAuthenticationToken
+      : undefined
+  const rawData = 'rawData' in error ? error.rawData : undefined
+  const organizations =
+    rawData && typeof rawData === 'object' && 'organizations' in rawData
+      ? rawData.organizations
+      : undefined
+  const organizationId =
+    Array.isArray(organizations) && organizations[0] && typeof organizations[0].id === 'string'
+      ? organizations[0].id
+      : undefined
+  return { token, organizationId }
+}
+
+async function authenticateTestUser(
+  userManagement: PasswordAuth,
+  credentials: TestUserCredentials,
+) {
+  const clientId = getConfig('clientId')
+  const payload = {
+    clientId,
+    email: credentials.email,
+    password: credentials.password,
+  }
+
+  const complete = async (error: unknown) => {
+    if (workosErrorCode(error) === 'email_verification_required') {
+      const users = await userManagement.listUsers({ email: credentials.email })
+      const user = users.data[0]
+      if (!user) throw error
+      await userManagement.updateUser({ userId: user.id, emailVerified: true })
+      try {
+        return await userManagement.authenticateWithPassword(payload)
+      } catch (retryError) {
+        return completeOrganizationSelection(retryError)
+      }
+    }
+
+    return completeOrganizationSelection(error)
+  }
+
+  const completeOrganizationSelection = async (error: unknown) => {
+    if (workosErrorCode(error) !== 'organization_selection_required') throw error
+    const { token, organizationId } = workosPendingAuth(error)
+    if (!token || !organizationId) throw error
+    return userManagement.authenticateWithOrganizationSelection({
+      clientId,
+      organizationId,
+      pendingAuthenticationToken: token,
+    })
+  }
+
+  try {
+    return await userManagement.authenticateWithPassword(payload)
+  } catch (error) {
+    return complete(error)
+  }
+}
+
 /**
  * Dev-only: sign in as `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` and set the
  * AuthKit session cookie. Production builds always 404 so this cannot ship.
@@ -82,10 +176,7 @@ export async function handleTestLogin(request: Request): Promise<Response> {
 
   try {
     const authkit = await getAuthkit()
-    const authResponse = await authkit.getWorkOS().userManagement.authenticateWithPassword({
-      email: credentials.email,
-      password: credentials.password,
-    })
+    const authResponse = await authenticateTestUser(authkit.getWorkOS().userManagement, credentials)
     const encryptedSession = await sessionEncryption.sealData(
       {
         accessToken: authResponse.accessToken,
@@ -100,7 +191,10 @@ export async function handleTestLogin(request: Request): Promise<Response> {
     applySessionCookies(headers, saved)
     return new Response(null, { status: 307, headers })
   } catch (error) {
-    console.error('[test-login] WorkOS password authentication failed', error)
+    console.error(
+      '[test-login] WorkOS password authentication failed',
+      workosErrorCode(error) ?? 'unknown',
+    )
     return jsonError(401, 'Test user authentication failed')
   }
 }

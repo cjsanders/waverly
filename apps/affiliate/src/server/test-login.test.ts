@@ -14,10 +14,26 @@ vi.mock('@workos/authkit-session', () => ({
   },
 }))
 
-import { getTestUserCredentials, handleTestLogin, sanitizeTestLoginReturnPath } from './test-login'
+import {
+  getTestUserCredentials,
+  handleTestLogin,
+  sanitizeTestLoginReturnPath,
+  workosErrorCode,
+} from './test-login'
 
 const authenticateWithPassword =
-  vi.fn<(payload: { email: string; password: string }) => Promise<unknown>>()
+  vi.fn<(payload: { clientId: string; email: string; password: string }) => Promise<unknown>>()
+const authenticateWithOrganizationSelection =
+  vi.fn<
+    (payload: {
+      clientId: string
+      organizationId: string
+      pendingAuthenticationToken: string
+    }) => Promise<unknown>
+  >()
+const listUsers = vi.fn<(options: { email: string }) => Promise<{ data: Array<{ id: string }> }>>()
+const updateUser =
+  vi.fn<(options: { userId: string; emailVerified: boolean }) => Promise<unknown>>()
 const saveSession =
   vi.fn<(response: Response, sessionData: string) => Promise<{ headers: Record<string, string> }>>()
 
@@ -66,12 +82,25 @@ describe('handleTestLogin', () => {
     vi.stubEnv('TEST_USER_EMAIL', 'agent@example.com')
     vi.stubEnv('TEST_USER_PASSWORD', 'secret')
     authenticateWithPassword.mockReset()
+    authenticateWithOrganizationSelection.mockReset()
+    listUsers.mockReset()
+    updateUser.mockReset()
     saveSession.mockReset()
     vi.mocked(getAuthkit).mockResolvedValue({
-      getWorkOS: () => ({ userManagement: { authenticateWithPassword } }),
+      getWorkOS: () => ({
+        userManagement: {
+          authenticateWithPassword,
+          authenticateWithOrganizationSelection,
+          listUsers,
+          updateUser,
+        },
+      }),
       saveSession,
     } as never)
-    vi.mocked(getConfig).mockReturnValue('cookie-password-that-is-32-chars!')
+    vi.mocked(getConfig).mockImplementation((key: string) => {
+      if (key === 'clientId') return 'client_test'
+      return 'cookie-password-that-is-32-chars!'
+    })
     vi.mocked(sessionEncryption.sealData).mockReset()
     vi.mocked(sessionEncryption.sealData).mockResolvedValue('encrypted-session')
     saveSession.mockResolvedValue({
@@ -110,6 +139,7 @@ describe('handleTestLogin', () => {
     expect(response.headers.get('Location')).toBe('/dashboard')
     expect(response.headers.get('Set-Cookie')).toContain('wos-session=encrypted-session')
     expect(authenticateWithPassword).toHaveBeenCalledWith({
+      clientId: 'client_test',
       email: 'agent@example.com',
       password: 'secret',
     })
@@ -132,6 +162,61 @@ describe('handleTestLogin', () => {
 
     expect(response.status).toBe(401)
     await expect(response.json()).resolves.toEqual({ error: 'Test user authentication failed' })
+    expect(updateUser).not.toHaveBeenCalled()
     consoleError.mockRestore()
+  })
+
+  it('verifies the WorkOS user email and retries when ownership is required', async () => {
+    authenticateWithPassword
+      .mockRejectedValueOnce(
+        Object.assign(new Error('verify email'), { code: 'email_verification_required' }),
+      )
+      .mockResolvedValueOnce({
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        user: { id: 'user_1', email: 'agent@example.com' },
+      })
+    listUsers.mockResolvedValue({ data: [{ id: 'user_1' }] })
+    updateUser.mockResolvedValue({})
+
+    const response = await handleTestLogin(new Request('http://localhost/api/auth/test-login'))
+
+    expect(response.status).toBe(307)
+    expect(listUsers).toHaveBeenCalledWith({ email: 'agent@example.com' })
+    expect(updateUser).toHaveBeenCalledWith({ userId: 'user_1', emailVerified: true })
+    expect(authenticateWithPassword).toHaveBeenCalledTimes(2)
+  })
+
+  it('selects the first WorkOS organization when the password grant requires it', async () => {
+    authenticateWithPassword.mockRejectedValue(
+      Object.assign(new Error('pick org'), {
+        code: 'organization_selection_required',
+        pendingAuthenticationToken: 'pending-token',
+        rawData: { organizations: [{ id: 'org_1', name: 'Acme' }] },
+      }),
+    )
+    authenticateWithOrganizationSelection.mockResolvedValue({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      user: { id: 'user_1', email: 'agent@example.com' },
+    })
+
+    const response = await handleTestLogin(new Request('http://localhost/api/auth/test-login'))
+
+    expect(response.status).toBe(307)
+    expect(authenticateWithOrganizationSelection).toHaveBeenCalledWith({
+      clientId: 'client_test',
+      organizationId: 'org_1',
+      pendingAuthenticationToken: 'pending-token',
+    })
+  })
+})
+
+describe('workosErrorCode', () => {
+  it('reads the WorkOS error code', () => {
+    expect(workosErrorCode({ code: 'email_verification_required' })).toBe(
+      'email_verification_required',
+    )
+    expect(workosErrorCode(new Error('nope'))).toBeUndefined()
   })
 })
