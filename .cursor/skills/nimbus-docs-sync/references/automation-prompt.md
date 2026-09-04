@@ -59,7 +59,8 @@ Exit immediately with no comment and no PR when:
 
 Computer use is available. When a page documents a UI flow:
 
-- Run the relevant app if the environment allows (`ASTRO_DEV_BACKGROUND=1` for the docs/website Astro servers).
+- Run the relevant app if the environment allows (`ASTRO_DEV_BACKGROUND=1` for the docs/website Astro servers; affiliate is `http://localhost:5173` in Cloud Agents).
+- For signed-in product UI, open `/api/auth/test-login?returnPathname=/dashboard` when `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are set. Never print the password.
 - Save screenshots as `apps/docs/public/docs/<name>.png` and short screencasts as `apps/docs/public/docs/<name>.webm`.
 - Embed with the registered `<Frame>` component (see the skill). Public URLs are `/docs/<filename>`.
 - If auth secrets are missing, write the prose anyway and skip authenticated screens rather than failing the run.
