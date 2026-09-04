@@ -34,11 +34,6 @@
         ],
       },
     },
-  },
-  "observability": {
-    "enabled": true,
-  },
-  "env": {
     // Selected with CLOUDFLARE_ENV=e2e by the end-to-end harness: AuthKit talks to a local
     // WorkOS emulator instead of api.workos.com. Never deploy this environment.
     "e2e": {
@@ -56,5 +51,8 @@
         ],
       },
     },
+  },
+  "observability": {
+    "enabled": true,
   },
 }
