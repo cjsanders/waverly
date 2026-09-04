@@ -1,0 +1,37 @@
+---
+title: Agent login
+description: Dev-only sign-in for Cloud Agents and local screenshot capture.
+---
+
+The affiliate app exposes `/api/auth/test-login` so Cloud Agents and other local tools can sign in as a WorkOS Email + Password user without driving the hosted AuthKit UI.
+
+This route is **dev-only**. Production builds return 404. Do not set the test-user secrets in production.
+
+## Create the test user
+
+1. In the WorkOS dashboard, enable Email + Password.
+2. Create a user with those credentials.
+3. Set `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` — as Cloud Agent secrets, or in `apps/affiliate/.env.local`. Never commit the values.
+
+## Sign in
+
+Open the affiliate origin plus `/api/auth/test-login`. Optional `returnPathname` (default `/dashboard`):
+
+```
+http://localhost:5173/api/auth/test-login?returnPathname=/dashboard
+```
+
+Cloud Agents run the affiliate app at `http://localhost:5173`. Locally you can use the portless affiliate URL instead.
+
+On success the handler authenticates with a password grant, writes the AuthKit session cookie, and redirects (307).
+
+| Result | When                                                 |
+| ------ | ---------------------------------------------------- |
+| 307    | Session cookie set; redirected to `returnPathname`   |
+| 401    | WorkOS rejected the credentials                      |
+| 404    | Production or non-dev build                          |
+| 503    | `TEST_USER_EMAIL` or `TEST_USER_PASSWORD` is missing |
+
+`returnPathname` must stay on this origin. Absolute URLs, protocol-relative paths, and unparseable values fall back to `/dashboard`.
+
+To capture the hosted WorkOS sign-in UI itself, use `/api/auth/sign-in` instead.

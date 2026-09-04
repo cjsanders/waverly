@@ -3,6 +3,10 @@ title: Getting started
 description: Build and operate the Waverly affiliate network.
 ---
 
+Start here for product, integration, and operational documentation.
+
+Cloud Agents and local tools sign in through the [agent login](/agent-login) route when `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are set. That path is dev-only and never ships in production.
+
 Waverly is an affiliate network. After you sign in to the affiliate app, you work inside a **workspace**. Each workspace is a WorkOS organization whose kind — creator, brand, or operator — picks the mode of the app and the URL you land on.
 
 <CardGrid>
@@ -16,5 +20,4 @@ Waverly is an affiliate network. After you sign in to the affiliate app, you wor
     [Roles, `metadata.kind`, and operator workspaces](/workos) for the environment.
   </Card>
 </CardGrid>
-
 Signed-in users with no workspace go to `/onboarding`. Everyone else opens the home of their active workspace (`/creator`, `/brand`, or `/operator`). `/dashboard` still works; it redirects into that workspace layout.
