@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# This repository has no local backing services or per-wake authentication.
+echo "[resume] No orb state needs repair"
