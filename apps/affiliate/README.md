@@ -69,12 +69,14 @@ Node.js 22.11 or newer.
    the logout return URL, so every origin the app runs on needs an entry). Set the app homepage URL
    as the fallback.
 4. Start the app and use the sign-in action on `/`.
+5. Optional: create an Email + Password user in WorkOS and set `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` so agents can open `/api/auth/test-login` instead of the hosted AuthKit screen.
 
 ### What's wired up
 
 - `authkitMiddleware()` manages the encrypted server-side session in `src/start.ts`.
 - `/api/auth/callback` completes the OAuth callback.
 - `/api/auth/sign-in` initiates sign-in and supports a `returnPathname` query parameter.
+- `/api/auth/test-login` is a **dev-only** agent login. When `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are set, it authenticates that WorkOS user with a password grant, writes the AuthKit session cookie, and redirects. Production builds return 404. Do not set those variables in production.
 - `<AuthKitProvider>` supplies reactive auth state and `ConvexProviderWithAuth` forwards WorkOS access tokens to Convex.
 
 For authorization in loaders and server functions, use `getAuth()` from

@@ -29,6 +29,7 @@
     "@tanstack/react-start": "latest",
     "@waverly/design-system": "workspace:*",
     "@workos-inc/node": "^10.8.0",
+    "@workos/authkit-session": "^0.7.1",
     "@workos/authkit-tanstack-react-start": "^0.11.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

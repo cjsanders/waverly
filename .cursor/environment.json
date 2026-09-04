@@ -1,0 +1,26 @@
+{
+  "name": "Waverly",
+  "install": "export BUN_INSTALL=\"$HOME/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; command -v bun >/dev/null 2>&1 || curl -fsSL https://bun.sh/install | bash -s \"bun-v1.3.10\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun install",
+  "terminals": [
+    {
+      "name": "website",
+      "description": "Astro dev server for apps/website on http://localhost:4321",
+      "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; cd apps/website && ASTRO_DEV_BACKGROUND=1 ./node_modules/.bin/astro dev --host --port 4321"
+    },
+    {
+      "name": "docs",
+      "description": "Astro dev server for apps/docs on http://localhost:4322",
+      "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; cd apps/docs && ASTRO_DEV_BACKGROUND=1 ./node_modules/.bin/astro dev --host --port 4322"
+    },
+    {
+      "name": "affiliate",
+      "description": "Affiliate app on http://localhost:5173. Open /api/auth/test-login after TEST_USER_EMAIL and TEST_USER_PASSWORD are set.",
+      "command": "export PATH=\"$HOME/.bun/bin:$PATH\"; cd apps/affiliate; export WORKOS_REDIRECT_URI=\"${WORKOS_REDIRECT_URI:-http://localhost:5173/api/auth/callback}\"; export CLOUDFLARE_ENV=\"${CLOUDFLARE_ENV:-dev}\"; ./node_modules/.bin/vite dev --host --port 5173"
+    }
+  ],
+  "ports": [
+    { "name": "website", "port": 4321 },
+    { "name": "docs", "port": 4322 },
+    { "name": "affiliate", "port": 5173 }
+  ]
+}

@@ -19,6 +19,22 @@
       "WORKOS_REDIRECT_URI",
     ],
   },
+  // Local `vite dev` uses CLOUDFLARE_ENV=dev so the WorkOS test user is loaded
+  // into the Worker. Production deploy stays on the top-level secrets list.
+  "env": {
+    "dev": {
+      "secrets": {
+        "required": [
+          "WORKOS_CLIENT_ID",
+          "WORKOS_API_KEY",
+          "WORKOS_COOKIE_PASSWORD",
+          "WORKOS_REDIRECT_URI",
+          "TEST_USER_EMAIL",
+          "TEST_USER_PASSWORD",
+        ],
+      },
+    },
+  },
   "observability": {
     "enabled": true,
   },
