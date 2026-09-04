@@ -23,6 +23,26 @@ Fill in the affiliate app's Convex and WorkOS values before starting it. Create 
 
 `bun install` also installs the Lefthook Git hooks. Commits fix and restage files with Oxlint, Oxfmt, and Prettier for Astro files. Pushes run typechecking and unit tests. Run a hook manually with `bunx lefthook run pre-commit` or temporarily bypass hooks with `LEFTHOOK=0 git commit`.
 
+### Local URLs
+
+Each `dev` script is wrapped in [portless](https://github.com/vercel-labs/portless), which gives every app a stable HTTPS URL instead of a port number:
+
+| App       | URL                                   |
+| --------- | ------------------------------------- |
+| affiliate | `https://affiliate.waverly.localhost` |
+| website   | `https://website.waverly.localhost`   |
+| docs      | `https://docs.waverly.localhost`      |
+
+The `.waverly` segment keeps these names from colliding with other projects on the same machine. Portless assigns each server a random port through `PORT`, so the dev scripts do not pin ports. On first run it generates a local certificate authority and adds it to the system trust store, which may prompt for your password; `bunx portless doctor` diagnoses proxy or certificate problems. Safari needs `bunx portless hosts sync` once.
+
+The affiliate callback URL in `.env.local` is `https://affiliate.waverly.localhost/api/auth/callback`. Register that URL, and the matching `/api/auth/sign-in` URL, in the WorkOS development environment.
+
+Astro backgrounds `astro dev` when it detects a coding agent, which makes portless drop the route as soon as the wrapper exits. Agents should set `ASTRO_DEV_BACKGROUND=1` when starting the website or docs servers so Astro stays in the foreground:
+
+```sh
+ASTRO_DEV_BACKGROUND=1 bun run dev
+```
+
 ### Amp orb portal
 
 The affiliate development server is declared in `.amp/services.yaml`. In an Amp orb, start it with:
@@ -31,7 +51,7 @@ The affiliate development server is declared in `.amp/services.yaml`. In an Amp 
 amp orb services ensure
 ```
 
-Use the exact portal URL printed by that command; do not save or construct it. Amp injects the current URL as `PUBLIC_URL`, and the service uses it for the WorkOS callback URL. The same callback URL must be allowed in the WorkOS development environment before testing sign-in.
+Use the exact portal URL printed by that command; do not save or construct it. Amp injects the current URL as `PUBLIC_URL`, and the service uses it for the WorkOS callback URL. The same callback URL must be allowed in the WorkOS development environment before testing sign-in. The Amp service starts Vite directly and does not use portless, so the local `.waverly.localhost` URLs do not apply inside an orb.
 
 For E2E tests, set `E2E_BASE_URL` at runtime to either the current portal URL or a Cloudflare preview URL. Browserbase runs outside the orb, so a private portal also requires a freshly minted one-use login URL in `E2E_PORTAL_LOGIN_URL`. Do not save that login URL as an Amp variable. Cloudflare preview runs do not need `E2E_PORTAL_LOGIN_URL`.
 

@@ -57,14 +57,14 @@ Node.js 22.11 or newer.
    ```bash
    WORKOS_CLIENT_ID=client_...
    WORKOS_API_KEY=sk_test_...
-   WORKOS_REDIRECT_URI=http://localhost:3000/api/auth/callback
+   WORKOS_REDIRECT_URI=https://affiliate.waverly.localhost/api/auth/callback
    WORKOS_COOKIE_PASSWORD=a-random-value-at-least-32-characters-long
    WORKOS_API_HOSTNAME=api.workos.com
    ```
 
 3. On the dashboard's [Redirects page](https://dashboard.workos.com/redirects), add
-   `http://localhost:3000/api/auth/callback` as a redirect URI and
-   `http://localhost:3000/api/auth/sign-in` as the sign-in endpoint.
+   `https://affiliate.waverly.localhost/api/auth/callback` as a redirect URI and
+   `https://affiliate.waverly.localhost/api/auth/sign-in` as the sign-in endpoint.
 4. Start the app and use the sign-in action on `/`.
 
 ### What's wired up
