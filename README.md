@@ -21,6 +21,8 @@ bun run dev
 
 Fill in the affiliate app's Convex and WorkOS values before starting it. Create the Convex development deployment from `apps/affiliate` with `bunx convex dev`.
 
+`bun install` also installs the Lefthook Git hooks. Commits fix and restage files with Oxlint, Oxfmt, and Prettier for Astro files. Pushes run typechecking and unit tests. Run a hook manually with `bunx lefthook run pre-commit` or temporarily bypass hooks with `LEFTHOOK=0 git commit`.
+
 ### Amp orb portal
 
 The affiliate development server is declared in `.amp/services.yaml`. In an Amp orb, start it with:

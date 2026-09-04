@@ -1,0 +1,22 @@
+pre-commit:
+  jobs:
+    - name: fix staged lint issues
+      run: bunx oxlint --fix --deny-warnings --report-unused-disable-directives --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true
+
+    - name: format staged files
+      run: bunx oxfmt --write --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true
+
+    - name: format staged Astro files
+      glob: '*.astro'
+      run: bunx prettier --plugin=prettier-plugin-astro --write {staged_files}
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    - name: typecheck
+      run: bun run typecheck
+
+    - name: unit tests
+      run: bun run test
