@@ -10,7 +10,10 @@
       "env": [
         "CONVEX_DEPLOYMENT",
         "VITE_CONVEX_URL",
+        "CLOUDFLARE_ENV",
         "WORKOS_API_HOSTNAME",
+        "WORKOS_API_HTTPS",
+        "WORKOS_API_PORT",
         "WORKOS_API_KEY",
         "WORKOS_CLIENT_ID",
         "WORKOS_COOKIE_PASSWORD",
@@ -31,7 +34,7 @@
     },
     "test:e2e": {
       "cache": false,
-      "env": ["BROWSERBASE_API_KEY", "E2E_BASE_URL", "E2E_PORTAL_LOGIN_URL"]
+      "env": ["CI", "BROWSERBASE_API_KEY", "E2E_BASE_URL", "E2E_PORTAL_LOGIN_URL"]
     }
   }
 }

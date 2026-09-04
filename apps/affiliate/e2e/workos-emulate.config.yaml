@@ -1,0 +1,19 @@
+# Seed for the WorkOS emulator used by the end-to-end suite. The emulator's non-interactive
+# authorize endpoint signs in the first user listed here. Ids are pinned so tests can assert on them.
+users:
+  - id: user_01E2E0000000000000000ALICE
+    email: alice@waverly.test
+    first_name: Alice
+    last_name: Example
+    email_verified: true
+
+organizations:
+  - id: org_01E2E00000000000000000BRAND
+    name: Waverly Test Brand
+    memberships:
+      - email: alice@waverly.test
+        role: admin
+
+roles:
+  - slug: admin
+    name: Admin

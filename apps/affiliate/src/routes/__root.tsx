@@ -3,6 +3,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { getAuth } from '@workos/authkit-tanstack-react-start'
 import faviconUrl from '@waverly/design-system/brand/waverly-icon.svg?url'
+import { useEffect } from 'react'
 
 import appCss from '../styles.css?url'
 import type { RouterContext } from '../router'
@@ -53,6 +54,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <DisableDevBfcache />
         {children}
         <TanStackDevtools
           config={{ position: 'bottom-right' }}
@@ -67,4 +69,22 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </body>
     </html>
   )
+}
+
+/**
+ * Chrome 149+ closes WebSockets when a page enters the back-forward cache. Vite treats that as a
+ * lost dev-server connection and reloads the page when it becomes active again. An unload listener
+ * opts this development-only document out of BFCache while preserving HMR.
+ */
+function DisableDevBfcache() {
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+
+    const handleUnload = () => {}
+    window.addEventListener('unload', handleUnload)
+
+    return () => window.removeEventListener('unload', handleUnload)
+  }, [])
+
+  return null
 }
