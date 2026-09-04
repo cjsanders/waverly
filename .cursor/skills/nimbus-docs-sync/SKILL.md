@@ -78,11 +78,12 @@ Do not add `Frame` to a page without registering it (it is already in `src/compo
 
 ### Capturing media with computer use
 
-1. Start only what you need. Docs: `ASTRO_DEV_BACKGROUND=1 bun run --cwd apps/docs dev`. Affiliate app: follow the repo README; it needs WorkOS/Convex env vars for authenticated screens.
-2. If the affiliate app cannot sign in in this environment, still write accurate prose from the code. Capture whatever UI is reachable (marketing site, docs site, unauthenticated screens). Do **not** block the docs PR on missing secrets.
-3. Screenshot the actual product UI, not the code editor or terminal.
-4. Copy chosen files into `apps/docs/public/docs/` and reference them from MDX as above.
-5. Optionally attach the same recordings to the docs PR description so reviewers can watch without checking out.
+1. Start only what you need. Docs: `ASTRO_DEV_BACKGROUND=1 bun run --cwd apps/docs dev`. Affiliate app: Cloud Agent environments already run it on `http://localhost:5173` (see `.cursor/environment.json`). Locally, follow the repo README; it needs WorkOS/Convex env vars.
+2. For **authenticated** screens, sign in as the WorkOS test user. Confirm `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are set (Cloud Agent secrets, or `apps/affiliate/.env.local`). Never print the password. Then open `http://localhost:5173/api/auth/test-login?returnPathname=/dashboard` in computer use. That route is dev-only: it uses a password grant, sets the AuthKit session cookie, and redirects. To capture the hosted WorkOS sign-in UI itself, use `/api/auth/sign-in` instead.
+3. If those secrets are missing, or the affiliate app cannot sign in, still write accurate prose from the code. Capture whatever UI is reachable (marketing site, docs site, unauthenticated screens). Do **not** block the docs PR on missing secrets.
+4. Screenshot the actual product UI, not the code editor or terminal.
+5. Copy chosen files into `apps/docs/public/docs/` and reference them from MDX as above.
+6. Optionally attach the same recordings to the docs PR description so reviewers can watch without checking out.
 
 ## Automation behavior (Cursor dashboard)
 
