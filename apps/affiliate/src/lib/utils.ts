@@ -1,7 +1,2 @@
-import type { ClassValue } from 'clsx'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+// shadcn's CLI expects `cn` at this alias; the implementation lives in the shared design system.
+export { cn } from '@waverly/design-system/lib/utils'

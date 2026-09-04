@@ -2,6 +2,7 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanst
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { getAuth } from '@workos/authkit-tanstack-react-start'
+import faviconUrl from '@waverly/design-system/brand/waverly-icon.svg?url'
 
 import appCss from '../styles.css?url'
 import type { RouterContext } from '../router'
@@ -24,6 +25,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: faviconUrl,
       },
     ],
   }),

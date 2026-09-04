@@ -1,0 +1,30 @@
+---
+/**
+ * Wave mark alone (869×464, ~1.87:1) for Astro apps. `size` sets the height; width follows.
+ * Use at 24px or larger and never recolor the layers.
+ */
+import iconSrc from "../../brand/waverly-icon.svg?url";
+
+interface Props {
+  size?: number;
+  class?: string;
+}
+
+const { size = 32, class: className } = Astro.props;
+---
+
+<img
+  class:list={["logo-icon", className]}
+  src={iconSrc}
+  alt=""
+  aria-hidden="true"
+  height={size}
+  style={`height:${size}px`}
+/>
+
+<style>
+  .logo-icon {
+    width: auto;
+    flex-shrink: 0;
+  }
+</style>

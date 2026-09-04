@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@import '@waverly/design-system/fonts.css';
+@import '@waverly/design-system/tokens.css';
 
 /* ============================================================
  * Nimbus Theme — THE file you edit to customize your site.
@@ -22,56 +24,49 @@
 :root {
   color-scheme: light;
 
-  /* Surfaces (paired with foregrounds for contrast) */
-  --nb-background: oklch(0.99 0 0);
-  --nb-foreground: oklch(0.21 0 0);
-
-  --nb-card: oklch(1 0 0);
-  --nb-card-foreground: var(--nb-foreground);
-
-  --nb-muted: oklch(0.967 0 0);
-  --nb-muted-foreground: oklch(0.556 0 0);
-
-  --nb-accent: oklch(0.967 0 0);
-  --nb-accent-foreground: var(--nb-foreground);
+  /* Surfaces — Waverly tokens from @waverly/design-system/tokens.css */
+  --nb-background: var(--background);
+  --nb-foreground: var(--foreground);
+  --nb-card: var(--card);
+  --nb-card-foreground: var(--card-foreground);
+  --nb-muted: var(--muted);
+  --nb-muted-foreground: var(--muted-foreground);
+  --nb-accent: var(--accent);
+  --nb-accent-foreground: var(--accent-foreground);
 
   /* Primary action / brand */
-  --nb-primary: oklch(0.145 0 0);
-  --nb-primary-foreground: oklch(0.97 0 0);
-  --nb-primary-hover: oklch(0.371 0 0);
+  --nb-primary: var(--primary);
+  --nb-primary-foreground: var(--primary-foreground);
+  --nb-primary-hover: var(--brand-700);
 
   /* Borders / focus */
-  --nb-border: oklch(0.935 0 0);
-  --nb-border-strong: oklch(0.87 0 0);
-  --nb-selected: oklch(0.89 0 0);
-  --nb-ring: oklch(0.145 0 0 / 0.35);
+  --nb-border: var(--border);
+  --nb-border-strong: var(--input);
+  --nb-selected: var(--brand-100);
+  --nb-ring: var(--ring);
 
   /* Status colors — paired (saturated for text/border + muted for bg) */
-  --nb-info: oklch(0.45 0.18 255);
-  --nb-info-foreground: oklch(0.45 0.18 255);
-  --nb-info-muted: oklch(0.965 0.015 255);
-
-  --nb-success: oklch(0.42 0.14 152);
-  --nb-success-foreground: oklch(0.42 0.14 152);
-  --nb-success-muted: oklch(0.965 0.015 152);
-
-  --nb-warning: oklch(0.48 0.15 65);
-  --nb-warning-foreground: oklch(0.48 0.15 65);
-  --nb-warning-muted: oklch(0.97 0.02 70);
-
-  --nb-danger: oklch(0.47 0.18 25);
-  --nb-danger-foreground: oklch(0.47 0.18 25);
-  --nb-danger-muted: oklch(0.965 0.015 25);
+  --nb-info: var(--info);
+  --nb-info-foreground: var(--info);
+  --nb-info-muted: var(--info-foreground);
+  --nb-success: var(--success);
+  --nb-success-foreground: var(--success);
+  --nb-success-muted: var(--success-foreground);
+  --nb-warning: var(--warning);
+  --nb-warning-foreground: var(--warning);
+  --nb-warning-muted: var(--warning-foreground);
+  --nb-danger: var(--destructive);
+  --nb-danger-foreground: var(--destructive);
+  --nb-danger-muted: color-mix(in oklch, var(--destructive) 12%, transparent);
 
   /* API method palette — shared source of truth for the method chip across the
      sidebar, endpoint card, and code rail (api-sidebar / api-layout /
-     api-code-rail); harmless elsewhere. Calibrated OKLCH duotone: each value is
-     legible as chip text over its own 14%-tinted background in both themes. */
-  --nb-m-get: oklch(0.48 0.12 156);
-  --nb-m-post: oklch(0.48 0.15 262);
-  --nb-m-put: oklch(0.5 0.13 60);
-  --nb-m-delete: oklch(0.5 0.18 24);
-  --nb-m-other: oklch(0.5 0 0);
+     api-code-rail); harmless elsewhere. Wave palette plus the status hues. */
+  --nb-m-get: var(--success);
+  --nb-m-post: var(--wave-5);
+  --nb-m-put: var(--warning);
+  --nb-m-delete: var(--destructive);
+  --nb-m-other: var(--sand-500);
 
   /* Layout */
   --nb-sidebar-width: 18.75rem;
@@ -80,27 +75,26 @@
   /* Used only by the API reference (registry: api-layout); harmless elsewhere. */
   --nb-code-rail-width: 34rem;
 
-  /* Typography — self-hosted via @fontsource-variable in BaseLayout.astro */
-  --nb-font-sans:
-    'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --nb-font-mono:
-    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro',
-    Menlo, Consolas, monospace;
+  /* Typography — Figtree for text, Quicksand for headings, JetBrains Mono for code.
+     Self-hosted via @waverly/design-system/fonts.css. */
+  --nb-font-sans: var(--font-sans-stack);
+  --nb-font-display: var(--font-display-stack);
+  --nb-font-mono: var(--font-mono-stack);
   --nb-h1-size: 2.1875rem;
   --nb-h1-weight: 600;
-  --nb-h1-tracking: -0.025em;
+  --nb-h1-tracking: var(--letter-spacing-display);
   --nb-h2-size: 1.3rem;
-  --nb-h2-weight: 650;
-  --nb-h2-tracking: -0.015em;
+  --nb-h2-weight: 600;
+  --nb-h2-tracking: var(--letter-spacing-display);
   --nb-h3-size: 1.1rem;
   --nb-h3-weight: 600;
   --nb-h3-tracking: -0.01em;
   --nb-h4-weight: 600;
 
   /* Shadows */
-  --nb-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.04);
-  --nb-shadow: 0 1px 3px oklch(0 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.04);
-  --nb-shadow-lg: 0 4px 12px oklch(0 0 0 / 0.08), 0 2px 4px oklch(0 0 0 / 0.04);
+  --nb-shadow-sm: var(--elevation-xs);
+  --nb-shadow: var(--elevation-sm);
+  --nb-shadow-lg: var(--elevation-md);
 }
 
 /* Wider content area on large displays (e.g. MacBook Pro 16″) */
@@ -111,56 +105,18 @@
 }
 
 /* ---- Dark mode ---- */
+/* Color tokens flip inside tokens.css (it matches `[data-mode='dark']`); only the
+   values that don't map one-to-one need restating here. */
 [data-mode='dark'] {
   color-scheme: dark;
 
-  --nb-background: oklch(0.085 0 0);
-  --nb-foreground: oklch(0.97 0 0);
+  --nb-primary-hover: var(--brand-400);
+  --nb-border-strong: var(--input);
+  --nb-selected: var(--accent);
+  --nb-danger-muted: color-mix(in oklch, var(--destructive) 18%, transparent);
 
-  --nb-card: #0f0f0f;
-  --nb-card-foreground: var(--nb-foreground);
-
-  --nb-muted: #060606;
-  --nb-muted-foreground: oklch(0.65 0 0);
-
-  --nb-accent: oklch(0.269 0 0);
-  --nb-accent-foreground: var(--nb-foreground);
-
-  --nb-primary: oklch(0.9 0 0);
-  --nb-primary-foreground: oklch(0.085 0 0);
-  --nb-primary-hover: oklch(0.7 0 0);
-
-  --nb-border: oklch(0.269 0 0);
-  --nb-border-strong: oklch(0.371 0 0);
-  --nb-selected: oklch(0.371 0 0);
-  --nb-ring: oklch(0.9 0 0 / 0.35);
-
-  --nb-info: oklch(0.75 0.12 255);
-  --nb-info-foreground: oklch(0.75 0.12 255);
-  --nb-info-muted: oklch(0.17 0.03 260);
-
-  --nb-success: oklch(0.72 0.12 150);
-  --nb-success-foreground: oklch(0.72 0.12 150);
-  --nb-success-muted: oklch(0.17 0.025 153);
-
-  --nb-warning: oklch(0.78 0.11 80);
-  --nb-warning-foreground: oklch(0.78 0.11 80);
-  --nb-warning-muted: oklch(0.19 0.03 70);
-
-  --nb-danger: oklch(0.72 0.14 25);
-  --nb-danger-foreground: oklch(0.72 0.14 25);
-  --nb-danger-muted: oklch(0.17 0.03 25);
-
-  /* API method palette — dark overrides. */
-  --nb-m-get: oklch(0.82 0.14 162);
-  --nb-m-post: oklch(0.8 0.13 266);
-  --nb-m-put: oklch(0.85 0.13 78);
-  --nb-m-delete: oklch(0.78 0.16 24);
-  --nb-m-other: oklch(0.72 0 0);
-
-  --nb-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.2);
-  --nb-shadow: 0 1px 3px oklch(0 0 0 / 0.3), 0 1px 2px oklch(0 0 0 / 0.2);
-  --nb-shadow-lg: 0 4px 12px oklch(0 0 0 / 0.4), 0 2px 4px oklch(0 0 0 / 0.2);
+  --nb-m-post: var(--brand-300);
+  --nb-m-other: var(--sand-400);
 }
 
 /* ---- Tailwind theme mapping ----
@@ -206,6 +162,7 @@
   --color-danger-muted: var(--nb-danger-muted);
 
   --font-sans: var(--nb-font-sans);
+  --font-display: var(--nb-font-display);
   --font-mono: var(--nb-font-mono);
 
   --shadow-sm: var(--nb-shadow-sm);
@@ -216,7 +173,15 @@
 /* ---- Minimal overrides the plugin doesn't cover ---- */
 html {
   font-family: var(--nb-font-sans);
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Waverly: Quicksand for headings only; Figtree for everything else. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--nb-font-display);
+  text-wrap: balance;
 }
 
 body {
@@ -230,8 +195,8 @@ body {
 }
 
 ::selection {
-  background: color-mix(in oklch, var(--nb-primary) 10%, transparent);
-  color: var(--nb-foreground);
+  background: var(--brand-200);
+  color: var(--brand-900);
 }
 
 /* ---- Focus indicators ---- */

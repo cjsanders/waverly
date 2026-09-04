@@ -1,24 +1,52 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Button } from '#/components/ui/button'
+import { Logo } from '@waverly/design-system/brand'
+import { Badge } from '@waverly/design-system/ui/badge'
+import { Button } from '@waverly/design-system/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@waverly/design-system/ui/card'
 
 export const Route = createFileRoute('/')({ component: Home })
 
+const stack = [
+  { name: 'TanStack Start', role: 'Routing and server functions' },
+  { name: 'Convex', role: 'Realtime data' },
+  { name: 'WorkOS', role: 'Sign in and organizations' },
+  { name: 'Tinybird', role: 'Event analytics' },
+] as const
+
 function Home() {
   return (
-    <main className="page-wrap grid min-h-screen place-items-center py-16">
-      <section className="island-shell max-w-2xl rounded-3xl p-10 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--kicker)]">
-          Waverly
-        </p>
-        <h1 className="display-title mt-4 text-5xl font-bold">Affiliate network workspace</h1>
-        <p className="mt-5 text-lg text-[var(--sea-ink-soft)]">
-          TanStack Start, Convex, WorkOS, Tinybird, and TanStack Charts are ready for product
-          development.
-        </p>
-        <Button asChild className="mt-8">
-          <a href="/api/auth/sign-in">Sign in with WorkOS</a>
-        </Button>
-      </section>
+    <main className="page-wrap flex min-h-screen flex-col items-center justify-center gap-10 py-16">
+      <Logo height={32} />
+      <Card className="w-full max-w-2xl shadow-sm">
+        <CardHeader className="items-center text-center">
+          <Badge variant="accent" dot className="mb-3">
+            Workspace preview
+          </Badge>
+          <CardTitle className="text-4xl">Affiliate network workspace</CardTitle>
+          <CardDescription className="mt-2 max-w-md text-base">
+            Track partners, payouts, and performance in one place. Sign in to open your workspace.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-8">
+          <Button asChild size="lg">
+            <a href="/api/auth/sign-in">Sign in with WorkOS</a>
+          </Button>
+          <dl className="grid w-full grid-cols-2 gap-4 border-t border-border pt-6 text-left sm:grid-cols-4">
+            {stack.map((item) => (
+              <div key={item.name}>
+                <dt className="font-medium">{item.name}</dt>
+                <dd className="text-sm text-muted-foreground">{item.role}</dd>
+              </div>
+            ))}
+          </dl>
+        </CardContent>
+      </Card>
     </main>
   )
 }

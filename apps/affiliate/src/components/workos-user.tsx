@@ -1,9 +1,9 @@
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
+import { Button } from '@waverly/design-system/ui/button'
 
 export default function WorkOSUser({ large }: { large?: boolean }) {
   const { user, loading, signOut } = useAuth()
-
-  const buttonClasses = `${large ? 'px-6 py-3 text-base' : 'px-4 py-2 text-sm'} demo-button`
+  const size = large ? 'lg' : 'default'
 
   if (loading) return null
 
@@ -15,21 +15,21 @@ export default function WorkOSUser({ large }: { large?: boolean }) {
             <img
               src={user.profilePictureUrl}
               alt={`Avatar of ${user.firstName} ${user.lastName}`}
-              className="w-10 h-10 rounded-full"
+              className="size-10 rounded-full"
             />
           )}
           {user.firstName} {user.lastName}
         </div>
-        <button onClick={() => void signOut()} className={buttonClasses}>
-          Sign Out
-        </button>
+        <Button variant="secondary" size={size} onClick={() => void signOut()}>
+          Sign out
+        </Button>
       </div>
     )
   }
 
   return (
-    <a href="/api/auth/sign-in" className={buttonClasses}>
-      Sign In {large && 'with AuthKit'}
-    </a>
+    <Button asChild size={size}>
+      <a href="/api/auth/sign-in">Sign in{large && ' with AuthKit'}</a>
+    </Button>
   )
 }

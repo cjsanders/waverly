@@ -2,7 +2,8 @@
   "name": "waverly",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -12,8 +13,8 @@
     "test:e2e": "turbo run test:e2e",
     "lint": "oxlint --deny-warnings --report-unused-disable-directives . && bun run --cwd apps/docs lint:docs",
     "lint:fix": "oxlint --fix --deny-warnings --report-unused-disable-directives .",
-    "format": "oxfmt --write . && prettier --plugin=prettier-plugin-astro --write \"apps/**/*.astro\"",
-    "format:check": "oxfmt --check . && prettier --plugin=prettier-plugin-astro --check \"apps/**/*.astro\"",
+    "format": "oxfmt --write . && prettier --plugin=prettier-plugin-astro --write \"{apps,packages}/**/*.astro\"",
+    "format:check": "oxfmt --check . && prettier --plugin=prettier-plugin-astro --check \"{apps,packages}/**/*.astro\"",
     "check": "bun run lint && bun run format:check && bun run typecheck && bun run test"
   },
   "devDependencies": {

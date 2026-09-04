@@ -1,0 +1,6 @@
+/* Self-hosted variable fonts (Fontsource) so no page depends on Google Fonts at runtime.
+   Figtree: body text. Quicksand: headings and big numbers only. JetBrains Mono: code. */
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/figtree/wght-italic.css';
+@import '@fontsource-variable/quicksand';
+@import '@fontsource-variable/jetbrains-mono';

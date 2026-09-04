@@ -12,26 +12,28 @@
 import type { OGImageOptions } from 'astro-og-canvas'
 
 export const ogCardConfig = {
+  // Waverly palette: brand-950 → brand-900 background, brand-500 edge, sand-50 / brand-300 text.
   bgGradient: [
-    [11, 11, 12],
-    [26, 26, 28],
+    [17, 29, 41],
+    [27, 47, 64],
   ],
-  border: { color: [39, 39, 42], width: 2, side: 'inline-start' },
+  border: { color: [57, 124, 168], width: 2, side: 'inline-start' },
   padding: 96,
-  fonts: ['./public/fonts/Inter-Bold.ttf'],
+  // Quicksand Bold, instanced from the Google Fonts variable file (OFL, see Quicksand-OFL.txt).
+  fonts: ['./public/fonts/Quicksand-Bold.ttf'],
   font: {
     title: {
-      color: [250, 250, 250],
+      color: [250, 249, 246],
       size: 64,
       weight: 'Bold',
-      families: ['Inter'],
+      families: ['Quicksand'],
       lineHeight: 1.1,
     },
     description: {
-      color: [161, 161, 170],
+      color: [134, 180, 200],
       size: 32,
       weight: 'Bold',
-      families: ['Inter'],
+      families: ['Quicksand'],
       lineHeight: 1.3,
     },
   },

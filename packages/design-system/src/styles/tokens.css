@@ -1,0 +1,149 @@
+/* Waverly design tokens — plain CSS custom properties, no Tailwind required.
+   Dark mode answers to both `.dark` (shadcn convention) and `[data-mode='dark']` (Nimbus docs). */
+
+:root {
+  /* shadcn semantic tokens (light) */
+  --background: #faf9f6;
+  --foreground: #1b2f40;
+  --card: #ffffff;
+  --card-foreground: #1b2f40;
+  --popover: #ffffff;
+  --popover-foreground: #1b2f40;
+  --primary: #336c88;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f1ec;
+  --secondary-foreground: #1b2f40;
+  --muted: #f3f1ec;
+  --muted-foreground: #665f56;
+  --accent: #eef5f8;
+  --accent-foreground: #336c88;
+  --destructive: #b5493f;
+  --destructive-foreground: #ffffff;
+  --border: #e8e5de;
+  --input: #d6d2c9;
+  --ring: #397ca8;
+  --radius: 0.75rem;
+
+  --chart-1: #7ebdc3;
+  --chart-2: #4d9ea2;
+  --chart-3: #428eba;
+  --chart-4: #397ca8;
+  --chart-5: #336c88;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #665f56;
+  --sidebar-primary: #336c88;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef5f8;
+  --sidebar-accent-foreground: #336c88;
+  --sidebar-border: #e8e5de;
+  --sidebar-ring: #397ca8;
+
+  /* Waverly extras */
+  --brand-teal: #4d9ea2;
+  --brand-teal-foreground: #ffffff;
+  --success: #3f8f6b;
+  --success-foreground: #e3f2ea;
+  --warning: #b8862b;
+  --warning-foreground: #f8efd8;
+  --info: #397ca8;
+  --info-foreground: #e3eef5;
+
+  /* Raw palette. Prefer the semantic tokens above; reach for these for charts, illustrations, and tints. */
+  --wave-1: #7ebdc3;
+  --wave-2: #4d9ea2;
+  --wave-3: #418895;
+  --wave-4: #428eba;
+  --wave-5: #397ca8;
+  --wave-6: #336c88;
+  --wave-7: #29445b;
+
+  --brand-50: #eef5f8;
+  --brand-100: #d8e8ef;
+  --brand-200: #b3d1de;
+  --brand-300: #86b4c8;
+  --brand-400: #5b95b0;
+  --brand-500: #397ca8;
+  --brand-600: #336c88;
+  --brand-700: #2b586f;
+  --brand-800: #29445b;
+  --brand-900: #1b2f40;
+  --brand-950: #111d29;
+
+  --teal-100: #dcefef;
+  --teal-200: #b6dedf;
+  --teal-300: #7ebdc3;
+  --teal-400: #4d9ea2;
+  --teal-500: #418895;
+  --teal-600: #35707b;
+
+  --sand-50: #faf9f6;
+  --sand-100: #f3f1ec;
+  --sand-200: #e8e5de;
+  --sand-300: #d6d2c9;
+  --sand-400: #b3aea3;
+  --sand-500: #8a857b;
+  --sand-600: #665f56;
+  --sand-700: #4a4640;
+  --sand-800: #2f2c28;
+  --sand-900: #1c1a17;
+
+  /* Type */
+  --font-sans-stack: 'Figtree Variable', 'Figtree', 'Helvetica Neue', system-ui, sans-serif;
+  --font-display-stack:
+    'Quicksand Variable', 'Quicksand', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --font-mono-stack: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  --letter-spacing-display: -0.02em;
+
+  /* Elevation — tinted with brand-800 rather than black */
+  --elevation-xs: 0 1px 2px rgb(41 68 91 / 0.06);
+  --elevation-sm: 0 1px 2px rgb(41 68 91 / 0.06), 0 2px 8px rgb(41 68 91 / 0.06);
+  --elevation-md: 0 4px 12px rgb(41 68 91 / 0.08), 0 12px 32px rgb(41 68 91 / 0.08);
+  --elevation-lg: 0 8px 24px rgb(41 68 91 / 0.12), 0 24px 64px rgb(41 68 91 / 0.12);
+
+  --easing-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark,
+[data-mode='dark'] {
+  --background: #111d29;
+  --foreground: #faf9f6;
+  --card: #1b2f40;
+  --card-foreground: #faf9f6;
+  --popover: #223a4d;
+  --popover-foreground: #faf9f6;
+  --primary: #397ca8;
+  --primary-foreground: #ffffff;
+  --secondary: #223a4d;
+  --secondary-foreground: #faf9f6;
+  --muted: #0d161f;
+  --muted-foreground: #a9bccb;
+  --accent: rgba(57, 124, 168, 0.18);
+  --accent-foreground: #86b4c8;
+  --destructive: #e07a70;
+  --destructive-foreground: #111d29;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #86b4c8;
+
+  --sidebar: #1b2f40;
+  --sidebar-foreground: #a9bccb;
+  --sidebar-primary: #397ca8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(57, 124, 168, 0.18);
+  --sidebar-accent-foreground: #86b4c8;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #86b4c8;
+
+  --success: #6dbf96;
+  --success-foreground: rgba(63, 143, 107, 0.2);
+  --warning: #d9a84a;
+  --warning-foreground: rgba(184, 134, 43, 0.2);
+  --info: #86b4c8;
+  --info-foreground: rgba(57, 124, 168, 0.2);
+
+  --elevation-xs: 0 1px 2px rgb(0 0 0 / 0.3);
+  --elevation-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.3);
+  --elevation-md: 0 4px 12px rgb(0 0 0 / 0.35), 0 12px 32px rgb(0 0 0 / 0.35);
+  --elevation-lg: 0 8px 24px rgb(0 0 0 / 0.4), 0 24px 64px rgb(0 0 0 / 0.4);
+}

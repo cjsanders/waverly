@@ -1,12 +1,13 @@
 ---
 import "../styles/global.css";
+import Logo from "@waverly/design-system/astro/Logo.astro";
+import favicon from "@waverly/design-system/brand/waverly-icon.svg?url";
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href={favicon} />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta
@@ -15,21 +16,21 @@ import "../styles/global.css";
     />
     <title>Waverly</title>
   </head>
-  <body
-    class="grid min-h-screen place-items-center bg-slate-950 px-6 text-slate-50"
-  >
-    <main class="max-w-2xl text-center">
-      <p
-        class="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300"
-      >
-        Waverly
-      </p>
-      <h1 class="text-5xl font-semibold tracking-tight sm:text-7xl">
+  <body class="grid min-h-screen place-items-center px-6">
+    <main class="flex max-w-2xl flex-col items-center text-center">
+      <Logo height={36} />
+      <h1 class="mt-10 text-5xl font-semibold sm:text-7xl">
         Affiliate partnerships, made clear.
       </h1>
-      <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-slate-300">
+      <p class="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
         The public website is ready for your product story.
       </p>
+      <a
+        href="https://affiliate.waverly.localhost"
+        class="mt-10 inline-flex h-12 items-center rounded-full bg-primary px-[26px] text-base font-medium text-primary-foreground transition-colors duration-150 ease-out hover:bg-brand-700 focus-visible:ring-[3px] focus-visible:ring-ring/30 focus-visible:outline-none dark:hover:bg-brand-400"
+      >
+        Open the workspace
+      </a>
     </main>
   </body>
 </html>
