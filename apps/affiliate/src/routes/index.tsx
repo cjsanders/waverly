@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { Logo } from '@waverly/design-system/brand'
 import { Badge } from '@waverly/design-system/ui/badge'
 import { Button } from '@waverly/design-system/ui/button'
@@ -10,7 +10,12 @@ import {
   CardTitle,
 } from '@waverly/design-system/ui/card'
 
-export const Route = createFileRoute('/')({ component: Home })
+export const Route = createFileRoute('/')({
+  beforeLoad: ({ context }) => {
+    if (context.user) throw redirect({ to: '/dashboard' })
+  },
+  component: Home,
+})
 
 const stack = [
   { name: 'TanStack Start', role: 'Routing and server functions' },
@@ -35,7 +40,7 @@ function Home() {
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-8">
           <Button asChild size="lg">
-            <a href="/api/auth/sign-in">Sign in with WorkOS</a>
+            <a href="/api/auth/sign-in?returnPathname=/dashboard">Sign in with WorkOS</a>
           </Button>
           <dl className="grid w-full grid-cols-2 gap-4 border-t border-border pt-6 text-left sm:grid-cols-4">
             {stack.map((item) => (
