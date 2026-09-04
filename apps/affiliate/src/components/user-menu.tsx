@@ -50,7 +50,7 @@ export function UserMenu({ className }: { className?: string }) {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void signOut({ returnTo: '/' })}>
+        <DropdownMenuItem onSelect={() => void signOut({ returnTo: landingPageUrl() })}>
           <LogOut />
           Sign out
         </DropdownMenuItem>
@@ -81,4 +81,9 @@ function formatRole(role: string | undefined) {
   if (!role) return undefined
   const words = role.replace(/[-_]+/g, ' ').trim()
   return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/** WorkOS redirects here after logout and expects an absolute URL, not a path. */
+function landingPageUrl() {
+  return new URL('/', window.location.origin).href
 }

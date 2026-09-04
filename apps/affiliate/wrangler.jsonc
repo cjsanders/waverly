@@ -4,6 +4,13 @@
   "compatibility_date": "2026-09-03",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  "vars": {
+    // AuthKit builds the WorkOS API base URL from these. Declaring them here lets local `.env`
+    // files and CI override them, for example to point at a WorkOS emulator.
+    "WORKOS_API_HOSTNAME": "api.workos.com",
+    "WORKOS_API_HTTPS": "true",
+    "WORKOS_API_PORT": "",
+  },
   "secrets": {
     "required": [
       "WORKOS_CLIENT_ID",
@@ -14,5 +21,24 @@
   },
   "observability": {
     "enabled": true,
+  },
+  "env": {
+    // Selected with CLOUDFLARE_ENV=e2e by the end-to-end harness: AuthKit talks to a local
+    // WorkOS emulator instead of api.workos.com. Never deploy this environment.
+    "e2e": {
+      "vars": {
+        "WORKOS_API_HOSTNAME": "localhost",
+        "WORKOS_API_HTTPS": "false",
+        "WORKOS_API_PORT": "4100",
+      },
+      "secrets": {
+        "required": [
+          "WORKOS_CLIENT_ID",
+          "WORKOS_API_KEY",
+          "WORKOS_COOKIE_PASSWORD",
+          "WORKOS_REDIRECT_URI",
+        ],
+      },
+    },
   },
 }
