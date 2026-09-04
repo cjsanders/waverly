@@ -14,7 +14,7 @@ jobs:
     name: Lint, typecheck, unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # setup-bun reads the version from the packageManager field in package.json.
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
@@ -26,7 +26,7 @@ jobs:
     env:
       CI: 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # setup-bun reads the version from the packageManager field in package.json.
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
@@ -38,12 +38,12 @@ jobs:
           echo "playwright=$(grep -o '"@playwright/test": "[^"]*"' apps/affiliate/package.json | cut -d'"' -f4)" >> "$GITHUB_OUTPUT"
 
       # The harness downloads the Convex backend binary on first run; keep it between runs.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/waverly/convex-local-backend
           key: convex-local-backend-${{ runner.os }}-${{ runner.arch }}-${{ steps.versions.outputs.convex_backend }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -57,7 +57,7 @@ jobs:
         working-directory: apps/affiliate
         run: bun run test:e2e
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: affiliate-e2e-results
