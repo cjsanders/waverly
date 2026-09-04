@@ -1,6 +1,7 @@
 {
   "name": "Waverly",
   "install": "export BUN_INSTALL=\"$HOME/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; command -v bun >/dev/null 2>&1 || curl -fsSL https://bun.sh/install | bash -s \"bun-v1.3.10\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun install",
+  "start": "export PATH=\"$HOME/.bun/bin:$PATH\"; bunx --bun portless proxy start; bunx --bun portless trust",
   "terminals": [
     {
       "name": "website",
