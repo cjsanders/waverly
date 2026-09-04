@@ -1,6 +1,6 @@
 ---
 title: WorkOS setup
-description: Roles, organization metadata, and how workspaces are mirrored.
+description: Roles, redirects, Convex token validation, and how workspaces are mirrored.
 ---
 
 Every [workspace](/workspaces) is a WorkOS organization. The affiliate app reads `metadata.kind` (`creator`, `brand`, or `operator`) and mirrors users, organizations, and memberships into Convex at sign-in.
@@ -11,9 +11,22 @@ In the WorkOS dashboard for this environment:
 
 1. Create roles with slugs `owner`, `admin`, and `member`. Make `member` the default.
 2. Enable Email + Password sign-in so seeded development users can sign in.
-3. Register the affiliate callback and sign-in URLs (`/api/auth/callback` and `/api/auth/sign-in`).
+3. On the [Redirects page](https://dashboard.workos.com/redirects), register:
+   - `/api/auth/callback` as a redirect URI
+   - `/api/auth/sign-in` as the sign-in endpoint
+   - the app origin (for example `https://affiliate.waverly.localhost/`) as a **sign-out URI** — the user menu sends that origin as the logout return URL, so every origin the app runs on needs an entry
+   - the app homepage URL as the fallback after logout
 
-Set `WORKOS_CLIENT_ID` on the Convex deployment (`bunx --bun convex env set WORKOS_CLIENT_ID client_...`). The Start app still needs the usual `WORKOS_*` values in `.env.local`.
+Set both `WORKOS_CLIENT_ID` and `WORKOS_API_URL` on the Convex deployment:
+
+```bash
+bunx --bun convex env set WORKOS_CLIENT_ID client_...
+bunx --bun convex env set WORKOS_API_URL https://api.workos.com
+```
+
+The auth config reads both. The Convex CLI requires every variable the auth config touches, so a deployment without `WORKOS_API_URL` will not start. Use `https://api.workos.com` unless you are pointing Convex at a local WorkOS emulator.
+
+The Start app still needs the usual `WORKOS_*` values in `.env.local`.
 
 ## Organization kind
 
@@ -26,3 +39,5 @@ Set `metadata.kind` on every organization the app should open. Values other than
 The auth callback lists the user's active WorkOS memberships, reads each organization's kind, and writes the Convex mirror with the user's own access token. The signed-in layout re-syncs if it finds no mirror yet.
 
 Authorization later checks the `memberships` table, not the token's `org_id` claim, so a stale token after a workspace switch cannot grant access.
+
+After sign-in, the overview shows the Convex session (role and organization) so a broken token chain is visible. **Convex did not accept the session** means the access token did not verify against that Convex deployment — check `WORKOS_CLIENT_ID` and `WORKOS_API_URL`.
