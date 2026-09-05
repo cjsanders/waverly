@@ -108,6 +108,20 @@ Three tiers, from fastest to most realistic:
 
 CI runs both tiers in `.github/workflows/ci.yml`.
 
+### Pull request previews
+
+`.github/workflows/preview.yml` deploys each pull request as its own Worker,
+`waverly-affiliate-pr-<number>`, built against a Convex preview deployment named `pr-<number>` that
+carries the PR's functions. The Worker gets its own secrets, including a callback URL on its own
+hostname, and the Browserbase smoke suite in `apps/e2e` runs against the resulting URL. The Worker
+is deleted when the PR closes; the Convex preview deployment expires on its own.
+
+It needs the repository secrets listed at the top of the workflow, the `CLOUDFLARE_ACCOUNT_ID`
+variable, and a wildcard redirect URI in the WorkOS sandbox environment:
+`https://waverly-affiliate-pr-*.<subdomain>.workers.dev/api/auth/callback`. Convex preview
+deployments read `WORKOS_CLIENT_ID` and `WORKOS_API_URL` from the project's default environment
+variables for previews (`bunx convex env default set --type preview ...`).
+
 ## Shadcn
 
 Add components using the latest version of [Shadcn](https://ui.shadcn.com/).

@@ -1,0 +1,144 @@
+name: PR preview
+
+# Deploys the PR's affiliate app as its own Worker (waverly-affiliate-pr-<n>) built against a
+# Convex preview deployment of the PR's functions, then runs the Browserbase smoke suite on it.
+# Skipped for forks and until the secrets below exist:
+#   CLOUDFLARE_API_TOKEN  Workers Scripts:Edit + Account Settings:Read
+#   CONVEX_DEPLOY_KEY     a *preview* deploy key from the Convex project settings
+#   WORKOS_CLIENT_ID      WorkOS sandbox environment; register the wildcard callback
+#   WORKOS_API_KEY        https://waverly-affiliate-pr-*.<subdomain>.workers.dev/api/auth/callback
+#   BROWSERBASE_API_KEY   optional; without it the smoke job is skipped
+# plus the CLOUDFLARE_ACCOUNT_ID repository variable.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  WORKER_NAME: waverly-affiliate-pr-${{ github.event.number }}
+
+jobs:
+  gate:
+    name: Check preview prerequisites
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+      browserbase: ${{ steps.check.outputs.browserbase }}
+    steps:
+      - id: check
+        env:
+          SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          HAS_DEPLOY_SECRETS: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CONVEX_DEPLOY_KEY != '' && secrets.WORKOS_CLIENT_ID != '' && secrets.WORKOS_API_KEY != '' && vars.CLOUDFLARE_ACCOUNT_ID != '' }}
+          HAS_BROWSERBASE: ${{ secrets.BROWSERBASE_API_KEY != '' }}
+        run: |
+          deploy=false
+          if [ "$SAME_REPO" = true ] && [ "$HAS_DEPLOY_SECRETS" = true ]; then deploy=true; fi
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          echo "browserbase=$HAS_BROWSERBASE" >> "$GITHUB_OUTPUT"
+          echo "Preview deploy: $deploy (same repo: $SAME_REPO, secrets: $HAS_DEPLOY_SECRETS); Browserbase: $HAS_BROWSERBASE"
+
+  deploy:
+    name: Deploy preview
+    needs: gate
+    if: needs.gate.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.names.outputs.url }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+
+      - name: Resolve the preview URL
+        id: names
+        run: |
+          subdomain=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+            | jq -r '.result.subdomain')
+          if [ -z "$subdomain" ] || [ "$subdomain" = null ]; then
+            echo "::error::No workers.dev subdomain on this account; enable it once in the Cloudflare dashboard"
+            exit 1
+          fi
+          url="https://$WORKER_NAME.$subdomain.workers.dev"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $url"
+
+      # Creates (or recreates) a Convex preview deployment with this PR's functions, then runs the
+      # app build with VITE_CONVEX_URL pointing at it. WorkOS variables come from the project's
+      # default env vars for preview deployments.
+      - name: Push functions to a Convex preview deployment and build the app
+        working-directory: apps/affiliate
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: >
+          bunx convex deploy --yes
+          --preview-create "pr-${{ github.event.number }}"
+          --cmd 'bun run build'
+          --cmd-url-env-var-name VITE_CONVEX_URL
+
+      - name: Deploy the Worker with its own secrets
+        working-directory: apps/affiliate
+        env:
+          WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID }}
+          WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY }}
+          PREVIEW_URL: ${{ steps.names.outputs.url }}
+        run: |
+          secrets_file="$RUNNER_TEMP/worker-secrets.json"
+          jq -n \
+            --arg client_id "$WORKOS_CLIENT_ID" \
+            --arg api_key "$WORKOS_API_KEY" \
+            --arg cookie_password "$(openssl rand -hex 32)" \
+            --arg redirect_uri "$PREVIEW_URL/api/auth/callback" \
+            '{WORKOS_CLIENT_ID: $client_id, WORKOS_API_KEY: $api_key, WORKOS_COOKIE_PASSWORD: $cookie_password, WORKOS_REDIRECT_URI: $redirect_uri}' \
+            > "$secrets_file"
+          bunx wrangler deploy --name "$WORKER_NAME" --secrets-file "$secrets_file"
+          rm -f "$secrets_file"
+
+      - name: Post the preview URL on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_URL: ${{ steps.names.outputs.url }}
+          PR: ${{ github.event.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          marker='<!-- affiliate-preview -->'
+          body="$marker
+          **Affiliate preview:** $PREVIEW_URL
+
+          Built from $HEAD_SHA against Convex preview deployment \`pr-$PR\`. Redeployed on every push; deleted when the PR closes."
+          existing=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq "map(select(.body | startswith(\"$marker\"))) | .[0].id // empty")
+          if [ -n "$existing" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$existing" -f body="$body" > /dev/null
+          else
+            gh pr comment "$PR" --body "$body"
+          fi
+
+  browserbase:
+    name: Browserbase smoke test
+    needs: [gate, deploy]
+    if: needs.gate.outputs.browserbase == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Run the Stagehand suite against the preview
+        working-directory: apps/e2e
+        env:
+          CI: 'true'
+          BROWSERBASE_API_KEY: ${{ secrets.BROWSERBASE_API_KEY }}
+          E2E_BASE_URL: ${{ needs.deploy.outputs.url }}
+        run: bun run test:e2e
