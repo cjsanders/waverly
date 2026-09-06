@@ -4,7 +4,7 @@ Bun and Turborepo monorepo for the Waverly affiliate network.
 
 ## Apps
 
-- `apps/affiliate` — TanStack Start, Convex, WorkOS AuthKit, TanStack Charts, Tailwind CSS, and shadcn/ui
+- `apps/affiliate` — authenticated five-role network demo: operations, publishers, creators, and sellers. Built with TanStack Start, Convex, WorkOS AuthKit, TanStack Charts, Tailwind CSS, and shadcn/ui. [Feature map](apps/affiliate/docs/demo-features.md).
 - `apps/website` — Astro marketing site
 - `apps/docs` — Nimbus documentation site
 - `apps/e2e` — Stagehand browser tests run by Vitest

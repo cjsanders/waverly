@@ -1,0 +1,86 @@
+/* Compact workspace. Neutral application chrome; color belongs to data and status. */
+[data-workspace-theme='compact'] {
+  --background: #fafafa;
+  --foreground: #252628;
+  --card: #ffffff;
+  --card-foreground: #252628;
+  --popover: #ffffff;
+  --popover-foreground: #252628;
+  --primary: #292a2d;
+  --primary-hover: #414246;
+  --primary-active: #18191b;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #252628;
+  --muted: #f5f5f6;
+  --muted-foreground: #686b71;
+  --accent: #f0f0f2;
+  --accent-foreground: #303236;
+  --border: #e5e6e8;
+  --input: #dedfe2;
+  --ring: #7b7e85;
+  --sidebar: #fcfcfc;
+  --sidebar-foreground: #52555b;
+  --sidebar-muted: #686b71;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #252628;
+  --sidebar-accent: #f1f1f3;
+  --sidebar-accent-foreground: #252628;
+  --sidebar-border: #e5e6e8;
+  --sidebar-ring: #7b7e85;
+  --brand-teal: #167b73;
+  --brand-teal-foreground: #ffffff;
+  --chart-1: #278ac0;
+  --chart-2: #df812f;
+  --chart-3: #249a88;
+  --chart-4: #8c7bc1;
+  --chart-5: #a8b4c2;
+  --radius: 0.5rem;
+  --control-radius: 0.5rem;
+  --surface-radius: 0.625rem;
+  --control-height: 2.25rem;
+  --control-padding: 0.75rem;
+  --layout-unit: 0.21875rem;
+  --font-display-stack: var(--font-sans-stack);
+  --elevation-xs: 0 1px 2px rgb(24 24 27 / 0.04);
+  --elevation-sm: 0 1px 3px rgb(24 24 27 / 0.06);
+  --elevation-md: 0 4px 16px rgb(24 24 27 / 0.08);
+  --elevation-lg: 0 12px 40px rgb(24 24 27 / 0.12);
+}
+
+:is(.dark, [data-mode='dark']) [data-workspace-theme='compact'] {
+  --background: #18191b;
+  --foreground: #eeeef0;
+  --card: #202124;
+  --card-foreground: #eeeef0;
+  --popover: #28292d;
+  --popover-foreground: #eeeef0;
+  --primary: #eeeef0;
+  --primary-hover: #d8d9dc;
+  --primary-active: #c4c5c9;
+  --primary-foreground: #202124;
+  --secondary: #2a2b2f;
+  --secondary-foreground: #eeeef0;
+  --muted: #27282c;
+  --muted-foreground: #a5a7ae;
+  --accent: #323338;
+  --accent-foreground: #eeeef0;
+  --border: #34363b;
+  --input: #45474e;
+  --ring: #a5a7ae;
+  --sidebar: #1c1d20;
+  --sidebar-foreground: #c3c5cb;
+  --sidebar-muted: #a5a7ae;
+  --sidebar-primary: #303136;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #292a2e;
+  --sidebar-accent-foreground: #eeeef0;
+  --sidebar-border: #34363b;
+  --sidebar-ring: #a5a7ae;
+}
+
+@media (pointer: coarse) {
+  [data-workspace-theme='compact'] {
+    --control-height: 2.75rem;
+  }
+}

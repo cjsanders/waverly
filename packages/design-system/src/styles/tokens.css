@@ -7,6 +7,8 @@
   --foreground: #1b2f40;
   --card: #ffffff;
   --card-foreground: #1b2f40;
+  /* Keep transparent product and brand artwork legible in either appearance. */
+  --media-background: #ffffff;
   --popover: #ffffff;
   --popover-foreground: #1b2f40;
   --primary: #336c88;
@@ -32,6 +34,7 @@
 
   --sidebar: #ffffff;
   --sidebar-foreground: #665f56;
+  --sidebar-muted: #665f56;
   --sidebar-primary: #336c88;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #eef5f8;
@@ -42,12 +45,14 @@
   /* Waverly extras */
   --brand-teal: #4d9ea2;
   --brand-teal-foreground: #ffffff;
-  --success: #3f8f6b;
+  --success: #217254;
   --success-foreground: #e3f2ea;
-  --warning: #b8862b;
+  --warning: #8a5a13;
   --warning-foreground: #f8efd8;
-  --info: #397ca8;
+  --info: #2b668d;
   --info-foreground: #e3eef5;
+  --highlight: #7050a2;
+  --highlight-surface: #f1edf8;
 
   /* Raw palette. Prefer the semantic tokens above; reach for these for charts, illustrations, and tints. */
   --wave-1: #7ebdc3;
@@ -128,6 +133,7 @@
 
   --sidebar: #1b2f40;
   --sidebar-foreground: #a9bccb;
+  --sidebar-muted: #a9bccb;
   --sidebar-primary: #397ca8;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(57, 124, 168, 0.18);
@@ -141,6 +147,8 @@
   --warning-foreground: rgba(184, 134, 43, 0.2);
   --info: #86b4c8;
   --info-foreground: rgba(57, 124, 168, 0.2);
+  --highlight: #c6a9ed;
+  --highlight-surface: rgba(159, 114, 213, 0.16);
 
   --elevation-xs: 0 1px 2px rgb(0 0 0 / 0.3);
   --elevation-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.3);

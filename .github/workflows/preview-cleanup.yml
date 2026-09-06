@@ -1,0 +1,35 @@
+name: PR preview cleanup
+
+# Removes the per-PR Worker when the PR closes. The Convex preview deployment expires on its own.
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  delete:
+    name: Delete preview Worker
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      WORKER_NAME: waverly-affiliate-pr-${{ github.event.number }}
+    steps:
+      - name: Delete the Worker if it exists
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "No CLOUDFLARE_API_TOKEN; nothing to delete"
+            exit 0
+          fi
+          status=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER_NAME?force=true")
+          case "$status" in
+            200) echo "Deleted $WORKER_NAME" ;;
+            404) echo "$WORKER_NAME was never deployed" ;;
+            *) echo "::error::Cloudflare returned $status deleting $WORKER_NAME"; exit 1 ;;
+          esac

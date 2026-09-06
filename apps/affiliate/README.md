@@ -1,4 +1,8 @@
-Welcome to your new TanStack Start app!
+# Waverly affiliate workspace
+
+The authenticated dashboard includes the five-role network demo migrated from Orion: operator, established publisher, new publisher, creator, and brand seller. See [the demo feature map](docs/demo-features.md) for the complete scope, persistence boundaries, architecture, and test coverage.
+
+Sign in with WorkOS, then use **Demo identity** in the sidebar (or page header on mobile). The first visit initializes an empty Convex deployment with sample data. Messages persist in the shared demo sandbox; secondary business actions remain simulated.
 
 # Getting Started
 
@@ -107,6 +111,20 @@ Three tiers, from fastest to most realistic:
   Playwright's global setup starts the stack and its global teardown stops it.
 
 CI runs both tiers in `.github/workflows/ci.yml`.
+
+### Pull request previews
+
+`.github/workflows/preview.yml` deploys each pull request as its own Worker,
+`waverly-affiliate-pr-<number>`, built against a Convex preview deployment named `pr-<number>` that
+carries the PR's functions. The Worker gets its own secrets, including a callback URL on its own
+hostname, and the Browserbase smoke suite in `apps/e2e` runs against the resulting URL. The Worker
+is deleted when the PR closes; the Convex preview deployment expires on its own.
+
+It needs the repository secrets listed at the top of the workflow, the `CLOUDFLARE_ACCOUNT_ID`
+variable, and a wildcard redirect URI in the WorkOS sandbox environment:
+`https://waverly-affiliate-pr-*.<subdomain>.workers.dev/api/auth/callback`. Convex preview
+deployments read `WORKOS_CLIENT_ID` and `WORKOS_API_URL` from the project's default environment
+variables for previews (`bunx convex env default set --type preview ...`).
 
 ## Shadcn
 
