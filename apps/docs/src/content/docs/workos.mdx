@@ -10,7 +10,7 @@ Every [workspace](/workspaces) is a WorkOS organization. The affiliate app reads
 In the WorkOS dashboard for this environment:
 
 1. Create roles with slugs `owner`, `admin`, and `member`. Make `member` the default.
-2. Enable Email + Password sign-in so seeded development users can sign in.
+2. Enable Email + Password sign-in so seeded development users can sign in. Cloud Agents then use [agent login](/agent-login) instead of the hosted AuthKit screen.
 3. Register the affiliate callback and sign-in URLs (`/api/auth/callback` and `/api/auth/sign-in`).
 
 Set `WORKOS_CLIENT_ID` on the Convex deployment (`bunx --bun convex env set WORKOS_CLIENT_ID client_...`). The Start app still needs the usual `WORKOS_*` values in `.env.local`.

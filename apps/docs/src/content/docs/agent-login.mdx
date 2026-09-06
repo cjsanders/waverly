@@ -16,7 +16,7 @@ bun run setup:agent
 bun run dev:agent
 ```
 
-This starts WorkOS Emulate, Convex, and the affiliate app with a deterministic test user. The setup stores its signing key and database under ignored local directories and refuses to start when local variable files would select a shared backend or override the emulator. Browser Convex traffic is proxied through the affiliate origin, so forwarded browsers do not connect to the agent's loopback address directly.
+This starts WorkOS Emulate, Convex, and the affiliate app with a deterministic test user (`agent@waverly.test`). The setup stores its signing key and database under ignored local directories and refuses to start when local variable files would select a shared backend or override the emulator. Browser Convex traffic is proxied through the affiliate origin, so forwarded browsers do not connect to the agent's loopback address directly.
 
 To use real WorkOS instead, enable Email + Password in its dashboard, create a user, and set `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` in `apps/affiliate/.env.local`. Never commit those values or set them in production.
 
@@ -30,9 +30,23 @@ http://localhost:5173/api/auth/test-login?returnPathname=/dashboard
 
 The agent stack runs the affiliate app at `http://localhost:5173` by default. Locally you can use the portless affiliate URL instead.
 
-On success the handler authenticates with a password grant, writes the AuthKit session cookie, and redirects (307).
+On success the handler authenticates with a password grant, writes the AuthKit session cookie, and redirects (307). If WorkOS asks for email verification or organization selection, the route completes those steps automatically.
+
+The default landing page is `/dashboard` (the signed-in overview). You can pass another same-origin path when you need a different screen.
+
+<Frame
+  caption="After a successful test-login, the affiliate Overview opens with the session cookie set. The seeded agent user appears in the sidebar."
+  aspect="16/9"
+>
+  <img
+    src="/docs/agent-login-dashboard.png"
+    alt="Signed-in affiliate Overview after agent test-login, showing the empty Nothing to show yet card and the seeded agent user"
+  />
+</Frame>
 
 The normal “Sign in with WorkOS” action also uses this route while WorkOS Emulate is enabled. This keeps the browser on the forwarded application origin; only the application server connects to the emulator's loopback address.
+
+Sign out stays on this origin while WorkOS Emulate is enabled. The user menu calls `/api/auth/sign-out`; the emulator logout page is never opened.
 
 | Result | When                                                 |
 | ------ | ---------------------------------------------------- |
