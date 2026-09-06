@@ -8,6 +8,18 @@
  * @module
  */
 
+import type * as demo from "../demo.js";
+import type * as demoAccess from "../demoAccess.js";
+import type * as domain_economics from "../domain/economics.js";
+import type * as domain_links from "../domain/links.js";
+import type * as ledger from "../ledger.js";
+import type * as links from "../links.js";
+import type * as marketplace from "../marketplace.js";
+import type * as messages from "../messages.js";
+import type * as payouts from "../payouts.js";
+import type * as presence from "../presence.js";
+import type * as providers from "../providers.js";
+import type * as publishers from "../publishers.js";
 import type * as viewer from "../viewer.js";
 
 import type {
@@ -17,6 +29,18 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  demo: typeof demo;
+  demoAccess: typeof demoAccess;
+  "domain/economics": typeof domain_economics;
+  "domain/links": typeof domain_links;
+  ledger: typeof ledger;
+  links: typeof links;
+  marketplace: typeof marketplace;
+  messages: typeof messages;
+  payouts: typeof payouts;
+  presence: typeof presence;
+  providers: typeof providers;
+  publishers: typeof publishers;
   viewer: typeof viewer;
 }>;
 
@@ -46,4 +70,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  presence: import("@convex-dev/presence/_generated/component.js").ComponentApi<"presence">;
+};

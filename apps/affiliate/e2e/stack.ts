@@ -148,6 +148,7 @@ function pushConvexFunctions() {
   // Keeps crons quiet during tests, per the Convex testing guide.
   convex('env', 'set', 'IS_TEST', 'true')
   convex('deploy', '--yes')
+  convex('run', 'demo:seed', '{}')
 }
 
 function appEnv() {

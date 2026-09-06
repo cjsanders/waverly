@@ -18,6 +18,8 @@
     "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
+    "@base-ui/react": "^1.7.0",
+    "@convex-dev/presence": "^0.4.0",
     "@convex-dev/react-query": "0.1.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/charts": "^0.16.0",

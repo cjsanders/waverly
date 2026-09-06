@@ -1,4 +1,8 @@
-Welcome to your new TanStack Start app!
+# Waverly affiliate workspace
+
+The authenticated dashboard includes the five-role network demo migrated from Orion: operator, established publisher, new publisher, creator, and brand seller. See [the demo feature map](docs/demo-features.md) for the complete scope, persistence boundaries, architecture, and test coverage.
+
+Sign in with WorkOS, then use **Demo identity** in the sidebar (or page header on mobile). The first visit initializes an empty Convex deployment with sample data. Messages persist in the shared demo sandbox; secondary business actions remain simulated.
 
 # Getting Started
 

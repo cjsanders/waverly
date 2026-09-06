@@ -1,0 +1,830 @@
+@layer components {
+  .waverly-app-shell {
+    display: flex;
+    min-width: 0;
+    background: var(--background);
+  }
+  .waverly-app-shell-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .waverly-layout {
+    display: flex;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .waverly-layout-main {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+  .waverly-layout-content {
+    min-width: 0;
+    flex: 1;
+    overflow: auto;
+    background: var(--background);
+  }
+  .waverly-layout-header {
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in oklch, var(--card) 94%, transparent);
+    backdrop-filter: blur(12px);
+  }
+  .waverly-layout-panel {
+    flex: none;
+    overflow: auto;
+    background: var(--card);
+  }
+  .waverly-layout-panel-divider {
+    border-right: 1px solid var(--border);
+  }
+
+  .waverly-vstack,
+  .waverly-hstack {
+    min-width: 0;
+  }
+  .waverly-grid {
+    min-width: 0;
+  }
+  .waverly-text,
+  .waverly-heading {
+    margin: 0;
+  }
+  .waverly-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .waverly-text-supporting {
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+  .waverly-text-large {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  .waverly-text-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .waverly-text-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+  }
+  .waverly-text-display-1 {
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+  }
+  .waverly-text-display-2 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
+  .waverly-text-display-3 {
+    font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+  }
+  .waverly-heading {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  h1.waverly-heading {
+    font-size: 1.75rem;
+    line-height: 1.15;
+  }
+  h2.waverly-heading {
+    font-size: 1.1rem;
+    line-height: 1.3;
+  }
+  h3.waverly-heading {
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+  .waverly-color-primary {
+    color: var(--foreground);
+  }
+  .waverly-color-secondary,
+  .waverly-color-gray {
+    color: var(--muted-foreground);
+  }
+  .waverly-color-accent,
+  .waverly-color-blue {
+    color: var(--primary);
+  }
+  .waverly-color-green {
+    color: #087b65;
+  }
+  .waverly-color-orange,
+  .waverly-color-yellow {
+    color: #a45c08;
+  }
+  .waverly-color-red {
+    color: var(--destructive);
+  }
+  .waverly-color-teal,
+  .waverly-color-cyan {
+    color: #09848c;
+  }
+  .waverly-weight-medium {
+    font-weight: 500;
+  }
+  .waverly-weight-semibold {
+    font-weight: 600;
+  }
+  .waverly-icon {
+    flex: none;
+  }
+
+  .waverly-card {
+    gap: 0;
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+  .waverly-card-muted,
+  .waverly-section-muted {
+    background: var(--muted);
+  }
+  .waverly-card-blue {
+    border-color: color-mix(in oklch, var(--primary) 22%, var(--border));
+    background: color-mix(in oklch, var(--primary) 6%, var(--card));
+  }
+  .waverly-elevation-low {
+    box-shadow: 0 4px 16px rgb(26 42 83 / 0.06);
+  }
+  .waverly-elevation-med {
+    box-shadow: 0 16px 44px rgb(26 42 83 / 0.11);
+  }
+  .waverly-section {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+  .waverly-aspect-ratio {
+    position: relative;
+    overflow: hidden;
+  }
+  .waverly-aspect-ratio > * {
+    width: 100%;
+    height: 100%;
+  }
+
+  .waverly-banner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+  .waverly-banner-copy {
+    min-width: 0;
+    flex: 1;
+  }
+  .waverly-banner-copy strong {
+    display: block;
+    font-size: 0.875rem;
+  }
+  .waverly-banner-copy p {
+    margin-top: 0.15rem;
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+  }
+  .waverly-banner-info {
+    border-left: 3px solid var(--primary);
+  }
+  .waverly-banner-success {
+    border-left: 3px solid #0b8a72;
+  }
+  .waverly-banner-warning {
+    border-left: 3px solid #c87b13;
+  }
+  .waverly-banner-error {
+    border-left: 3px solid var(--destructive);
+  }
+
+  .waverly-status-dot {
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    flex: none;
+    border-radius: 999px;
+    background: #8994a6;
+  }
+  .waverly-status-success {
+    background: #0b8a72;
+  }
+  .waverly-status-warning {
+    background: #d58617;
+  }
+  .waverly-status-error {
+    background: #d33d45;
+  }
+  .waverly-status-accent {
+    background: var(--primary);
+  }
+  .waverly-status-pulse {
+    animation: waverly-pulse 1.7s ease-out infinite;
+  }
+  .waverly-token {
+    border-color: var(--border);
+    background: var(--muted);
+    color: var(--foreground);
+  }
+  .waverly-token-sm {
+    padding: 0.1rem 0.4rem;
+    font-size: 0.7rem;
+  }
+  .waverly-token-green,
+  .waverly-token-teal {
+    border-color: #9dd8cd;
+    background: #e2f4ef;
+    color: #08715f;
+  }
+  .waverly-token-blue {
+    border-color: #bac7ff;
+    background: #edf0ff;
+    color: #314cc8;
+  }
+  .waverly-token-yellow,
+  .waverly-token-orange {
+    border-color: #efd39d;
+    background: #fff5db;
+    color: #8a570c;
+  }
+  .waverly-token-red {
+    border-color: #efb9bd;
+    background: #fff0f1;
+    color: #a42c34;
+  }
+
+  .waverly-list {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+  .waverly-list-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .waverly-list-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    text-align: left;
+  }
+  .waverly-list-compact .waverly-list-item {
+    padding-block: 0.55rem;
+  }
+  .waverly-list-spacious .waverly-list-item {
+    padding-block: 1rem;
+  }
+  .waverly-list-divided .waverly-list-item + .waverly-list-item {
+    border-top: 1px solid var(--border);
+  }
+  .waverly-list-item-action {
+    transition: background-color 120ms ease;
+  }
+  .waverly-list-item-action:hover,
+  .waverly-list-item-selected {
+    background: var(--muted);
+  }
+  .waverly-list-item-copy {
+    min-width: 0;
+    flex: 1;
+  }
+  .waverly-list-item-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .waverly-list-item-description {
+    margin-top: 0.15rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+  .waverly-list-item-start,
+  .waverly-list-item-end {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .waverly-progress {
+    width: 100%;
+  }
+  .waverly-progress-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.35rem;
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+  }
+  .waverly-field {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .waverly-field > legend {
+    margin-bottom: 0.35rem;
+  }
+  .waverly-sr-label > span:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .waverly-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .waverly-input-wrap > svg {
+    position: absolute;
+    left: 0.65rem;
+    z-index: 1;
+    width: 0.9rem;
+    color: var(--muted-foreground);
+  }
+  .waverly-input-wrap > svg + input {
+    padding-left: 2rem;
+  }
+  .waverly-input-wrap > button {
+    position: absolute;
+    right: 0.45rem;
+    padding: 0.2rem;
+    color: var(--muted-foreground);
+  }
+  .waverly-input-wrap > button svg {
+    width: 0.85rem;
+  }
+  .waverly-input-unit {
+    position: absolute;
+    right: 0.7rem;
+    color: var(--muted-foreground);
+  }
+  .waverly-date-range {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .waverly-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.875rem;
+  }
+  .waverly-switch-row small {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--muted-foreground);
+    font-weight: 400;
+  }
+
+  .waverly-toolbar {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.85rem;
+    background: var(--card);
+  }
+  .waverly-toolbar-muted {
+    background: var(--muted);
+  }
+  .waverly-toolbar-divider {
+    border-bottom: 1px solid var(--border);
+  }
+  .waverly-toolbar-end {
+    display: flex;
+    min-width: 0;
+    margin-left: auto;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .waverly-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+  .waverly-table-compact th,
+  .waverly-table-compact td {
+    padding-block: 0.45rem;
+  }
+  .waverly-table-spacious th,
+  .waverly-table-spacious td {
+    padding-block: 0.85rem;
+  }
+
+  .waverly-side-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    width: 16.5rem;
+    height: 100svh;
+    flex: none;
+    flex-direction: column;
+    border-right: 1px solid var(--sidebar-border);
+    background: var(--sidebar);
+    color: var(--sidebar-foreground);
+    transition: width 180ms ease;
+  }
+  .waverly-side-nav-collapsed {
+    width: 4rem;
+  }
+  .waverly-side-nav-header {
+    position: relative;
+    padding: 1rem;
+  }
+  .waverly-side-nav-toggle {
+    position: absolute;
+    right: 0.4rem;
+    bottom: -0.75rem;
+    display: grid;
+    width: 1.5rem;
+    height: 1.5rem;
+    place-items: center;
+    border: 1px solid var(--sidebar-border);
+    border-radius: 999px;
+    background: var(--sidebar);
+  }
+  .waverly-side-nav-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+  }
+  .waverly-side-nav-footer {
+    border-top: 1px solid var(--sidebar-border);
+  }
+  .waverly-nav-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    overflow: hidden;
+  }
+  .waverly-nav-heading > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+  .waverly-nav-heading small {
+    color: color-mix(in oklch, var(--sidebar-foreground) 56%, transparent);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+  .waverly-nav-heading strong {
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+  .waverly-nav-heading span {
+    white-space: nowrap;
+    color: color-mix(in oklch, var(--sidebar-foreground) 62%, transparent);
+    font-size: 0.7rem;
+  }
+  .waverly-nav-section {
+    margin-top: 0.8rem;
+  }
+  .waverly-nav-section h2 {
+    margin: 0 0.6rem 0.35rem;
+    color: color-mix(in oklch, var(--sidebar-foreground) 48%, transparent);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .waverly-nav-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.65rem;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    padding: 0.48rem 0.6rem;
+    color: color-mix(in oklch, var(--sidebar-foreground) 78%, transparent);
+    font-size: 0.78rem;
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+  }
+  .waverly-nav-item svg {
+    width: 1rem;
+    flex: none;
+  }
+  .waverly-nav-item span {
+    white-space: nowrap;
+  }
+  .waverly-nav-item:hover {
+    background: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
+  }
+  .waverly-nav-item-selected {
+    background: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+  }
+  .waverly-side-nav-collapsed .waverly-nav-heading > div,
+  .waverly-side-nav-collapsed .waverly-nav-section h2,
+  .waverly-side-nav-collapsed .waverly-nav-item span {
+    display: none;
+  }
+
+  .waverly-stepper {
+    display: flex;
+    width: 100%;
+    gap: 0.25rem;
+    overflow-x: auto;
+  }
+  .waverly-stepper li {
+    min-width: max-content;
+    flex: 1;
+  }
+  .waverly-stepper button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted-foreground);
+    font-size: 0.68rem;
+  }
+  .waverly-stepper button span {
+    display: grid;
+    width: 1.35rem;
+    height: 1.35rem;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+  }
+  .waverly-stepper button.active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .waverly-stepper button.active span,
+  .waverly-stepper button.complete span {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  .waverly-empty {
+    display: grid;
+    min-height: 16rem;
+    place-items: center;
+    align-content: center;
+    gap: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+  }
+  .waverly-empty-compact {
+    min-height: 9rem;
+  }
+
+  .waverly-chat-layout {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+  .waverly-chat-scroll {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+    padding: 1rem;
+  }
+  .waverly-chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .waverly-chat-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-top: 1px solid var(--border);
+    background: var(--card);
+  }
+  .waverly-chat-composer-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .waverly-chat-composer-files {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+  }
+  .waverly-chat-composer-file {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 15rem;
+    flex: none;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0.4rem 0.5rem;
+    background: var(--muted);
+  }
+  .waverly-chat-composer-file > svg {
+    width: 0.9rem;
+    flex: none;
+    color: var(--muted-foreground);
+  }
+  .waverly-chat-composer-file > span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+  .waverly-chat-composer-file strong {
+    overflow: hidden;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .waverly-chat-composer-file small {
+    color: var(--muted-foreground);
+    font-size: 0.65rem;
+  }
+  .waverly-chat-composer-file button {
+    display: grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--muted-foreground);
+  }
+  .waverly-chat-composer-file button:hover {
+    background: var(--background);
+    color: var(--foreground);
+  }
+  .waverly-chat-composer-file button svg {
+    width: 0.75rem;
+  }
+  .waverly-chat-composer p {
+    align-self: center;
+    color: var(--destructive);
+    font-size: 0.75rem;
+  }
+  .waverly-typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.18rem;
+  }
+  .waverly-typing-dots span {
+    width: 0.28rem;
+    height: 0.28rem;
+    border-radius: 999px;
+    background: currentColor;
+    animation: waverly-typing 1.1s ease-in-out infinite;
+  }
+  .waverly-typing-dots span:nth-child(2) {
+    animation-delay: 120ms;
+  }
+  .waverly-typing-dots span:nth-child(3) {
+    animation-delay: 240ms;
+  }
+  .waverly-link-button {
+    display: inline-flex;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: var(--radius-lg);
+    padding: 0 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .waverly-button-default {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  @media (max-width: 900px) {
+    .waverly-app-shell {
+      display: block;
+    }
+    .waverly-side-nav {
+      position: sticky;
+      width: 100%;
+      height: auto;
+      max-height: 44svh;
+      border-right: 0;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+    .waverly-side-nav-header {
+      padding: 0.7rem 1rem;
+    }
+    .waverly-side-nav-body {
+      display: flex;
+      gap: 0.35rem;
+      overflow-x: auto;
+      padding: 0.45rem 0.75rem;
+    }
+    .waverly-nav-section {
+      display: flex;
+      margin: 0;
+      gap: 0.25rem;
+    }
+    .waverly-nav-section h2,
+    .waverly-side-nav-toggle,
+    .waverly-side-nav-footer {
+      display: none;
+    }
+    .waverly-nav-item {
+      width: auto;
+    }
+    .waverly-layout-panel {
+      width: 17rem !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .waverly-layout-panel {
+      width: 100% !important;
+    }
+    .waverly-layout {
+      overflow: visible;
+    }
+    .waverly-banner {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .waverly-list-item {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .waverly-list-item-end {
+      width: 100%;
+      padding-left: 1.75rem;
+    }
+    .waverly-date-range {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .waverly-date-range > span {
+      display: none;
+    }
+  }
+}
+
+@keyframes waverly-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, currentColor 34%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.45rem transparent;
+  }
+}
+
+@keyframes waverly-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-0.16rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Compatibility tokens for the ported layout; visual values come from Waverly. */
+.waverly-app-shell {
+  --color-text-primary: var(--foreground);
+  --color-text-secondary: var(--muted-foreground);
+  --color-icon-cyan: var(--chart-2);
+  --content-width-readable: 46rem;
+}
