@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Card, CardDescription, CardHeader, CardTitle } from '@waverly/design-system/ui/card'
 
-import { AppShell } from '#/components/app-shell'
+import { homePaths } from '#/lib/workspace'
 
+/** Legacy entry point: sends the user to the home of their active workspace's mode. */
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: ({ context, location }) => {
     if (!context.user) {
@@ -10,22 +10,7 @@ export const Route = createFileRoute('/dashboard')({
         href: `/api/auth/sign-in?returnPathname=${encodeURIComponent(location.href)}`,
       })
     }
+    // The workspace layout resolves which mode to open; creator is only the first hop.
+    throw redirect({ to: homePaths.creator })
   },
-  component: Dashboard,
 })
-
-function Dashboard() {
-  return (
-    <AppShell title="Overview">
-      <Card className="shadow-sm">
-        <CardHeader className="items-center py-16 text-center">
-          <CardTitle className="text-2xl">Nothing to show yet</CardTitle>
-          <CardDescription className="mt-1 max-w-md text-base">
-            Creator sales, commissions, and campaign performance will appear here once data starts
-            flowing.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    </AppShell>
-  )
-}
