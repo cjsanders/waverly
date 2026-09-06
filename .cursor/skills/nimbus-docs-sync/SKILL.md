@@ -78,9 +78,9 @@ Do not add `Frame` to a page without registering it (it is already in `src/compo
 
 ### Capturing media with computer use
 
-1. Start only what you need. Docs: `ASTRO_DEV_BACKGROUND=1 bun run --cwd apps/docs dev`. Affiliate app: Cloud Agent environments already run it on `http://localhost:5173` (see `.cursor/environment.json`). Locally, follow the repo README; it needs WorkOS/Convex env vars.
-2. For **authenticated** screens, sign in as the WorkOS test user. Confirm `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are set (Cloud Agent secrets, or `apps/affiliate/.env.local`). Never print the password. Then open `http://localhost:5173/api/auth/test-login?returnPathname=/dashboard` in computer use. That route is dev-only: it uses a password grant, sets the AuthKit session cookie, and redirects. To capture the hosted WorkOS sign-in UI itself, use `/api/auth/sign-in` instead.
-3. If those secrets are missing, or the affiliate app cannot sign in, still write accurate prose from the code. Capture whatever UI is reachable (marketing site, docs site, unauthenticated screens). Do **not** block the docs PR on missing secrets.
+1. Start only what you need. Docs: `ASTRO_DEV_BACKGROUND=1 bun run --cwd apps/docs dev`. Affiliate app: Cloud Agent environments run the credential-free local stack with `bun run dev:agent` on `http://localhost:5173` (see `.cursor/environment.json`).
+2. For **authenticated** screens, open `http://localhost:5173/api/auth/test-login?returnPathname=/dashboard` in computer use. The dev-only route uses the WorkOS Emulate user prepared by `bun run setup:agent`, sets the AuthKit session cookie, and redirects. A real WorkOS environment instead needs `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` in `apps/affiliate/.env.local`; never print the password. To capture the hosted WorkOS sign-in UI itself, use `/api/auth/sign-in` instead.
+3. If the local stack cannot run or the affiliate app cannot sign in, still write accurate prose from the code. Capture whatever UI is reachable (marketing site, docs site, unauthenticated screens). Do **not** block the docs PR on the development environment.
 4. Screenshot the actual product UI, not the code editor or terminal.
 5. Copy chosen files into `apps/docs/public/docs/` and reference them from MDX as above.
 6. Optionally attach the same recordings to the docs PR description so reviewers can watch without checking out.

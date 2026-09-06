@@ -3,15 +3,22 @@ title: Agent login
 description: Dev-only sign-in for Cloud Agents and local screenshot capture.
 ---
 
-The affiliate app exposes `/api/auth/test-login` so Cloud Agents and other local tools can sign in as a WorkOS Email + Password user without driving the hosted AuthKit UI.
+The affiliate app exposes `/api/auth/test-login` so Cloud Agents and other local tools can sign in without driving the hosted AuthKit UI.
 
-This route is **dev-only**. Production builds return 404. Do not set the test-user secrets in production.
+This route is **dev-only**. Production builds return 404.
 
-## Create the test user
+## Cloud Agents
 
-1. In the WorkOS dashboard, enable Email + Password.
-2. Create a user with those credentials.
-3. Set `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` — as Cloud Agent secrets, or in `apps/affiliate/.env.local`. Never commit the values.
+Run the credential-free local stack from the repository root:
+
+```sh
+bun run setup:agent
+bun run dev:agent
+```
+
+This starts WorkOS Emulate, Convex, and the affiliate app with a deterministic test user. The setup stores its signing key and database under ignored local directories and refuses to start when local variable files would select a shared backend or override the emulator. Browser Convex traffic is proxied through the affiliate origin, so forwarded browsers do not connect to the agent's loopback address directly.
+
+To use real WorkOS instead, enable Email + Password in its dashboard, create a user, and set `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` in `apps/affiliate/.env.local`. Never commit those values or set them in production.
 
 ## Sign in
 
@@ -21,17 +28,19 @@ Open the affiliate origin plus `/api/auth/test-login`. Optional `returnPathname`
 http://localhost:5173/api/auth/test-login?returnPathname=/dashboard
 ```
 
-Cloud Agents run the affiliate app at `http://localhost:5173`. Locally you can use the portless affiliate URL instead.
+The agent stack runs the affiliate app at `http://localhost:5173` by default. Locally you can use the portless affiliate URL instead.
 
 On success the handler authenticates with a password grant, writes the AuthKit session cookie, and redirects (307).
+
+The normal “Sign in with WorkOS” action also uses this route while WorkOS Emulate is enabled. This keeps the browser on the forwarded application origin; only the application server connects to the emulator's loopback address.
 
 | Result | When                                                 |
 | ------ | ---------------------------------------------------- |
 | 307    | Session cookie set; redirected to `returnPathname`   |
-| 401    | WorkOS rejected the credentials                      |
+| 401    | WorkOS or WorkOS Emulate rejected the credentials    |
 | 404    | Production or non-dev build                          |
 | 503    | `TEST_USER_EMAIL` or `TEST_USER_PASSWORD` is missing |
 
 `returnPathname` must stay on this origin. Absolute URLs, protocol-relative paths, and unparseable values fall back to `/dashboard`.
 
-To capture the hosted WorkOS sign-in UI itself, use `/api/auth/sign-in` instead.
+The hosted WorkOS sign-in UI is only available when the app is configured for real WorkOS.

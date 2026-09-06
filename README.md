@@ -49,26 +49,37 @@ ASTRO_DEV_BACKGROUND=1 bun run dev
 
 ### Agent login (screenshots and screencasts)
 
-Cloud agents and other local tools can sign in as a WorkOS Email + Password user without driving the hosted AuthKit UI. Set these secrets (never commit the values):
+Cloud agents can run an isolated local WorkOS and Convex stack without credentials:
+
+```sh
+bun run setup:agent
+bun run dev:agent
+```
+
+`setup:agent` creates the ignored local state and performs a one-shot Convex sync. `dev:agent` supervises WorkOS Emulate, Convex, and the affiliate app at `http://localhost:5173` (or `$PORT`). It is suitable for Cursor Cloud Agents and other Linux cloud-agent environments. It refuses to start when dotenv or Wrangler variable files would select a shared backend or override the isolated emulator settings.
+
+Other local tools can instead sign in against a real WorkOS Email + Password user without driving the hosted AuthKit UI. Set these secrets (never commit the values):
 
 ```sh
 TEST_USER_EMAIL=
 TEST_USER_PASSWORD=
 ```
 
-In Cursor Cloud Agent environments, add them as secrets with those exact names. In `.env.local`, copy them from `apps/affiliate/.env.example`. The user must exist in the WorkOS development environment with Email + Password enabled.
+In `.env.local`, copy them from `apps/affiliate/.env.example`. The user must exist in the WorkOS development environment with Email + Password enabled. Cloud agents use the deterministic user seeded in `apps/affiliate/workos-emulate.config.yaml` instead.
 
-Then open `/api/auth/test-login` on the affiliate app (optional `?returnPathname=/dashboard`). That route is **dev-only**; production builds return 404. Cursor Cloud Agents run the affiliate app at `http://localhost:5173`. See `.cursor/skills/nimbus-docs-sync/SKILL.md` for the screenshot workflow.
+The normal “Sign in with WorkOS” action automatically uses the seeded account in the agent stack, without sending the browser to the emulator's loopback address. Agents can also open `/api/auth/test-login` directly (optional `?returnPathname=/dashboard`). That route is **dev-only**; production builds return 404. See `.cursor/skills/nimbus-docs-sync/SKILL.md` for the screenshot workflow.
 
 ### Amp orb portal
 
-The affiliate development server is declared in `.amp/services.yaml`. In an Amp orb, start it with:
+Amp uses the same agent setup through `.agents/setup`, while `.amp/services.yaml` gives its native supervisor ownership of the long-running processes. Local state is stored under the ignored `apps/affiliate/.convex/` and `apps/affiliate/.workos-emulate/` directories. A small front proxy routes browser Convex traffic through the affiliate origin and leaves Vite/Cloudflare ownership of its own WebSockets, so a forwarded browser never needs access to the agent's loopback address.
+
+In an Amp orb, start the declared services with:
 
 ```sh
 amp orb services ensure
 ```
 
-Use the exact portal URL printed by that command; do not save or construct it. Amp injects the current URL as `PUBLIC_URL`, and the service uses it for the WorkOS callback URL. The same callback URL must be allowed in the WorkOS development environment before testing sign-in. The Amp service starts Vite directly and does not use portless, so the local `.waverly.localhost` URLs do not apply inside an orb.
+Use the exact affiliate portal URL printed by that command; do not save or construct it. Amp injects the current URL as `PUBLIC_URL`, and the service uses it for the callback URL. The Amp service starts the agent front proxy directly and does not use portless, so the local `.waverly.localhost` URLs do not apply inside an orb.
 
 For E2E tests, set `E2E_BASE_URL` at runtime to either the current portal URL or a Cloudflare preview URL. Browserbase runs outside the orb, so a private portal also requires a freshly minted one-use login URL in `E2E_PORTAL_LOGIN_URL`. Do not save that login URL as an Amp variable. Cloudflare preview runs do not need `E2E_PORTAL_LOGIN_URL`.
 

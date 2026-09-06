@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
+import { Route as ApiAuthSignOutRouteImport } from './routes/api/auth/sign-out'
 import { Route as ApiAuthTestLoginRouteImport } from './routes/api/auth/test-login'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
   path: '/api/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSignOutRoute = ApiAuthSignOutRouteImport.update({
+  id: '/api/auth/sign-out',
+  path: '/api/auth/sign-out',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthTestLoginRoute = ApiAuthTestLoginRouteImport.update({
   id: '/api/auth/test-login',
   path: '/api/auth/test-login',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-out': typeof ApiAuthSignOutRoute
   '/api/auth/test-login': typeof ApiAuthTestLoginRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-out': typeof ApiAuthSignOutRoute
   '/api/auth/test-login': typeof ApiAuthTestLoginRoute
 }
 export interface FileRoutesById {
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-out': typeof ApiAuthSignOutRoute
   '/api/auth/test-login': typeof ApiAuthTestLoginRoute
 }
 export interface FileRouteTypes {
@@ -70,6 +79,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/sign-out'
     | '/api/auth/test-login'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -77,6 +87,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/sign-out'
     | '/api/auth/test-login'
   id:
     | '__root__'
@@ -84,6 +95,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/sign-out'
     | '/api/auth/test-login'
   fileRoutesById: FileRoutesById
 }
@@ -92,6 +104,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthSignInRoute: typeof ApiAuthSignInRoute
+  ApiAuthSignOutRoute: typeof ApiAuthSignOutRoute
   ApiAuthTestLoginRoute: typeof ApiAuthTestLoginRoute
 }
 
@@ -125,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/sign-out': {
+      id: '/api/auth/sign-out'
+      path: '/api/auth/sign-out'
+      fullPath: '/api/auth/sign-out'
+      preLoaderRoute: typeof ApiAuthSignOutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/test-login': {
       id: '/api/auth/test-login'
       path: '/api/auth/test-login'
@@ -140,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthSignInRoute: ApiAuthSignInRoute,
+  ApiAuthSignOutRoute: ApiAuthSignOutRoute,
   ApiAuthTestLoginRoute: ApiAuthTestLoginRoute,
 }
 export const routeTree = rootRouteImport
