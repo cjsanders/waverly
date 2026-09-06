@@ -16,6 +16,12 @@
   // into the Worker. Production deploy stays on the top-level secrets list.
   "env": {
     "dev": {
+      "vars": {
+        "WORKOS_EMULATE": "false",
+        "WORKOS_API_HOSTNAME": "api.workos.com",
+        "WORKOS_API_HTTPS": "true",
+        "WORKOS_API_PORT": "",
+      },
       "secrets": {
         "required": [
           "WORKOS_CLIENT_ID",

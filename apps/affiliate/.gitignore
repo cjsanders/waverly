@@ -9,5 +9,6 @@ dist-ssr
 .wrangler
 .output
 .vinxi
+.workos-emulate
 __unconfig*
 todos.json

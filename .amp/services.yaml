@@ -1,9 +1,35 @@
 services:
+  workos:
+    command: >-
+      bunx workos-emulate --host 127.0.0.1 --port "$PORT"
+      --seed workos-emulate.config.yaml
+      --signing-key .workos-emulate/signing-key.pem
+      --kid waverly-local
+      --issuer http://127.0.0.1:4100
+    cwd: apps/affiliate
+    port: 4100
+    health: /health
+  convex:
+    command: ./scripts/convex-agent.sh dev --tail-logs disable
+    cwd: apps/affiliate
+    port: 3210
   affiliate:
     command: >-
+      VITE_CONVEX_URL=http://127.0.0.1:3210
+      VITE_CONVEX_SITE_URL=http://127.0.0.1:3211
+      VITE_CONVEX_BROWSER_PROXY=true
+      WORKOS_EMULATE=true
+      WORKOS_CLIENT_ID=client_waverly_local
+      WORKOS_API_KEY=sk_test_default
+      WORKOS_API_HOSTNAME=127.0.0.1
+      WORKOS_API_HTTPS=false
+      WORKOS_API_PORT=4100
+      WORKOS_COOKIE_PASSWORD=waverly-local-cookie-password-32-chars
       WORKOS_REDIRECT_URI="$PUBLIC_URL"api/auth/callback
+      TEST_USER_EMAIL=agent@waverly.test
+      TEST_USER_PASSWORD=waverly-local-password
       CLOUDFLARE_ENV="${CLOUDFLARE_ENV:-dev}"
-      bunx vite dev --host 0.0.0.0 --port "$PORT"
+      bun run dev:agent:frontend
     cwd: apps/affiliate
     health: /
     portal:
