@@ -39,7 +39,12 @@ function trustForwardedHost(): Plugin {
   }
 }
 
-const config = defineConfig(({ mode }) => {
+const config = defineConfig(({ command, mode }) => {
+  // Named `dev` Wrangler env includes TEST_USER_* so agent login works locally.
+  if (command === 'serve') {
+    process.env.CLOUDFLARE_ENV ??= 'dev'
+  }
+
   const env = loadEnv(mode, process.cwd(), '')
 
   if (!env.VITE_CONVEX_URL) {

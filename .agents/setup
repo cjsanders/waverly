@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+SECONDS=0
+
+required_bun_version="$(sed -n 's/.*"packageManager": "bun@\([^"]*\)".*/\1/p' package.json)"
+if [[ -z "$required_bun_version" ]]; then
+  echo "[setup] package.json does not pin a Bun version" >&2
+  exit 1
+fi
+
+if ! command -v bun >/dev/null || [[ "$(bun --version)" != "$required_bun_version" ]]; then
+  echo "[setup] Installing Bun $required_bun_version"
+  if ! command -v unzip >/dev/null; then
+    sudo apt-get update
+    sudo apt-get install -y unzip
+  fi
+  curl -fsSL https://bun.com/install | bash -s "bun-v$required_bun_version"
+  export BUN_INSTALL="$HOME/.bun"
+  export PATH="$BUN_INSTALL/bin:$PATH"
+  mkdir -p "$HOME/.local/bin"
+  ln -sfn "$BUN_INSTALL/bin/bun" "$HOME/.local/bin/bun"
+  ln -sfn "$BUN_INSTALL/bin/bunx" "$HOME/.local/bin/bunx"
+else
+  echo "[setup] Bun $required_bun_version is already installed"
+fi
+
+echo "[setup] Installing workspace dependencies from bun.lock"
+bun install --frozen-lockfile
+
+if [[ ! -f apps/affiliate/.env.local ]]; then
+  cp -- apps/affiliate/.env.example apps/affiliate/.env.local
+  echo "[setup] Created apps/affiliate/.env.local from its template"
+fi
+
+if [[ ! -f apps/e2e/.env ]]; then
+  cp -- apps/e2e/.env.example apps/e2e/.env
+  echo "[setup] Created apps/e2e/.env from its template"
+fi
+
+echo "[setup] Complete in ${SECONDS}s"

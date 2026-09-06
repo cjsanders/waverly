@@ -47,6 +47,19 @@ Astro backgrounds `astro dev` when it detects a coding agent, which makes portle
 ASTRO_DEV_BACKGROUND=1 bun run dev
 ```
 
+### Agent login (screenshots and screencasts)
+
+Cloud agents and other local tools can sign in as a WorkOS Email + Password user without driving the hosted AuthKit UI. Set these secrets (never commit the values):
+
+```sh
+TEST_USER_EMAIL=
+TEST_USER_PASSWORD=
+```
+
+In Cursor Cloud Agent environments, add them as secrets with those exact names. In `.env.local`, copy them from `apps/affiliate/.env.example`. The user must exist in the WorkOS development environment with Email + Password enabled.
+
+Then open `/api/auth/test-login` on the affiliate app (optional `?returnPathname=/dashboard`). That route is **dev-only**; production builds return 404. Cursor Cloud Agents run the affiliate app at `http://localhost:5173`. See `.cursor/skills/nimbus-docs-sync/SKILL.md` for the screenshot workflow.
+
 ### Amp orb portal
 
 The affiliate development server is declared in `.amp/services.yaml`. In an Amp orb, start it with:

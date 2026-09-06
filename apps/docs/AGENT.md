@@ -6,6 +6,7 @@ Astro-based docs. The `nimbus-docs` package handles content schemas, sidebar/TOC
 
 ```
 astro.config.ts              # imports nimbus + defineNimbusConfig
+public/docs/                 # screenshots (.png/.webp) and screencasts (.webm)
 src/
 ├── components.ts            # MDX globals registry — every component used in .mdx must be listed
 ├── components/              # AgentDirective, Header, Render + ui/<slug>/
@@ -50,6 +51,17 @@ Rules:
 - **Partials use `<Render file="..." />`.** Don't import `.mdx` directly. Shared content lives in `src/content/partials/<slug>.mdx`.
 - **Icons use `astro-icon` + Phosphor.** `<Icon name="ph:<glyph>" class="w-4 h-4" />` from `astro-icon/components`. Glyphs: [phosphoricons.com](https://phosphoricons.com).
 - **Don't remove `<AgentDirective />` from `BaseLayout.astro`.** It points agents at `/llms.txt`.
+- **Screenshots and screencasts live in `public/docs/`.** Wrap them in `<Frame>` (registered in `src/components.ts`). See `.cursor/skills/nimbus-docs-sync/SKILL.md`. For signed-in affiliate UI, open `/api/auth/test-login` when `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` are set.
+
+```mdx
+<Frame caption="Affiliate dashboard home" aspect="16/9">
+  <img src="/docs/affiliate-dashboard.png" alt="Affiliate dashboard home" />
+</Frame>
+
+<Frame caption="Signing in" aspect="16/9">
+  <video src="/docs/affiliate-sign-in.webm" controls playsinline />
+</Frame>
+```
 
 ## Adding things
 

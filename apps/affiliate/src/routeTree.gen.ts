@@ -16,6 +16,7 @@ import { Route as AppWorkspaceRouteImport } from './routes/_app/_workspace'
 import { Route as AppOnboardingRouteImport } from './routes/_app/onboarding'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
+import { Route as ApiAuthTestLoginRouteImport } from './routes/api/auth/test-login'
 import { Route as AppWorkspaceBrandIndexRouteImport } from './routes/_app/_workspace/brand/index'
 import { Route as AppWorkspaceCreatorIndexRouteImport } from './routes/_app/_workspace/creator/index'
 import { Route as AppWorkspaceOperatorIndexRouteImport } from './routes/_app/_workspace/operator/index'
@@ -53,6 +54,11 @@ const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
   path: '/api/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthTestLoginRoute = ApiAuthTestLoginRouteImport.update({
+  id: '/api/auth/test-login',
+  path: '/api/auth/test-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppWorkspaceBrandIndexRoute = AppWorkspaceBrandIndexRouteImport.update({
   id: '/brand/',
   path: '/brand/',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AppOnboardingRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/test-login': typeof ApiAuthTestLoginRoute
   '/brand/': typeof AppWorkspaceBrandIndexRoute
   '/creator/': typeof AppWorkspaceCreatorIndexRoute
   '/operator/': typeof AppWorkspaceOperatorIndexRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/test-login': typeof ApiAuthTestLoginRoute
   '/brand': typeof AppWorkspaceBrandIndexRoute
   '/creator': typeof AppWorkspaceCreatorIndexRoute
   '/operator': typeof AppWorkspaceOperatorIndexRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/_app/onboarding': typeof AppOnboardingRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/test-login': typeof ApiAuthTestLoginRoute
   '/_app/_workspace/brand/': typeof AppWorkspaceBrandIndexRoute
   '/_app/_workspace/creator/': typeof AppWorkspaceCreatorIndexRoute
   '/_app/_workspace/operator/': typeof AppWorkspaceOperatorIndexRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/test-login'
     | '/brand/'
     | '/creator/'
     | '/operator/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/test-login'
     | '/brand'
     | '/creator'
     | '/operator'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
     | '/_app/onboarding'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/test-login'
     | '/_app/_workspace/brand/'
     | '/_app/_workspace/creator/'
     | '/_app/_workspace/operator/'
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthSignInRoute: typeof ApiAuthSignInRoute
+  ApiAuthTestLoginRoute: typeof ApiAuthTestLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -196,6 +209,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/sign-in'
       fullPath: '/api/auth/sign-in'
       preLoaderRoute: typeof ApiAuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/test-login': {
+      id: '/api/auth/test-login'
+      path: '/api/auth/test-login'
+      fullPath: '/api/auth/test-login'
+      preLoaderRoute: typeof ApiAuthTestLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/_workspace/brand/': {
@@ -256,6 +276,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthSignInRoute: ApiAuthSignInRoute,
+  ApiAuthTestLoginRoute: ApiAuthTestLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
