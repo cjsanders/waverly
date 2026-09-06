@@ -51,6 +51,10 @@ bun run check
 This integration uses WorkOS AuthKit's full-stack TanStack Start SDK and requires
 Node.js 22.11 or newer.
 
+Cloud agents can use isolated WorkOS Emulate and Convex backends without credentials. From the repository root, run `bun run setup:agent` once and `bun run dev:agent` to start the complete stack on port 5173. The setup refuses to start when local variable files would select a shared backend or override the emulator. A front proxy keeps browser Convex traffic on the app origin so the stack works behind cloud-agent port forwarding without competing with Vite's WebSocket handling.
+
+For development against real WorkOS:
+
 1. Copy your client ID and API key from the [WorkOS dashboard](https://dashboard.workos.com/api-keys).
 2. Fill in `.env.local`:
 

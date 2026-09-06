@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This repository has no local backing services or per-wake authentication.
+# Convex and the frontend are supervised through .amp/services.yaml.
 echo "[resume] No orb state needs repair"
