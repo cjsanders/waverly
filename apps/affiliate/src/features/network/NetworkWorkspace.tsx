@@ -13,7 +13,7 @@ import {
   useMediaQuery,
 } from '#/features/network/ui/primitives'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Orbit } from 'lucide-react'
+import { Info, Orbit } from 'lucide-react'
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { DemoBootstrap } from './DemoBootstrap'
 import { availablePages, roleOptions } from './navigation'
@@ -90,10 +90,10 @@ export function NetworkWorkspace() {
 
   const pageHeader = getPageHeader(identity, currentPage)
   const isPendingReview = identity === 'everyday' && currentPage === 'Overview'
-  const pagePadding: 4 | 6 = isCompactHeader ? 4 : 6
+  const pagePadding: 4 | 5 = isCompactHeader ? 4 : 5
 
   return (
-    <AppShell sideNav={nav} height="fill" variant="section" contentPadding={0}>
+    <AppShell sideNav={nav} height="fill" variant="section" contentPadding={0} theme="compact">
       <DemoBootstrap />
       <Layout
         height="fill"
@@ -101,14 +101,31 @@ export function NetworkWorkspace() {
         header={
           <LayoutHeader padding={pagePadding}>
             <VStack gap={2}>
-              <HStack gap={2} align="center">
-                <Icon icon={Orbit} color="accent" />
-                <Text type="supporting" color="accent" weight="semibold">
-                  {pageHeader.eyebrow}
-                </Text>
-              </HStack>
+              <div className="waverly-header-top">
+                <HStack gap={2} align="center">
+                  <Icon icon={Orbit} color="secondary" size="sm" />
+                  <Text type="supporting" color="secondary" weight="medium">
+                    {pageHeader.eyebrow.charAt(0) + pageHeader.eyebrow.slice(1).toLowerCase()}
+                  </Text>
+                </HStack>
+                <details className="waverly-demo-note">
+                  <summary>
+                    <StatusDot
+                      variant={isPendingReview ? 'warning' : 'success'}
+                      label="Workspace state"
+                    />
+                    Demo workspace · USD
+                    <Info size={14} aria-hidden="true" />
+                  </summary>
+                  <p>
+                    Sample data across five demo roles. Messages are shared with signed-in demo
+                    users; other actions are simulated.
+                  </p>
+                </details>
+              </div>
               <div className="flex flex-wrap items-center gap-2 min-[901px]:hidden">
                 <Selector
+                  isLabelHidden
                   label="Demo identity"
                   options={roleOptions}
                   value={identity}
@@ -119,20 +136,9 @@ export function NetworkWorkspace() {
               <Heading level={1} type="display-3">
                 {pageHeader.title}
               </Heading>
-              <Text color="secondary">{pageHeader.description}</Text>
-              <HStack gap={2} align="center">
-                <StatusDot
-                  variant={isPendingReview ? 'warning' : 'success'}
-                  label="Workspace state"
-                />
-                <Text type="supporting" color="secondary">
-                  Demo workspace · Sample data · USD
-                </Text>
-              </HStack>
-              <p className="text-xs text-muted-foreground">
-                Explore five demo roles. Messages are shared with signed-in demo users; other
-                actions are simulated.
-              </p>
+              <Text type="supporting" color="secondary">
+                {pageHeader.description}
+              </Text>
             </VStack>
           </LayoutHeader>
         }

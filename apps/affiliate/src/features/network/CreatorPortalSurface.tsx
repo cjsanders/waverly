@@ -1,3 +1,4 @@
+import { Thumbnail } from '@waverly/design-system/ui/thumbnail'
 import {
   AspectRatio,
   Avatar,
@@ -227,13 +228,7 @@ function brandFor(offerKey: string) {
 
 function ProductThumb({ offerKey }: { offerKey: string }) {
   const offer = offerFor(offerKey)
-  return (
-    <VStack width="var(--spacing-12)">
-      <AspectRatio ratio={1} fit="contain">
-        <img src={offer.productImageUrl} alt={`${offer.offerName} product`} style={imageStyle} />
-      </AspectRatio>
-    </VStack>
-  )
+  return <Thumbnail src={offer.productImageUrl} alt={offer.offerName} />
 }
 
 function PageIntro({

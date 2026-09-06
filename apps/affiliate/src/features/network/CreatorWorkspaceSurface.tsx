@@ -1,3 +1,4 @@
+import { Thumbnail } from '@waverly/design-system/ui/thumbnail'
 import {
   AspectRatio,
   Banner,
@@ -62,23 +63,11 @@ function offerBrand(offer: (typeof programOffers)[number]) {
 }
 
 function ProductThumb({ src, name }: { src: string; name: string }) {
-  return (
-    <VStack width="var(--spacing-16)">
-      <AspectRatio ratio={1} fit="contain">
-        <img src={src} alt={name} style={imageStyle} />
-      </AspectRatio>
-    </VStack>
-  )
+  return <Thumbnail src={src} alt={name} size="lg" />
 }
 
 function BrandThumb({ src, name }: { src: string; name: string }) {
-  return (
-    <VStack width="var(--spacing-12)">
-      <AspectRatio ratio={1} fit="contain">
-        <img src={src} alt={`${name} logo`} style={imageStyle} />
-      </AspectRatio>
-    </VStack>
-  )
+  return <Thumbnail src={src} alt={name} fit="cover" />
 }
 
 function WorkspaceIntro({
@@ -733,7 +722,7 @@ function StorefrontSurface() {
                   <AspectRatio ratio={4 / 3} fit="contain">
                     <img src={offer.productImageUrl} alt={offer.offerName} style={imageStyle} />
                   </AspectRatio>
-                  <VStack gap={3} padding={4} height="100%" justify="between">
+                  <VStack gap={3} padding={4} style={{ flex: 1 }} justify="between">
                     <VStack gap={1}>
                       <Text type="supporting" color="accent" weight="semibold">
                         {brand?.name ?? 'Brand'}

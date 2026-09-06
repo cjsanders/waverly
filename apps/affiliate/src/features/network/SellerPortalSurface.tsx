@@ -1,5 +1,5 @@
+import { Thumbnail } from '@waverly/design-system/ui/thumbnail'
 import {
-  AspectRatio,
   Avatar,
   AvatarStatusDot,
   Banner,
@@ -57,7 +57,7 @@ import {
   Users,
   WalletCards,
 } from 'lucide-react'
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState } from 'react'
 import { dailyPerformance, programOffers, type SeedProgramOffer } from '../../../shared/demoData'
 import {
   sellerApplications,
@@ -132,12 +132,6 @@ const money = new Intl.NumberFormat('en-US', {
 const integer = new Intl.NumberFormat('en-US')
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 
-const productImageStyle: CSSProperties = {
-  width: '100%',
-  height: '100%',
-  objectFit: 'contain',
-}
-
 const puroAirOffers = programOffers.filter((offer) => offer.advertiserKey === 'paper-crane')
 
 function creatorById(id: string) {
@@ -196,17 +190,7 @@ function ProductIdentity({ offer }: { offer: SeedProgramOffer }) {
 }
 
 function ProductThumb({ offer }: { offer: SeedProgramOffer }) {
-  return (
-    <VStack width="var(--spacing-12)">
-      <AspectRatio ratio={1} fit="contain">
-        <img
-          src={offer.productImageUrl}
-          alt={`${offer.offerName} product`}
-          style={productImageStyle}
-        />
-      </AspectRatio>
-    </VStack>
-  )
+  return <Thumbnail src={offer.productImageUrl} alt={offer.offerName} />
 }
 
 function PageContext({

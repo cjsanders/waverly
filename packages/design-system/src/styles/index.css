@@ -9,6 +9,7 @@
 @import 'tw-animate-css';
 @import './fonts.css';
 @import './tokens.css';
+@import './workspace.css';
 @import './theme.css';
 
 /* Let each app's Tailwind build see the classes used inside the shared components. */

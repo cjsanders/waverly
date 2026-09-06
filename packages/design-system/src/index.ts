@@ -10,4 +10,5 @@ export {
   CardTitle,
 } from './components/ui/card'
 export { Input } from './components/ui/input'
+export { Thumbnail } from './components/ui/thumbnail'
 export { Logo, LogoIcon, logoIconSrc, logoSrc, logoWhiteSrc } from './components/brand/logo'

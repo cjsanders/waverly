@@ -50,6 +50,20 @@ They keep shadcn's API and add the Waverly shape rules:
 
 Other shadcn components need no changes. Generate them with the shadcn CLI as usual; they pick up radius, colors, and ring from the theme. Two conventions to apply by hand: a `Tabs` list uses `rounded-full bg-muted p-1` for the segmented look, and `Dialog` content uses `rounded-2xl shadow-lg`.
 
+## Compact workspace
+
+The affiliate app opts into the compact workspace with `data-workspace-theme="compact"` on its shell. White cards and navigation, pale gray backgrounds (`#fafafa`), fine borders (`#e5e6e8`), and charcoal text and primary actions (`#292a2d`) form the interface. Figtree carries headings, controls, and data. Color is reserved for the original logo, statuses, and chart series. Dark mode remains available through an ancestor `.dark` or `data-mode="dark"`.
+
+`--control-radius`, `--surface-radius`, `--control-height`, and `--control-padding` let workspaces set shapes and density without duplicating components. The compact workspace uses 8px controls, 10px surfaces, and 36px desktop inputs and buttons. Coarse pointers retain 44px targets. The affiliate layout uses a 3.5px spacing unit, a 224px sidebar, shared metric rows, and bounded product media. Without these overrides, shared components retain their original shapes. Keep the original colored logo on the light sidebar; mark actual dark surfaces with `data-mode="dark"` to select its white wordmark.
+
+Use `--chart-1` through `--chart-5` for data series, independently of the neutral action color. The workspace chart palette starts with blue and orange, then teal and violet.
+
+Desktop examples: [discovery and sidebar utilities](docs/compact-discovery.png), [reports and period controls](docs/compact-reports.png). These screenshots use the local demo data.
+
+Use `Thumbnail` from `@waverly/design-system/ui/thumbnail` for images in rows and lists. It reserves a non-shrinking 40px, 48px (default), or 64px square, supports `contain` and `cover`, and displays initials if loading fails. Give it the actual brand or product name as `alt`; catalog photography should not be described as a logo. Keep larger product photography in a separate aspect-ratio container.
+
+The affiliate table adapter honors pixel and proportional columns, density, and text overflow. Tables scroll inside their container; the brand catalog switches to a comparison list based on the available content width. Keep status, share, earnings, and fit available in both layouts. Search fields reserve space for their icons and return focus to the input when cleared.
+
 ## Logo
 
 - React: `<Logo />` is the full lockup and swaps to the white wordmark in dark mode. `<LogoIcon />` is the wave mark for avatars and sidebars.
@@ -62,4 +76,4 @@ Use the icon at 24px or larger and never recolor its layers.
 
 - Sentence case. No emoji, no exclamation marks.
 - One primary button per view. Teal `accent` at most once per view.
-- Charts use `chart-1` through `chart-5` in order (the wave, light to deep).
+- Charts use `chart-1` through `chart-5` in order; each theme defines its data palette.

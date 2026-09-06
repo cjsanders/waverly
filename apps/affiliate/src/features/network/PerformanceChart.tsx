@@ -66,7 +66,7 @@ export function PerformanceChart({
         muted: 'var(--color-text-secondary)',
         grid: 'var(--color-border)',
         background: 'transparent',
-        palette: ['var(--primary)', 'var(--color-icon-cyan)'],
+        palette: ['var(--chart-1)', 'var(--chart-2)'],
       },
       tooltip,
       svgAnimation: true,

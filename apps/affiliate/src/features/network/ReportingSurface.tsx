@@ -2,14 +2,13 @@ import type { ISODateString } from '#/features/network/ui/primitives'
 import {
   Button,
   Card,
-  DateRangeInput,
   Divider,
   Grid,
   HStack,
   Heading,
   Icon,
   IconButton,
-  Section,
+  MetricGroup,
   Selector,
   StatusDot,
   Tab,
@@ -45,6 +44,7 @@ import {
   summarizePerformance,
   type SeedDay,
 } from '../../../shared/demoData'
+import { ReportPeriodPicker } from './ReportPeriodPicker'
 import { ReportingChart, type ReportRankingPoint, type ReportTrendPoint } from './ReportingChart'
 import type { DemoIdentity } from './types'
 
@@ -127,39 +127,6 @@ function formatMoney(cents: number) {
 
 function formatCompactMoney(cents: number) {
   return compactMoney.format(cents / 100)
-}
-
-function ReportMetricCard({
-  label,
-  value,
-  detail,
-  isFeatured = false,
-}: {
-  label: string
-  value: string
-  detail: string
-  isFeatured?: boolean
-}) {
-  return (
-    <Card
-      padding={4}
-      variant={isFeatured ? 'blue' : 'default'}
-      elevation={isFeatured ? 'low' : 'none'}
-      height="100%"
-    >
-      <VStack gap={1}>
-        <Text type="supporting" color="secondary" weight="semibold">
-          {label}
-        </Text>
-        <Text type="display-3" weight="semibold" hasTabularNumbers>
-          {value}
-        </Text>
-        <Text type="supporting" color="secondary">
-          {detail}
-        </Text>
-      </VStack>
-    </Card>
-  )
 }
 
 function formatReportDate(timestamp: number) {
@@ -389,7 +356,7 @@ function escapeCsv(value: string | number) {
 export function ReportingSurface({ identity }: { identity: DemoIdentity }) {
   const isNarrow = useMediaQuery('(max-width: 700px)')
   const [view, setView] = useState<ReportView>('performance')
-  const [range, setRange] = useState<DateRange | null>(initialRange)
+  const [range, setRange] = useState<DateRange>(initialRange)
   const [provider, setProvider] = useState('all')
   const [metric, setMetric] = useState<ReportMetric>('orderValue')
   const [search, setSearch] = useState('')
@@ -588,110 +555,99 @@ export function ReportingSurface({ identity }: { identity: DemoIdentity }) {
 
   return (
     <VStack gap={6}>
-      <Section variant="muted" padding={5}>
-        <VStack gap={4}>
-          <HStack justify="between" align="center" gap={4} wrap="wrap">
-            <TabList
-              value={view}
-              onChange={(value) => setView(value as ReportView)}
-              size="sm"
-              hasDivider
-              overflow="scroll"
-            >
-              <Tab value="performance" label="Performance" icon={<Icon icon={ChartSpline} />} />
-              <Tab value="product" label="Products" icon={<Icon icon={PackageSearch} />} />
-              <Tab value="brand" label="Brands" icon={<Icon icon={Building2} />} />
-              <Tab value="source" label="Sources" icon={<Icon icon={Waypoints} />} />
-              <Tab value="cpc" label="CPC" icon={<Icon icon={MousePointerClick} />} />
-              <Tab value="shared-id" label="Shared IDs" icon={<Icon icon={Fingerprint} />} />
-            </TabList>
-            <HStack gap={2} align="center">
-              <StatusDot variant="success" label="Reporting data is current" />
-              <Text type="supporting" color="secondary">
-                Updated 18m ago
-              </Text>
-              <Token label={`${currentDays.length} days`} size="sm" />
-            </HStack>
-          </HStack>
-          <Divider />
-          <Grid columns={{ minWidth: 260, max: 4, repeat: 'fit' }} gap={4}>
-            <DateRangeInput
-              label="Report period"
-              value={range}
-              onChange={setRange}
-              presets={reportPresets}
-              min="2026-05-18"
-              max="2026-08-15"
-              numberOfMonths={1}
-              size="sm"
-              width="100%"
-              hasClear={false}
-            />
-            <Selector
-              label="Compare with"
-              options={[{ value: 'previous', label: 'Previous period' }]}
-              value="previous"
-              onChange={() => undefined}
-              size="sm"
-              width="100%"
-            />
-            <Selector
-              label="Provider"
-              options={providerOptions}
-              value={provider}
-              onChange={setProvider}
-              size="sm"
-              width="100%"
-            />
-            <Selector
-              label="Chart metric"
-              options={metricOptions}
-              value={metric}
-              onChange={(value) => setMetric(value as ReportMetric)}
-              size="sm"
-              width="100%"
-            />
-          </Grid>
-        </VStack>
-      </Section>
+      <section className="waverly-report-controls" aria-label="Report controls">
+        <div className="waverly-report-tabs">
+          <TabList
+            label="Report views"
+            value={view}
+            onChange={(value) => setView(value as ReportView)}
+            size="sm"
+            hasDivider
+            overflow="scroll"
+          >
+            <Tab value="performance" label="Performance" icon={<Icon icon={ChartSpline} />} />
+            <Tab value="product" label="Products" icon={<Icon icon={PackageSearch} />} />
+            <Tab value="brand" label="Brands" icon={<Icon icon={Building2} />} />
+            <Tab value="source" label="Sources" icon={<Icon icon={Waypoints} />} />
+            <Tab value="cpc" label="CPC" icon={<Icon icon={MousePointerClick} />} />
+            <Tab value="shared-id" label="Shared IDs" icon={<Icon icon={Fingerprint} />} />
+          </TabList>
+          <div className="waverly-report-freshness">
+            <StatusDot variant="success" label="Reporting data is current" />
+            <span>Updated 18m ago</span>
+          </div>
+        </div>
+        <div className="waverly-report-filters">
+          <ReportPeriodPicker
+            value={range}
+            onChange={setRange}
+            presets={reportPresets}
+            min="2026-05-18"
+            max="2026-08-15"
+          />
+          <Selector
+            label="Provider"
+            options={providerOptions}
+            value={provider}
+            onChange={setProvider}
+            className="data-[size=default]:h-[var(--control-height)]"
+            width="100%"
+          />
+          <Selector
+            label="Chart metric"
+            options={metricOptions}
+            value={metric}
+            onChange={(value) => setMetric(value as ReportMetric)}
+            className="data-[size=default]:h-[var(--control-height)]"
+            width="100%"
+          />
+          <p className="waverly-report-comparison" aria-live="polite">
+            <strong>{currentDays.length} days</strong>
+            Compared with previous period
+          </p>
+        </div>
+      </section>
 
-      <Grid columns={{ minWidth: 160, max: 3, repeat: 'fit' }} gap={3}>
-        <ReportMetricCard
-          label="Order value"
-          value={formatCompactMoney(currentSummary.orderValueCents)}
-          detail={deltaLabel(currentSummary.orderValueCents, previousSummary.orderValueCents)}
-          isFeatured
+      <div className="waverly-report-metrics">
+        <MetricGroup
+          items={[
+            {
+              label: 'Order value',
+              value: formatCompactMoney(currentSummary.orderValueCents),
+              context: deltaLabel(currentSummary.orderValueCents, previousSummary.orderValueCents),
+            },
+            {
+              label: 'Gross commission',
+              value: formatCompactMoney(currentSummary.grossCommissionCents),
+              context: `${((currentSummary.grossCommissionCents / Math.max(currentSummary.orderValueCents, 1)) * 100).toFixed(1)}% of order value`,
+            },
+            {
+              label: identity === 'operator' ? 'Waverly revenue' : 'Earnings',
+              value: formatCompactMoney(
+                identity === 'operator'
+                  ? currentSummary.waverlyRevenueCents
+                  : currentSummary.publisherEarningsCents,
+              ),
+              context: 'Snapshotted economics',
+            },
+            {
+              label: 'Clicks',
+              value: integer.format(currentSummary.clicks),
+              context: deltaLabel(currentSummary.clicks, previousSummary.clicks),
+            },
+            {
+              label: 'Conversions',
+              value: integer.format(currentSummary.conversions),
+              context: `${(currentRate * 100).toFixed(2)}% conversion rate`,
+            },
+            {
+              label: 'Conversion rate',
+              value: `${(currentRate * 100).toFixed(2)}%`,
+              context: deltaLabel(currentRate, previousRate),
+            },
+          ]}
         />
-        <ReportMetricCard
-          label="Gross commission"
-          value={formatCompactMoney(currentSummary.grossCommissionCents)}
-          detail={`${((currentSummary.grossCommissionCents / Math.max(currentSummary.orderValueCents, 1)) * 100).toFixed(1)}% of order value`}
-        />
-        <ReportMetricCard
-          label={identity === 'operator' ? 'Waverly revenue' : 'Earnings'}
-          value={formatCompactMoney(
-            identity === 'operator'
-              ? currentSummary.waverlyRevenueCents
-              : currentSummary.publisherEarningsCents,
-          )}
-          detail="Snapshotted economics"
-        />
-        <ReportMetricCard
-          label="Clicks"
-          value={integer.format(currentSummary.clicks)}
-          detail={deltaLabel(currentSummary.clicks, previousSummary.clicks)}
-        />
-        <ReportMetricCard
-          label="Conversions"
-          value={integer.format(currentSummary.conversions)}
-          detail={`${(currentRate * 100).toFixed(2)}% conversion rate`}
-        />
-        <ReportMetricCard
-          label="Conversion rate"
-          value={`${(currentRate * 100).toFixed(2)}%`}
-          detail={deltaLabel(currentRate, previousRate)}
-        />
-      </Grid>
+      </div>
 
       <Card padding={0}>
         <VStack gap={0}>
