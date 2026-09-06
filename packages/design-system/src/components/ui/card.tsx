@@ -1,5 +1,5 @@
-// Waverly card: 1px border, 12px radius, 24px padding, no shadow by default.
-// Add className="shadow-sm" to elevate. Titles use the display face (Quicksand).
+// Waverly card: 1px border, themeable surface radius, no shadow by default.
+// Add className="shadow-sm" to elevate. Titles use the theme's display face.
 import type * as React from 'react'
 
 import { cn } from '../../lib/utils'
@@ -8,7 +8,10 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card"
-      className={cn('rounded-xl border border-border bg-card text-card-foreground', className)}
+      className={cn(
+        'rounded-[var(--surface-radius,var(--radius-xl))] border border-border bg-card text-card-foreground',
+        className,
+      )}
       {...props}
     />
   )

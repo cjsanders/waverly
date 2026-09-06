@@ -1,12 +1,10 @@
-import { Button } from '@waverly/design-system/ui/button'
-import { Bell, MessageCircle } from 'lucide-react'
 import { UserMenu } from '#/components/user-menu'
 import {
   Selector,
   SideNav,
-  SideNavHeading,
   SideNavItem,
   SideNavSection,
+  Text,
   VStack,
   useSideNavRenderMode,
 } from '#/features/network/ui/primitives'
@@ -25,6 +23,7 @@ import {
   sellerNav,
 } from './navigation'
 import type { DemoIdentity } from './types'
+import { WorkspaceActions } from './WorkspaceActions'
 export function NetworkNav({
   identity,
   currentPage,
@@ -66,77 +65,85 @@ export function NetworkNav({
       }}
       header={
         <VStack gap={3}>
-          {isNavCollapsed && !isMobileTopBar ? <LogoIcon size={24} /> : <Logo height={24} />}
-          <SideNavHeading
-            heading={
-              identity === 'operator'
-                ? 'Operations'
-                : identity === 'northstar'
-                  ? 'Northstar Media'
-                  : identity === 'everyday'
-                    ? 'Everyday Finds'
-                    : identity === 'puroair'
-                      ? 'PuroAir'
-                      : 'Avery Lane'
-            }
-            subheading={
-              isMobileTopBar
-                ? undefined
-                : identity === 'operator'
+          <div className="flex items-center justify-between gap-3">
+            {isNavCollapsed && !isMobileTopBar ? <LogoIcon size={24} /> : <Logo height={22} />}
+            {isMobileTopBar ? (
+              <WorkspaceActions
+                key={identity}
+                identity={identity}
+                currentPage={currentPage}
+                onPageChange={onPageChange}
+                mode="mobile"
+              />
+            ) : null}
+          </div>
+          {!isNavCollapsed && !isMobileTopBar ? (
+            <VStack gap={1.5} className="waverly-workspace-picker">
+              <Selector
+                label="Demo identity"
+                isLabelHidden
+                options={roleOptions}
+                value={identity}
+                onChange={(value) => onIdentityChange(value as DemoIdentity)}
+                width="100%"
+              />
+              <Text type="supporting" color="secondary">
+                {identity === 'operator'
                   ? 'Partner operations'
                   : identity === 'avery'
                     ? 'Creator workspace'
                     : identity === 'puroair'
-                      ? 'Brand seller workspace'
-                      : 'Publisher workspace'
-            }
-          />
+                      ? 'Brand workspace'
+                      : 'Publisher workspace'}
+              </Text>
+            </VStack>
+          ) : null}
         </VStack>
       }
       footer={
-        !isNavCollapsed ? (
+        !isNavCollapsed && !isMobileTopBar ? (
           <VStack gap={3} padding={3}>
-            <Selector
-              label="Demo identity"
-              options={roleOptions}
-              value={identity}
-              onChange={(value) => onIdentityChange(value as DemoIdentity)}
-              size="sm"
-              width="100%"
+            <WorkspaceActions
+              key={identity}
+              identity={identity}
+              currentPage={currentPage}
+              onPageChange={onPageChange}
             />
-            <div className="flex items-center gap-2">
-              <UserMenu className="min-w-0 flex-1" />
-              <Button
-                variant="secondary"
-                size="icon-sm"
-                aria-label="Messages"
-                onClick={() => onPageChange('Messages')}
-              >
-                <MessageCircle />
-              </Button>
-              <Button variant="secondary" size="icon-sm" aria-label="Alerts">
-                <Bell />
-              </Button>
-            </div>
+            <UserMenu className="w-full" />
             <span data-testid="convex-session" className="sr-only">
               {sessionLabel}
             </span>
           </VStack>
         ) : undefined
       }
-      footerIcons={<UserMenu />}
+      footerIcons={
+        isNavCollapsed && !isMobileTopBar ? (
+          <div className="flex flex-col items-center gap-3 py-3">
+            <WorkspaceActions
+              key={identity}
+              identity={identity}
+              currentPage={currentPage}
+              onPageChange={onPageChange}
+              mode="collapsed"
+            />
+            <UserMenu className="w-10 overflow-hidden p-1" />
+          </div>
+        ) : undefined
+      }
     >
       {sections.map((section) => (
         <SideNavSection key={section.title} title={section.title}>
-          {section.items.map((item) => (
-            <SideNavItem
-              key={item}
-              label={item}
-              icon={navIcons[item]}
-              isSelected={currentPage === item}
-              onClick={() => onPageChange(item)}
-            />
-          ))}
+          {section.items
+            .filter((item) => item !== 'Messages')
+            .map((item) => (
+              <SideNavItem
+                key={item}
+                label={item}
+                icon={navIcons[item]}
+                isSelected={currentPage === item}
+                onClick={() => onPageChange(item)}
+              />
+            ))}
         </SideNavSection>
       ))}
     </SideNav>

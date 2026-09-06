@@ -10,6 +10,7 @@ import {
   Icon,
   List,
   ListItem,
+  MetricGroup,
   ProgressBar,
   StatusDot,
   Step,
@@ -61,58 +62,11 @@ import type {
 export function MetricSummary({
   items,
   isCompact = false,
-  isEditorial = false,
 }: {
   items: Array<{ label: string; value: string; context?: string }>
   isCompact?: boolean
-  isEditorial?: boolean
 }) {
-  const isNarrowEditorial = useMediaQuery('(max-width: 1100px)')
-  const isVeryNarrow = useMediaQuery('(max-width: 340px)')
-  const columns = isEditorial
-    ? { minWidth: 150, max: isNarrowEditorial ? 2 : items.length + 1, repeat: 'fit' as const }
-    : { minWidth: 180, max: items.length, repeat: 'fit' as const }
-  return (
-    <Grid columns={columns} gap={4}>
-      {items.map((item, index) => {
-        const metric = (
-          <Card
-            padding={isEditorial && index === 0 ? 5 : 4}
-            variant={index === 0 ? 'blue' : 'default'}
-            elevation={index === 0 ? 'low' : 'none'}
-            height="100%"
-          >
-            <VStack gap={1}>
-              <Text type="supporting" color="secondary" weight="semibold">
-                {item.label}
-              </Text>
-              <Text
-                type={isEditorial && index === 0 ? 'display-2' : isCompact ? 'large' : 'display-3'}
-                weight="semibold"
-                hasTabularNumbers
-              >
-                {item.value}
-              </Text>
-              {item.context ? (
-                <Text type="supporting" color="secondary">
-                  {item.context}
-                </Text>
-              ) : null}
-            </VStack>
-          </Card>
-        )
-        return isEditorial && index === 0 && !isNarrowEditorial ? (
-          <GridSpan key={item.label} columns={2}>
-            {metric}
-          </GridSpan>
-        ) : (
-          <GridSpan key={item.label} columns={isVeryNarrow ? 'full' : 1}>
-            {metric}
-          </GridSpan>
-        )
-      })}
-    </Grid>
-  )
+  return <MetricGroup items={items} compact={isCompact} />
 }
 
 export function makeRankings(): RankingRow[] {
@@ -655,7 +609,6 @@ export function Overview({
       </Banner>
 
       <MetricSummary
-        isEditorial
         items={[
           {
             label: 'Order value',

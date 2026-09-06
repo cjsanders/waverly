@@ -1,3 +1,4 @@
+import { Thumbnail } from '@waverly/design-system/ui/thumbnail'
 import { useSavedProducts } from './use-saved-products'
 import {
   AspectRatio,
@@ -10,6 +11,7 @@ import {
   Icon,
   List,
   ListItem,
+  MetricGroup,
   ProgressBar,
   Section,
   Selector,
@@ -84,7 +86,9 @@ interface BrandRow extends Record<string, unknown> {
   offers: string
   rate: string
   performance: string
-  fit: number
+  earnings: number
+  maxShare: number
+  fit: number | null
   access: string
   logoUrl: string
 }
@@ -293,108 +297,75 @@ function CatalogCard({
   onOpen: () => void
 }) {
   return (
-    <Card
-      padding={0}
-      variant={item.fit >= 98 ? 'blue' : 'default'}
-      elevation={item.fit >= 98 ? 'low' : 'none'}
-      height="100%"
-    >
-      <VStack gap={0} height="100%">
+    <Card padding={0} className="waverly-product-card" height="100%">
+      <div className="waverly-product-media">
         <AspectRatio ratio={4 / 3} fit="contain">
-          <img src={item.imageUrl} alt={item.name} style={catalogImageStyle} />
+          <img src={item.imageUrl} alt={item.name} style={catalogImageStyle} loading="lazy" />
         </AspectRatio>
-        <VStack gap={4} padding={4} height="100%" justify="between">
-          <VStack gap={3}>
-            <HStack justify="between" align="center" gap={2}>
-              <HStack gap={2} align="center">
-                <StatusDot variant={statusVariant(item.access)} label={`${item.access} access`} />
-                <Text type="supporting" weight="semibold">
-                  {item.access}
-                </Text>
-              </HStack>
-              <Token
-                label={`${item.fit}% fit`}
-                size="sm"
-                color={item.fit >= 90 ? 'blue' : 'gray'}
-              />
-            </HStack>
-            <HStack gap={2} wrap="wrap">
-              <Token label={`${item.marketplace} · ${item.countryCode}`} size="sm" />
-              <Token
-                label={`${item.commissionRate.toFixed(0)}% commission`}
-                color="green"
-                size="sm"
-              />
-              {item.isDeal ? <Token label="Deal live" color="purple" size="sm" /> : null}
-              {item.samplesAvailable ? (
-                <Token label="Sample available" color="blue" size="sm" />
-              ) : null}
-            </HStack>
-            <VStack gap={1}>
-              <HStack gap={2} align="center">
-                <BrandLogo src={item.brandLogoUrl} name={item.brand} />
-                <Text type="supporting" color="accent" weight="semibold">
-                  {item.brand}
-                </Text>
-              </HStack>
-              <Heading level={3}>{item.name}</Heading>
-              <Text type="supporting" color="secondary">
-                {item.productSku} · {item.rating.toFixed(1)} ★ · {integer.format(item.reviewCount)}{' '}
-                reviews
-              </Text>
-              <Text color="secondary">{item.reason}</Text>
-            </VStack>
-            <Grid columns={{ minWidth: 92, max: 3, repeat: 'fit' }} gap={3}>
-              <VStack gap={0.5}>
-                <Text type="supporting" color="secondary">
-                  Publisher share
-                </Text>
-                <Text weight="semibold">{item.share.toFixed(0)}%</Text>
-              </VStack>
-              <VStack gap={0.5}>
-                <Text type="supporting" color="secondary">
-                  Attribution
-                </Text>
-                <Text weight="semibold">{item.attributionDays} days</Text>
-              </VStack>
-              <VStack gap={0.5}>
-                <Text type="supporting" color="secondary">
-                  Typical price
-                </Text>
-                <Text weight="semibold">{formatMoney(item.priceCents)}</Text>
-              </VStack>
-            </Grid>
-          </VStack>
-          <HStack gap={2} wrap="wrap">
-            <Button
-              label="View product"
-              icon={<Icon icon={ArrowRight} />}
-              variant="primary"
-              size="sm"
-              onClick={onOpen}
-            />
-            <Button
-              label={isSaved ? 'Saved' : 'Save'}
-              icon={<Icon icon={Heart} />}
-              variant={isSaved ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={onSave}
-            />
-          </HStack>
-        </VStack>
-      </VStack>
+      </div>
+      <div className="waverly-product-copy">
+        <div className="waverly-product-status">
+          <span>
+            <StatusDot variant={statusVariant(item.access)} label={`${item.access} access`} />
+            {item.access}
+          </span>
+          <span>{item.fit}% fit</span>
+        </div>
+        <div>
+          <Text type="supporting" color="secondary">
+            {item.brand}
+          </Text>
+          <Heading level={3}>{item.name}</Heading>
+        </div>
+        <Text type="supporting" color="secondary">
+          {item.marketplace} · {item.countryCode} · {item.rating.toFixed(1)} ★
+          <span className="sr-only"> out of 5</span>
+        </Text>
+        <Text type="supporting" color="secondary">
+          {item.reason}
+        </Text>
+        <div className="waverly-product-tags">
+          {item.isDeal ? <Token label="Deal live" color="orange" size="sm" /> : null}
+          {item.samplesAvailable ? <Token label="Samples" color="green" size="sm" /> : null}
+        </div>
+        <dl className="waverly-product-terms">
+          <div>
+            <dt>Publisher share</dt>
+            <dd>{item.share.toFixed(0)}%</dd>
+          </div>
+          <div>
+            <dt>Attribution</dt>
+            <dd>{item.attributionDays} days</dd>
+          </div>
+          <div>
+            <dt>Retail price</dt>
+            <dd>{formatMoney(item.priceCents)}</dd>
+          </div>
+        </dl>
+        <div className="waverly-product-actions">
+          <Button
+            label="View product"
+            icon={<Icon icon={ArrowRight} />}
+            variant="secondary"
+            size="sm"
+            onClick={onOpen}
+          />
+          <Button
+            label={isSaved ? 'Saved' : 'Save'}
+            icon={<Icon icon={Heart} />}
+            variant="ghost"
+            size="sm"
+            aria-pressed={isSaved}
+            onClick={onSave}
+          />
+        </div>
+      </div>
     </Card>
   )
 }
 
 function BrandLogo({ src, name }: { src: string; name: string }) {
-  return (
-    <VStack width="var(--spacing-10)">
-      <AspectRatio ratio={8 / 5} fit="contain">
-        <img src={src} alt={`${name} logo`} style={catalogImageStyle} />
-      </AspectRatio>
-    </VStack>
-  )
+  return <Thumbnail src={src} alt={name} fit="cover" size="sm" />
 }
 
 const brandPositioning: Record<string, { summary: string; audience: string; content: string }> = {
@@ -914,39 +885,34 @@ function ForYouView({
   const recommendations = [...catalog].sort((a, b) => b.fit - a.fit).slice(0, 4)
   const opportunityValue = recommendations.reduce((sum, item) => sum + item.earningsCents, 0)
   return (
-    <VStack gap={6}>
-      <Banner
-        status="info"
-        title="Built for your editorial calendar"
-        description="Recommendations combine audience fit, offer economics, recent network performance, and your upcoming coverage themes."
-        endContent={
-          <Button
-            label="Tune recommendations"
-            icon={<Icon icon={Sparkles} />}
-            variant="secondary"
-            size="sm"
-          />
-        }
+    <VStack gap={5}>
+      <MetricGroup
+        items={[
+          {
+            label: 'High-fit matches',
+            value: String(catalog.filter((item) => item.fit >= 90).length),
+            context: '90% audience fit or better',
+          },
+          {
+            label: 'Opportunity value',
+            value: formatMoney(opportunityValue),
+            context: 'Recent network earnings',
+          },
+          { label: 'Bonus available', value: '$980', context: 'Across loyalty programs' },
+          { label: 'Ending soon', value: '3', context: 'In the next 7 days' },
+        ]}
       />
-      <Grid columns={{ minWidth: 150, max: 4, repeat: 'fit' }} gap={4}>
-        <MetricCard label="High-fit matches" value="8" detail="90% fit or better" />
-        <MetricCard
-          label="Opportunity value"
-          value={formatMoney(opportunityValue)}
-          detail="Recent network earnings"
-        />
-        <MetricCard label="Bonus available" value="$980" detail="Across loyalty programs" />
-        <MetricCard label="Ending soon" value="3" detail="Review in the next 7 days" />
-      </Grid>
       <VStack gap={3}>
         <HStack justify="between" align="end" gap={4} wrap="wrap">
           <VStack gap={0.5}>
             <Heading level={2}>Best next opportunities</Heading>
-            <Text color="secondary">Ranked for Northstar Living, not just by commission rate</Text>
+            <Text color="secondary">
+              Selected for your audience, ranked by fit and recent performance.
+            </Text>
           </VStack>
           <Token label="Updated today" size="sm" />
         </HStack>
-        <Grid columns={{ minWidth: 260, max: 3, repeat: 'fit' }} gap={4}>
+        <div className="waverly-product-grid">
           {recommendations.map((item) => (
             <CatalogCard
               key={item.id}
@@ -956,7 +922,7 @@ function ForYouView({
               onOpen={() => onOpenProduct(item)}
             />
           ))}
-        </Grid>
+        </div>
       </VStack>
       <Section padding={0}>
         <List
@@ -1048,13 +1014,7 @@ function ProductsView({
           resultCount={visible.length}
         />
       )}
-      <HStack gap={2} wrap="wrap">
-        <Token label="High fit" color="blue" />
-        <Token label="Partnered" color="green" />
-        <Token label="Loyalty bonus" color="purple" />
-        <Token label="30-day attribution" />
-      </HStack>
-      <Grid columns={{ minWidth: 300, max: 3, repeat: 'fit' }} gap={4}>
+      <div className="waverly-product-grid">
         {visible.map((item) => (
           <CatalogCard
             key={item.id}
@@ -1064,156 +1024,231 @@ function ProductsView({
             onOpen={() => onOpenProduct(item)}
           />
         ))}
-      </Grid>
+      </div>
     </VStack>
   )
 }
 
 function BrandsView({ onOpenBrand }: { onOpenBrand: (brandId: string) => void }) {
   const [search, setSearch] = useState('')
-  const isNarrow = useMediaQuery('(max-width: 768px)')
-  const allRows: BrandRow[] = advertisers.map((brand, index) => {
+  const [category, setCategory] = useState('All categories')
+  const [access, setAccess] = useState('All access')
+  const [sort, setSort] = useState('Best fit')
+  const allRows: BrandRow[] = advertisers.map((brand) => {
     const offers = catalog.filter((item) => item.brand === brand.name)
+    const minShare = Math.min(...offers.map((item) => item.share))
+    const maxShare = Math.max(...offers.map((item) => item.share))
     const earnings = offers.reduce((sum, item) => sum + item.earningsCents, 0)
     return {
       id: brand.key,
       brand: brand.name,
       category: brand.category,
       offers: integer.format(offers.length),
-      rate: offers.length
-        ? `${Math.min(...offers.map((item) => item.share)).toFixed(0)}–${Math.max(...offers.map((item) => item.share)).toFixed(0)}%`
-        : '—',
+      rate: !offers.length
+        ? '—'
+        : minShare === maxShare
+          ? `${minShare.toFixed(0)}%`
+          : `${minShare.toFixed(0)}–${maxShare.toFixed(0)}%`,
+      maxShare: offers.length ? maxShare : 0,
+      earnings,
       performance: formatMoney(earnings),
-      fit: offers[0]?.fit ?? 70 + (index % 20),
+      fit: offers[0]?.fit ?? null,
       access: offers[0]?.access ?? 'Eligible',
       logoUrl: brand.logoUrl,
     }
   })
   const normalized = search.trim().toLowerCase()
-  const rows = allRows.filter(
-    (row) =>
-      !normalized ||
-      [row.brand, row.category, row.access].some((value) =>
-        value.toLowerCase().includes(normalized),
-      ),
+  const rows = allRows
+    .filter(
+      (row) =>
+        (!normalized ||
+          [row.brand, row.category, row.access].some((value) =>
+            value.toLowerCase().includes(normalized),
+          )) &&
+        (category === 'All categories' || row.category === category) &&
+        (access === 'All access' || row.access === access),
+    )
+    .sort((a, b) => {
+      if (sort === 'Brand name') return a.brand.localeCompare(b.brand)
+      if (sort === 'Highest earnings') return b.earnings - a.earnings
+      if (sort === 'Highest share') return b.maxShare - a.maxShare
+      return (b.fit ?? -1) - (a.fit ?? -1)
+    })
+  const hasFilters = Boolean(search || category !== 'All categories' || access !== 'All access')
+  const resetFilters = () => {
+    setSearch('')
+    setCategory('All categories')
+    setAccess('All access')
+  }
+  const fitIndicator = (row: BrandRow) => (
+    <span className="waverly-fit">
+      {row.fit === null ? (
+        <>
+          <span aria-hidden="true">—</span>
+          <span className="sr-only">Fit unavailable</span>
+        </>
+      ) : (
+        <>
+          <span className="waverly-fit-track" aria-hidden="true">
+            <span style={{ width: `${row.fit}%` }} />
+          </span>
+          <span>{row.fit}%</span>
+        </>
+      )}
+    </span>
+  )
+  const brandButton = (row: BrandRow) => (
+    <button
+      type="button"
+      className="waverly-brand-link"
+      aria-label={`View ${row.brand}`}
+      onClick={() => onOpenBrand(row.id)}
+    >
+      <BrandLogo src={row.logoUrl} name={row.brand} />
+      <span>{row.brand}</span>
+    </button>
+  )
+  const accessStatus = (row: BrandRow) => (
+    <Token
+      label={row.access}
+      color={row.access === 'Partnered' ? 'green' : row.access === 'Review' ? 'orange' : 'blue'}
+      size="sm"
+    />
   )
   const columns: TableColumn<BrandRow>[] = [
-    {
-      key: 'brand',
-      header: 'Brand',
-      width: proportional(2),
-      renderCell: (row) => (
-        <HStack gap={2} align="center">
-          <BrandLogo src={row.logoUrl} name={row.brand} />
-          <Button label={row.brand} variant="ghost" size="sm" onClick={() => onOpenBrand(row.id)} />
-        </HStack>
-      ),
-    },
-    { key: 'category', header: 'Category', width: proportional(1) },
-    {
-      key: 'access',
-      header: 'Access',
-      width: pixel(130),
-      renderCell: (row) => (
-        <HStack gap={2} align="center">
-          <StatusDot variant={statusVariant(row.access)} label={`${row.access} status`} />
-          <Text>{row.access}</Text>
-        </HStack>
-      ),
-    },
-    { key: 'offers', header: 'Offers', width: pixel(90), align: 'end' },
-    { key: 'rate', header: 'Publisher share', width: pixel(140), align: 'end' },
-    { key: 'performance', header: 'Recent earnings', width: pixel(140), align: 'end' },
+    { key: 'brand', header: 'Brand', width: proportional(2.5), renderCell: brandButton },
+    { key: 'category', header: 'Category', width: pixel(100) },
+    { key: 'access', header: 'Access', width: pixel(110), renderCell: accessStatus },
+    { key: 'offers', header: 'Offers', width: pixel(60), align: 'end' },
+    { key: 'rate', header: 'Publisher share', width: pixel(120), align: 'end' },
+    { key: 'performance', header: 'Network earnings', width: pixel(135), align: 'end' },
     {
       key: 'fit',
-      header: 'Fit',
-      width: pixel(90),
+      header: 'Audience fit',
+      width: pixel(125),
       align: 'end',
-      renderCell: (row) => (
-        <Token label={`${row.fit}%`} color={row.fit >= 90 ? 'blue' : 'gray'} size="sm" />
-      ),
+      renderCell: fitIndicator,
     },
   ]
   return (
-    <VStack gap={4}>
-      <Banner
-        status="info"
-        title="Compare brands by fit and performance"
-        description="Rate is only one signal. Waverly also surfaces access, recent network earnings, and audience alignment before you open a brand."
-      />
-      {isNarrow ? (
-        <VStack gap={3}>
+    <section className="waverly-brand-catalog" aria-label="Brand catalog">
+      <div className="waverly-catalog-intro">
+        <div>
+          <Heading level={2}>Find your next brand partner</Heading>
+          <Text color="secondary">Compare audience fit, access, and earning potential.</Text>
+        </div>
+        <details className="waverly-catalog-help">
+          <summary>How to compare</summary>
+          <p>
+            Publisher share is your share of commission, not the product price. Network earnings
+            show recent activity across the demo network. Audience fit is a sample alignment score.
+            Review means approval is required.
+          </p>
+        </details>
+      </div>
+      <Card padding={0} className="waverly-catalog-surface">
+        <fieldset className="waverly-catalog-controls" aria-label="Brand catalog controls">
           <TextInput
             label="Search brands"
             isLabelHidden
-            placeholder="Search brands…"
+            placeholder="Search brands or categories…"
             value={search}
             onChange={setSearch}
             hasClear
-            width="100%"
+            startIcon={Search}
           />
-          <List
-            density="balanced"
-            hasDividers
-            header={<Text weight="semibold">{rows.length} brands</Text>}
-          >
-            {rows.map((row) => (
-              <ListItem
-                key={row.id}
-                label={row.brand}
-                description={`${row.category} · ${row.rate} share · ${row.performance} recent earnings`}
-                startContent={<BrandLogo src={row.logoUrl} name={row.brand} />}
-                endContent={
-                  <Button
-                    label="View"
-                    icon={<Icon icon={ArrowRight} />}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onOpenBrand(row.id)}
-                  />
-                }
+          <Selector
+            label="Category"
+            className="data-[size=default]:h-[var(--control-height)]"
+            isLabelHidden
+            options={[
+              'All categories',
+              ...Array.from(new Set(allRows.map((row) => row.category))).sort(),
+            ]}
+            value={category}
+            onChange={setCategory}
+          />
+          <Selector
+            label="Access"
+            className="data-[size=default]:h-[var(--control-height)]"
+            isLabelHidden
+            options={['All access', 'Partnered', 'Eligible', 'Review']}
+            value={access}
+            onChange={setAccess}
+          />
+          <Selector
+            label="Sort brands"
+            className="data-[size=default]:h-[var(--control-height)]"
+            isLabelHidden
+            options={['Best fit', 'Brand name', 'Highest earnings', 'Highest share']}
+            value={sort}
+            onChange={setSort}
+          />
+        </fieldset>
+        <div className="waverly-catalog-results">
+          <output>
+            {rows.length} of {allRows.length} brands
+          </output>
+          {hasFilters ? (
+            <button type="button" onClick={resetFilters}>
+              Clear filters
+            </button>
+          ) : (
+            <span>USD · Sample data</span>
+          )}
+        </div>
+        {rows.length ? (
+          <>
+            <div className="waverly-catalog-desktop">
+              <Table
+                label="Brands"
+                data={rows}
+                columns={columns}
+                idKey="id"
+                density="balanced"
+                dividers="rows"
+                hasHover
+                textOverflow="truncate"
               />
-            ))}
-          </List>
-        </VStack>
-      ) : (
-        <Card padding={0}>
-          <VStack gap={0}>
-            <Toolbar
-              label="Brand catalog controls"
-              size="sm"
-              variant="muted"
-              dividers={['bottom']}
-              startContent={
-                <TextInput
-                  label="Search brands"
-                  isLabelHidden
-                  placeholder="Search brands…"
-                  value={search}
-                  onChange={setSearch}
-                  hasClear
-                  width={240}
-                />
-              }
-              endContent={
-                <Text type="supporting" color="secondary">
-                  {rows.length} of {advertisers.length} brands
-                </Text>
-              }
-            />
-            <Table
-              data={rows}
-              columns={columns}
-              idKey="id"
-              density="balanced"
-              dividers="rows"
-              hasHover
-              textOverflow="truncate"
-            />
-          </VStack>
-        </Card>
-      )}
-    </VStack>
+            </div>
+            <ul className="waverly-catalog-mobile" aria-label="Brands">
+              {rows.map((row) => (
+                <li key={row.id}>
+                  <div className="waverly-brand-summary">
+                    {brandButton(row)}
+                    {accessStatus(row)}
+                  </div>
+                  <div className="waverly-brand-category">
+                    {row.category} · {row.offers} {row.offers === '1' ? 'offer' : 'offers'}
+                  </div>
+                  <dl>
+                    <div>
+                      <dt>Publisher share</dt>
+                      <dd>{row.rate}</dd>
+                    </div>
+                    <div>
+                      <dt>Network earnings</dt>
+                      <dd>{row.performance}</dd>
+                    </div>
+                    <div>
+                      <dt>Audience fit</dt>
+                      <dd>{fitIndicator(row)}</dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <div className="waverly-catalog-empty">
+            <Search aria-hidden="true" />
+            <Heading level={3}>No brands match your filters</Heading>
+            <Text color="secondary">Try another name or clear the filters to see all brands.</Text>
+            <Button label="Reset filters" variant="secondary" onClick={resetFilters} />
+          </div>
+        )}
+      </Card>
+    </section>
   )
 }
 

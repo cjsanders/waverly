@@ -30,6 +30,7 @@ import {
   forwardRef,
   isValidElement,
   useEffect,
+  useId,
   useRef,
   useState,
   type CSSProperties,
@@ -58,7 +59,7 @@ function dimension(value: Dimension | undefined) {
 }
 
 function space(value: number | undefined) {
-  return value === undefined ? undefined : `${value * 0.25}rem`
+  return value === undefined ? undefined : `calc(${value} * var(--layout-unit,0.25rem))`
 }
 
 function stackStyle(props: StackProps, direction: 'row' | 'column'): CSSProperties {
@@ -377,6 +378,26 @@ export function Card({
   )
 }
 
+export function MetricGroup({
+  items,
+  compact = false,
+}: {
+  items: Array<{ label: string; value: string; context?: string }>
+  compact?: boolean
+}) {
+  return (
+    <dl className={cn('waverly-metric-group', compact && 'waverly-metric-group-compact')}>
+      {items.map((item) => (
+        <div key={item.label}>
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+          {item.context ? <dd className="waverly-metric-context">{item.context}</dd> : null}
+        </div>
+      ))}
+    </dl>
+  )
+}
+
 export function Section({
   padding = 4,
   variant = 'default',
@@ -402,7 +423,7 @@ export function AspectRatio({
   fit,
   style,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { ratio: number; fit?: string }) {
+}: HTMLAttributes<HTMLDivElement> & { ratio: number; fit?: CSSProperties['objectFit'] }) {
   return (
     <div
       className="waverly-aspect-ratio"
@@ -448,8 +469,23 @@ export function Token({
 }) {
   return (
     <Badge
-      variant="outline"
-      className={cn('waverly-token', `waverly-token-${color}`, size === 'sm' && 'waverly-token-sm')}
+      variant={
+        color === 'green' || color === 'teal'
+          ? 'success'
+          : color === 'blue'
+            ? 'info'
+            : color === 'orange' || color === 'yellow'
+              ? 'warning'
+              : color === 'red'
+                ? 'destructive'
+                : 'outline'
+      }
+      className={cn(
+        'waverly-token',
+        `waverly-token-${color}`,
+        color === 'purple' && 'text-[var(--highlight)]',
+        size === 'sm' && 'waverly-token-sm',
+      )}
     >
       {label}
     </Badge>
@@ -607,6 +643,7 @@ export function Selector({
   variant,
   description,
   isDisabled,
+  className,
 }: {
   label: string
   options: Option[]
@@ -619,6 +656,7 @@ export function Selector({
   description?: ReactNode
   isDisabled?: boolean
   disabledMessage?: string
+  className?: string
 }) {
   return (
     <label
@@ -638,7 +676,11 @@ export function Selector({
         <SelectTrigger
           aria-label={label}
           size={size}
-          className={cn('w-full', variant === 'ghost' && 'border-transparent bg-transparent')}
+          className={cn(
+            'w-full',
+            variant === 'ghost' && 'border-transparent bg-transparent',
+            className,
+          )}
         >
           <SelectValue />
         </SelectTrigger>
@@ -680,15 +722,20 @@ export function TextInput({
   startIcon?: IconType
   width?: Dimension
 }) {
+  const inputId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
   return (
-    <label
+    <div
       className={cn('waverly-field', isLabelHidden && 'waverly-sr-label')}
       style={{ width: dimension(width) }}
     >
-      <span>{label}</span>
+      <label htmlFor={inputId}>{label}</label>
       <span className="waverly-input-wrap">
         {StartIcon ? <StartIcon aria-hidden /> : null}
         <Input
+          id={inputId}
+          ref={inputRef}
+          className={cn(StartIcon && 'pl-9', hasClear && value && 'pr-11')}
           aria-label={isLabelHidden ? label : undefined}
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -696,13 +743,20 @@ export function TextInput({
           type={type}
           readOnly={isReadOnly}
         />
-        {hasClear && value ? (
-          <button type="button" aria-label={`Clear ${label}`} onClick={() => onChange('')}>
+        {hasClear && value && !isReadOnly ? (
+          <button
+            type="button"
+            aria-label={`Clear ${label}`}
+            onClick={() => {
+              onChange('')
+              inputRef.current?.focus()
+            }}
+          >
             <X />
           </button>
         ) : null}
       </span>
-    </label>
+    </div>
   )
 }
 
@@ -839,11 +893,13 @@ export function Tab({ value, label, icon }: { value: string; label: string; icon
 }
 
 export function TabList({
+  label,
   value,
   onChange,
   children,
   overflow,
 }: {
+  label?: string
   value: string
   onChange: (value: string) => void
   children: ReactNode
@@ -857,7 +913,9 @@ export function TabList({
       onValueChange={(next) => onChange(String(next))}
       className={cn(overflow === 'scroll' && 'min-w-0 overflow-x-auto')}
     >
-      <TabsList variant="line">{children}</TabsList>
+      <TabsList variant="line" aria-label={label}>
+        {children}
+      </TabsList>
     </Tabs>
   )
 }
@@ -879,6 +937,9 @@ export function Table<T extends Record<string, unknown>>({
   idKey,
   hasHover,
   density = 'balanced',
+  dividers = 'rows',
+  textOverflow,
+  label,
 }: {
   data: T[]
   columns: TableColumn<T>[]
@@ -887,14 +948,45 @@ export function Table<T extends Record<string, unknown>>({
   dividers?: string
   hasHover?: boolean
   textOverflow?: string
+  label?: string
 }) {
+  const fixedWidth = columns.reduce(
+    (total, column) => total + (column.width?.unit === 'px' ? column.width.value : 0),
+    0,
+  )
+  const flexibleWidth = columns.reduce(
+    (total, column) => total + (column.width?.unit === 'px' ? 0 : (column.width?.value ?? 1)),
+    0,
+  )
   return (
     <div className="waverly-table-wrap">
-      <ShadcnTable className={cn(`waverly-table-${density}`)}>
+      <ShadcnTable
+        aria-label={label}
+        className={cn('waverly-data-table', `waverly-table-${density}`)}
+        data-dividers={dividers}
+        data-hover={hasHover || undefined}
+        data-overflow={textOverflow}
+        style={{ tableLayout: 'fixed', minWidth: fixedWidth + flexibleWidth * 110 }}
+      >
+        <colgroup>
+          {columns.map((column) => (
+            <col
+              key={String(column.key)}
+              style={{
+                width:
+                  column.width?.unit === 'px'
+                    ? column.width.value
+                    : `calc((100% - ${fixedWidth}px) * ${(column.width?.value ?? 1) / flexibleWidth})`,
+              }}
+            />
+          ))}
+        </colgroup>
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-transparent">
             {columns.map((column) => (
               <TableHead
+                scope="col"
+                className="h-9 bg-muted px-3.5 text-xs text-muted-foreground"
                 key={String(column.key)}
                 style={{ textAlign: column.align === 'end' ? 'right' : column.align }}
               >
@@ -905,15 +997,30 @@ export function Table<T extends Record<string, unknown>>({
         </TableHeader>
         <TableBody>
           {data.map((row) => (
-            <TableRow key={String(row[idKey])} className={cn(hasHover && 'hover:bg-muted/50')}>
+            <TableRow
+              key={String(row[idKey])}
+              className={cn(
+                hasHover ? 'hover:bg-muted/50' : 'hover:bg-transparent',
+                dividers === 'none' && 'border-0',
+              )}
+            >
               {columns.map((column) => (
                 <TableCell
                   key={String(column.key)}
+                  className={cn(
+                    'px-3.5',
+                    density === 'compact' ? 'py-1.5' : density === 'spacious' ? 'py-4' : 'py-2',
+                  )}
                   style={{ textAlign: column.align === 'end' ? 'right' : column.align }}
                 >
-                  {column.renderCell
-                    ? column.renderCell(row)
-                    : String(row[column.key as keyof T] ?? '')}
+                  <div
+                    className="waverly-table-cell-content"
+                    style={{ whiteSpace: column.renderCell ? 'normal' : undefined }}
+                  >
+                    {column.renderCell
+                      ? column.renderCell(row)
+                      : String(row[column.key as keyof T] ?? '')}
+                  </div>
                 </TableCell>
               ))}
             </TableRow>
@@ -1032,16 +1139,19 @@ export function AppShell({
   contentPadding = 0,
   height,
   variant,
+  theme,
 }: {
   sideNav?: ReactNode
   children: ReactNode
   contentPadding?: number
   height?: Dimension
   variant?: string
+  theme?: 'compact'
 }) {
   return (
     <div
       className={cn('waverly-app-shell', variant && `waverly-app-shell-${variant}`)}
+      data-workspace-theme={theme}
       style={{ minHeight: height === 'fill' ? '100svh' : dimension(height) }}
     >
       {sideNav}
@@ -1083,11 +1193,12 @@ export function SideNav({
         {collapsible ? (
           <button
             type="button"
-            aria-label={collapsible.buttonLabel}
+            aria-label={collapsed ? 'Expand navigation' : collapsible.buttonLabel}
+            aria-expanded={!collapsed}
             className="waverly-side-nav-toggle"
             onClick={() => collapsible.onCollapsedChange(!collapsed)}
           >
-            ‹
+            {collapsed ? '›' : '‹'}
           </button>
         ) : null}
       </div>
@@ -1123,7 +1234,7 @@ export function SideNavHeading({
 export function SideNavSection({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <section className="waverly-nav-section">
-      <h2>{title}</h2>
+      <h2>{title.charAt(0) + title.slice(1).toLowerCase()}</h2>
       {children}
     </section>
   )
@@ -1144,6 +1255,8 @@ export function SideNavItem({
     <button
       type="button"
       aria-current={isSelected ? 'page' : undefined}
+      aria-label={label}
+      title={label}
       className={cn('waverly-nav-item', isSelected && 'waverly-nav-item-selected')}
       onClick={onClick}
     >
