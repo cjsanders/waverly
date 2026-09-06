@@ -17,7 +17,7 @@ Organizations without a valid `kind` are ignored at sign-in and cannot open the 
 
 ## Routes
 
-Each mode lives under its own prefix. Visiting a prefix that does not match the active workspace sends you to that workspace's home. `/dashboard` is a leftover entry point: it signs you in if needed, then hops into the workspace layout (first `/creator`, which then redirects if your workspace is a brand or operator).
+Each mode lives under its own prefix. Visiting a prefix that does not match the active workspace sends you to that workspace's home. `/dashboard` signs you in if needed, then opens the [compact affiliate workspace](/affiliate-workspace) — discovery, reports, and messages for the selected demo identity.
 
 If you have memberships but the session has no active organization yet — a fresh sign-up, or a membership added elsewhere — the app selects your first workspace and shows “Opening …” while the session updates.
 
@@ -33,7 +33,7 @@ Workspaces in the list are ordered operator, then brand, then creator, and alpha
 
 ## Navigation
 
-Only **Overview** is wired up so far. Other sidebar items render as “Coming soon.” Each mode also has its own primary action in the top bar.
+WorkOS mode sidebars still treat most items as “Coming soon.” The signed-in [affiliate workspace](/affiliate-workspace) is the compact dashboard with discovery, reports, and messages. Each WorkOS mode also has its own primary action in the top bar.
 
 | Mode     | Sidebar                                       | Primary action | Empty overview                                                                     |
 | -------- | --------------------------------------------- | -------------- | ---------------------------------------------------------------------------------- |

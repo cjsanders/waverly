@@ -1,0 +1,84 @@
+---
+title: Affiliate workspace
+description: Compact dashboard chrome, discovery catalogs, reports, and messages.
+---
+
+The signed-in affiliate app is a compact workspace. `/dashboard` opens it. A **Demo identity** control switches among operator, publisher, creator, and brand sample views. Messages are shared with other signed-in demo users; other actions are simulated.
+
+The shell uses a light sidebar, pale gray content, and Figtree for headings and controls. The original colored logo stays on the sidebar. Color is reserved for status, charts, and the logo.
+
+## Identities
+
+| Identity    | Label            | What you see                                               |
+| ----------- | ---------------- | ---------------------------------------------------------- |
+| `operator`  | Waverly Operator | Network overview, marketplace, performance, and finance    |
+| `northstar` | Northstar Media  | Publisher discovery, partnerships, reports, and earnings   |
+| `everyday`  | Everyday Finds   | Publisher onboarding plus the same discovery catalogs      |
+| `avery`     | Avery Lane       | Creator projects, performance, and publisher relationships |
+| `puroair`   | PuroAir          | Brand program, creator applications, and billing           |
+
+The URL keeps `role` and `page` so you can share a view. On small screens the identity control moves into the header.
+
+This dashboard is the current signed-in product. [Workspaces](/workspaces) documents the WorkOS organization kinds that still select creator, brand, or operator mode.
+
+## Messages and alerts
+
+**Messages** and **Alerts** sit above the account menu. They stay available when the sidebar is collapsed and in the mobile header.
+
+- **Messages** opens the inbox. The badge is the unread thread count from Convex.
+- **Alerts** opens a popover of role-specific sample notices. Each notice jumps to the relevant page — for example, reversed conversions open Earnings. An empty list reads “You're all caught up.”
+
+## Discovery
+
+Publisher identities have a Discovery section: **For you**, **Product catalog**, **Brand catalog**, **Cost-per-click**, **Loyalty programs**, and **Lists**.
+
+Product photography stays inside a 4:3 frame so images cannot stretch the grid. Brand rows use a fixed square thumbnail. Search fields keep a clear control and return focus to the input when you clear them.
+
+<Frame
+  caption="Publisher discovery with product cards, bounded media, and Messages and Alerts in the sidebar"
+  aspect="16/9"
+>
+  <img
+    src="/docs/affiliate-workspace-discovery.png"
+    alt="Compact affiliate workspace showing For you recommendations, product cards, and sidebar Messages and Alerts"
+  />
+</Frame>
+
+### Brand catalog
+
+Search by brand or category. Filter **Category** and **Access** (Partnered, Eligible, Review). Sort by Best fit, Brand name, Highest earnings, or Highest share.
+
+The result line shows how many of the 20 sample brands match. **Clear filters** appears once a filter is on. An empty match shows **No brands match your filters** with **Reset filters**.
+
+On a narrow viewport the table becomes a comparison list. Publisher share, network earnings, and audience fit stay visible.
+
+## Reports
+
+**Reports** (publisher and operator) and **Performance** (creator and brand) share one reporting surface.
+
+Choose a view — Performance, Products, Brands, Sources, CPC, or Shared IDs — then set **Report period**, **Provider**, and **Chart metric**. Summary metrics compare the selected range with the previous period of the same length. The active view tab is keyboard-reachable and keeps a visible indicator.
+
+<Frame
+  caption="Reports with aligned period, provider, and metric controls above the compact metric row"
+  aspect="16/9"
+>
+  <img
+    src="/docs/affiliate-workspace-reports.png"
+    alt="Compact reports page with report period, provider, and chart metric filters above six summary metrics"
+  />
+</Frame>
+
+### Report period
+
+Open **Report period** for a preset or a custom range. The demo data covers 18 May through 15 August 2026.
+
+| Preset       | Range in the demo data |
+| ------------ | ---------------------- |
+| Last 7 days  | 9–15 Aug 2026          |
+| Last 14 days | 2–15 Aug 2026          |
+| Last 30 days | 17 Jul–15 Aug 2026     |
+| Full 90 days | 18 May–15 Aug 2026     |
+
+Custom **From** / **To** must stay inside that window. The end date must be on or after the start date, or **Apply dates** stays disabled and the popover shows “End date must be on or after the start date.” **Cancel** closes the popover without changing the range.
+
+The table can be searched and exported as CSV.
