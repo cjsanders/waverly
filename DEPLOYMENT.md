@@ -58,6 +58,8 @@ The helper downloads an explicit allowlist from Doppler. Only public Convex valu
 
 Updating Doppler values takes effect on the next successful build. Trigger a rebuild after rotating runtime secrets. Wrangler applies secrets additively: deleting a key in Doppler alone does not delete an existing Worker secret. Remove obsolete Worker secrets deliberately through Cloudflare.
 
+After changing Cloudflare Build commands or encrypted Build variables, push a new commit to verify the new configuration. Retrying an earlier failed build can reuse that build's previous configuration snapshot. In the fresh affiliate build, confirm the standalone build command is empty and the deployment helper runs with both encrypted Doppler token variables present.
+
 Convex deployments remain separate. Point preview configuration at the intended development backend, and deploy compatible Convex functions before a frontend that depends on them.
 
 ## Validation
