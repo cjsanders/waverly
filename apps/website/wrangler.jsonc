@@ -1,6 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "waverly-website",
+  "account_id": "d464b0c0c3eb92aeb343cc1a2bb1c177",
+  "workers_dev": true,
+  "preview_urls": true,
   "compatibility_date": "2026-09-03",
   "assets": {
     "directory": "./dist",
