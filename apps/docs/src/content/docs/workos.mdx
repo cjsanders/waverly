@@ -17,6 +17,8 @@ In the WorkOS dashboard for this environment:
    - the app origin (for example `https://affiliate.waverly.localhost/`) as a **sign-out URI** — the user menu sends that origin as the logout return URL, so every origin the app runs on needs an entry
    - the app homepage URL as the fallback after logout
 
+   Deployed Workers need their own entries. Production is `https://waverly-affiliate.waverly-d46.workers.dev/api/auth/callback`. Previews share `https://*-waverly-affiliate.waverly-d46.workers.dev/api/auth/callback` (and the matching origins as sign-out URIs). Test preview sign-in on the stable branch alias, not the version-hash URL. See [Cloudflare and Doppler](/deployment).
+
 Set both `WORKOS_CLIENT_ID` and `WORKOS_API_URL` on the Convex deployment:
 
 ```bash
