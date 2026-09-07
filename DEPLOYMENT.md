@@ -50,7 +50,9 @@ Required affiliate values in both deployed configs:
 
 Optional values: `VITE_CONVEX_SITE_URL`, `WORKOS_API_HOSTNAME`, `TINYBIRD_API_URL`, and `TINYBIRD_PIPE_READ_TOKEN`.
 
-The production callback is `https://waverly-affiliate.waverly-d46.workers.dev/api/auth/callback` unless a custom domain is configured. Register the matching `/api/auth/sign-in` and `/api/auth/sign-out` URLs in WorkOS as well. Preview authentication needs a callback allowed by the WorkOS environment; set `WORKOS_REDIRECT_URI` in the preview config accordingly. Do not use the local `.localhost` callback in deployed configs.
+The production callback is `https://waverly-affiliate.waverly-d46.workers.dev/api/auth/callback` unless a custom domain is configured. For previews, the helper overrides `WORKOS_REDIRECT_URI` with that branch's stable alias callback. Allow `https://*-waverly-affiliate.waverly-d46.workers.dev/api/auth/callback` in WorkOS, which is restricted to this Worker's preview hostnames. Test sign-in using the branch alias URL, not the version-hash URL, so OAuth cookies stay on the same hostname. Preserve existing local callbacks. Do not use the local `.localhost` callback in deployed configs.
+
+The initial `dev`, `prd`, and `preview` configs were seeded with the seven existing local Convex/WorkOS values, excluding test-user credentials. Development preserves the local callback; deployed configs use Workers URLs. These configurations currently share the existing Convex and WorkOS environments, so previews are not isolated from production backend data. Replace the `prd` and `preview` credentials with separate backend environments when isolation is needed.
 
 The helper downloads an explicit allowlist from Doppler. Only public Convex values enter the build environment; only server runtime values enter a permission-restricted temporary secrets file. Wrangler uploads that file with the code using `--secrets-file`, including for previews, then the helper removes the file. It does not use `wrangler secret bulk`, which could change the active deployment. Test-user passwords and Doppler tokens are never uploaded as Worker runtime secrets.
 

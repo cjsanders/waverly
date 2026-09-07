@@ -36,6 +36,15 @@ export function selectSecrets(secrets, keys) {
   )
 }
 
+export function workerSecrets(secrets, mode, branch) {
+  const selected = selectSecrets(secrets, runtimeKeys)
+  if (mode === 'preview') {
+    const alias = previewAlias(branch || 'manual', 'waverly-affiliate')
+    selected.WORKOS_REDIRECT_URI = `https://${alias}-waverly-affiliate.waverly-d46.workers.dev/api/auth/callback`
+  }
+  return selected
+}
+
 export function deployArgs(mode, app, branch) {
   if (!apps.has(app)) throw new Error('App must be affiliate, website, or docs')
   if (!['deploy', 'preview'].includes(mode)) throw new Error('Mode must be deploy or preview')
@@ -107,7 +116,7 @@ async function main() {
     if (app === 'affiliate') {
       temporary = await mkdtemp(join(tmpdir(), 'waverly-secrets-'))
       const path = join(temporary, 'secrets.json')
-      await writeFile(path, JSON.stringify(selectSecrets(secrets, runtimeKeys)), { mode: 0o600 })
+      await writeFile(path, JSON.stringify(workerSecrets(secrets, mode, branch)), { mode: 0o600 })
       args.push('--secrets-file', path)
     }
     run('bunx', ['--no-install', 'wrangler', ...args], cwd)

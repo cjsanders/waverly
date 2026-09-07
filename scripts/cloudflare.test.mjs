@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { deployArgs, previewAlias, selectSecrets } from './cloudflare.mjs'
+import { deployArgs, previewAlias, selectSecrets, workerSecrets } from './cloudflare.mjs'
 
 test('previews upload versions without changing Worker names or production traffic', () => {
   for (const app of ['affiliate', 'website', 'docs']) {
@@ -45,4 +45,24 @@ test('only explicitly selected, nonempty string secrets reach the Worker', () =>
     ),
     { WORKOS_API_KEY: 'sample' },
   )
+})
+
+test('preview authentication returns to the same branch alias without changing production', () => {
+  const secrets = {
+    WORKOS_REDIRECT_URI: 'https://affiliate.example.com/api/auth/callback',
+    WORKOS_API_KEY: 'sample',
+    DOPPLER_TOKEN_PREVIEW: 'never',
+  }
+  const branch = 'feature/auth-test'
+  const preview = workerSecrets(secrets, 'preview', branch)
+  assert.equal(
+    preview.WORKOS_REDIRECT_URI,
+    `https://${previewAlias(branch, 'waverly-affiliate')}-waverly-affiliate.waverly-d46.workers.dev/api/auth/callback`,
+  )
+  assert.equal(
+    workerSecrets(secrets, 'deploy', 'main').WORKOS_REDIRECT_URI,
+    secrets.WORKOS_REDIRECT_URI,
+  )
+  assert.equal(secrets.WORKOS_REDIRECT_URI, 'https://affiliate.example.com/api/auth/callback')
+  assert.ok(!('DOPPLER_TOKEN_PREVIEW' in preview))
 })
