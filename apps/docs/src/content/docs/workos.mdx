@@ -14,8 +14,12 @@ In the WorkOS dashboard for this environment:
 3. On the [Redirects page](https://dashboard.workos.com/redirects), register:
    - `/api/auth/callback` as a redirect URI
    - `/api/auth/sign-in` as the sign-in endpoint
-   - the app origin (for example `https://affiliate.waverly.localhost/`) as a **sign-out URI** — the user menu sends that origin as the logout return URL, so every origin the app runs on needs an entry
+   - the app origin as a **sign-out URI** — the user menu sends that origin as the logout return URL, so every origin the app runs on needs an entry
    - the app homepage URL as the fallback after logout
+
+   Local development uses `https://affiliate.waverly.localhost`. Production uses `https://waverly-affiliate.waverly-d46.workers.dev`. Previews share that Worker and use a stable branch alias under `https://*-waverly-affiliate.waverly-d46.workers.dev`. Allow those callback and sign-out URLs (keep existing local callbacks). Do not put the `.localhost` callback in a deployed Doppler config.
+
+   Sign in through the branch-alias preview URL, not the version-hash URL, so OAuth cookies stay on the same hostname. See [Cloudflare and Doppler](/deployment).
 
 Set both `WORKOS_CLIENT_ID` and `WORKOS_API_URL` on the Convex deployment:
 
