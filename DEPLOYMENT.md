@@ -34,10 +34,12 @@ Each app has a `doppler.yaml` pointing at its development config. Run `doppler l
 
 The website and docs currently have no application secrets, so their Doppler projects are ready for future configuration and need no CI token yet. For affiliate, create read-only service tokens for configs `prd` and `preview`, and save them as encrypted **Cloudflare Build secrets**, not Worker runtime secrets:
 
-- `DOPPLER_TOKEN_PRODUCTION`: reads `waverly-affiliate/prd`
-- `DOPPLER_TOKEN_PREVIEW`: reads `waverly-affiliate/preview`
+- Production build trigger: `DOPPLER_TOKEN_PRODUCTION` reads `waverly-affiliate/prd`.
+- Preview build trigger: `DOPPLER_TOKEN_PREVIEW` reads `waverly-affiliate/preview`.
 
-Cloudflare Build secrets are available to build commands on connected branches. Only trusted contributors should push branches to this repository.
+Cloudflare stores build commands and variables separately for the production and preview triggers. Configure and verify both through the [Builds API](https://developers.cloudflare.com/workers/ci-cd/builds/api-reference/). The dashboard currently has a [reported preview-trigger configuration bug](https://github.com/cloudflare/workers-sdk/issues/15349): its visible settings can differ from the preview trigger, and dashboard edits can reset preview variables. After a dashboard edit, recheck the preview command and encrypted token before relying on previews. Never place the production Doppler token on the preview trigger.
+
+Cloudflare Build secrets are available to commands run by their build trigger. Only trusted contributors should push branches to this repository.
 
 Required affiliate values in both deployed configs:
 
