@@ -15,6 +15,8 @@ Bun and Turborepo monorepo for the Waverly affiliate network.
 
 All three web apps are configured for Cloudflare Workers. The website and docs apps deploy as static Worker assets; the affiliate app runs through the Cloudflare Vite plugin. Oxfmt formats supported repository files, with Prettier handling Astro files that Oxfmt does not yet support. Nimbus's generated `DocsLayout.astro` is excluded because the Astro plugin cannot parse its inline restoration script.
 
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the three-Worker GitHub deployment setup, shared-Worker previews, and Doppler configuration.
+
 ## Setup
 
 ```sh
