@@ -24,7 +24,7 @@ For affiliate, use an explicit no-op build command. The deployment helper fetche
 - Deploy: `node ../../scripts/cloudflare.mjs affiliate deploy`
 - Non-production deploy: `node ../../scripts/cloudflare.mjs affiliate preview`
 
-The helper uses the Worker name in its Wrangler config, blocks production deployment from a non-main Cloudflare build, and creates a stable branch alias for previews. The account's Workers subdomain is `waverly-d46.workers.dev`.
+The helper uses the Worker name in its Wrangler config, reads Cloudflare's `WORKERS_CI_BRANCH`, blocks production deployment from a non-main Cloudflare build, and creates a stable branch alias for previews. A Cloudflare build with missing branch metadata fails before downloading credentials or deploying. The account's Workers subdomain is `waverly-d46.workers.dev`.
 
 The Bun version comes from the repository's `packageManager` field. Cloudflare installs monorepo dependencies using the root lockfile. Build watch paths should include the app, `packages/design-system/**`, `scripts/cloudflare*`, `bun.lock`, and the root `package.json`.
 

@@ -1,6 +1,44 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { deployArgs, previewAlias, selectSecrets, workerSecrets } from './cloudflare.mjs'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+import {
+  buildBranch,
+  deployArgs,
+  previewAlias,
+  selectSecrets,
+  workerSecrets,
+} from './cloudflare.mjs'
+
+test('Cloudflare branch metadata controls preview aliases and production guards', () => {
+  const branch = buildBranch({
+    WORKERS_CI: '1',
+    WORKERS_CI_BRANCH: 'feature/auth',
+  })
+  assert.equal(branch, 'feature/auth')
+  assert.equal(
+    deployArgs('preview', 'affiliate', branch)[3],
+    previewAlias(branch, 'waverly-affiliate'),
+  )
+  assert.throws(() => deployArgs('deploy', 'affiliate', branch), /only allowed from main/)
+  assert.deepEqual(
+    deployArgs('deploy', 'affiliate', buildBranch({ WORKERS_CI: '1', WORKERS_CI_BRANCH: 'main' })),
+    ['deploy'],
+  )
+  assert.throws(() => buildBranch({ WORKERS_CI: '1' }), /WORKERS_CI_BRANCH is required/)
+  assert.equal(buildBranch({}), undefined)
+})
+
+test('the deployment entry point fails closed when Cloudflare branch metadata is missing', () => {
+  const result = spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL('./cloudflare.mjs', import.meta.url)), 'affiliate', 'deploy'],
+    { env: { WORKERS_CI: '1' }, encoding: 'utf8' },
+  )
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /WORKERS_CI_BRANCH is required/)
+  assert.doesNotMatch(result.stderr, /DOPPLER_TOKEN/)
+})
 
 test('previews upload versions without changing Worker names or production traffic', () => {
   for (const app of ['affiliate', 'website', 'docs']) {

@@ -19,6 +19,14 @@ const runtimeKeys = [
 const buildKeys = ['VITE_CONVEX_URL', 'VITE_CONVEX_SITE_URL']
 const requiredKeys = [...runtimeKeys.slice(0, 4), 'VITE_CONVEX_URL']
 
+export function buildBranch(env = process.env) {
+  const branch = env.WORKERS_CI_BRANCH
+  if (env.WORKERS_CI && !branch) {
+    throw new Error('WORKERS_CI_BRANCH is required in Cloudflare Builds')
+  }
+  return branch
+}
+
 export function previewAlias(branch, worker) {
   const hash = createHash('sha256').update(branch).digest('hex').slice(0, 8)
   const slug = branch
@@ -95,7 +103,7 @@ async function main() {
   const [app, mode, ...extra] = process.argv.slice(2)
   if (extra.length)
     throw new Error('Usage: node scripts/cloudflare.mjs <affiliate|website|docs> <deploy|preview>')
-  const branch = process.env.CF_BUILD_BRANCH
+  const branch = buildBranch()
   const args = deployArgs(mode, app, branch)
   const cwd = join(root, 'apps', app)
   const secrets = app === 'affiliate' ? await downloadSecrets(mode) : {}
