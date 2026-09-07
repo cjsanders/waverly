@@ -1,0 +1,80 @@
+---
+title: Deployment
+description: Three Cloudflare Workers, shared-Worker previews, and Doppler for affiliate secrets.
+---
+
+Waverly deploys as exactly three Cloudflare Workers. `main` is production. Other branches upload a preview **version** of the same named Worker — they do not create a branch-specific Worker or promote a preview to production.
+
+| App       | Worker              | App directory    | Doppler project     |
+| --------- | ------------------- | ---------------- | ------------------- |
+| Website   | `waverly-website`   | `apps/website`   | `waverly-website`   |
+| Affiliate | `waverly-affiliate` | `apps/affiliate` | `waverly-affiliate` |
+| Docs      | `waverly-docs`      | `apps/docs`      | `waverly-docs`      |
+
+The Workers subdomain is `waverly-d46.workers.dev`. Each Worker is connected to this repository through Cloudflare Workers Builds, with builds enabled for non-production branches.
+
+## Build commands
+
+Website and docs (set the Cloudflare root directory to the app folder):
+
+- Build: `bun run build`
+- Production: `bunx wrangler deploy`
+- Preview: `bunx wrangler versions upload`
+
+Affiliate uses a no-op Cloudflare build command. `scripts/cloudflare.mjs` loads Doppler, then builds and deploys:
+
+- Build: `true`
+- Production: `node ../../scripts/cloudflare.mjs affiliate deploy`
+- Preview: `node ../../scripts/cloudflare.mjs affiliate preview`
+
+The helper reads `WORKERS_CI_BRANCH`, refuses production deploys from a non-`main` Cloudflare build, and fails closed if Cloudflare CI branch metadata is missing — before it downloads credentials. Preview aliases are stable for a given branch name. Bun comes from the root `packageManager` field; watch paths should include the app, `packages/design-system/**`, `scripts/cloudflare*`, `bun.lock`, and the root `package.json`.
+
+<Aside type="caution" title="Preview trigger settings">
+  Cloudflare stores production and preview commands separately. After a dashboard edit, recheck the
+  preview command and encrypted token through the Builds API — dashboard edits can reset preview
+  variables. Never put the production Doppler token on the preview trigger.
+</Aside>
+
+## Doppler
+
+Each app has a `doppler.yaml` that selects its `dev` config. Run `doppler login` once, then `doppler setup` in the app directory. For affiliate local development: `doppler run -- bun run dev`.
+
+Website and docs have no application secrets yet, so they do not need a CI token. Affiliate uses two **read-only** service tokens saved as encrypted Cloudflare **Build** secrets (not Worker runtime secrets):
+
+| Build trigger | Secret                     | Doppler config              |
+| ------------- | -------------------------- | --------------------------- |
+| Production    | `DOPPLER_TOKEN_PRODUCTION` | `waverly-affiliate/prd`     |
+| Preview       | `DOPPLER_TOKEN_PREVIEW`    | `waverly-affiliate/preview` |
+
+Required values in both deployed affiliate configs:
+
+| Name                     | Purpose                                        |
+| ------------------------ | ---------------------------------------------- |
+| `VITE_CONVEX_URL`        | HTTPS Convex URL baked into the browser bundle |
+| `WORKOS_CLIENT_ID`       | WorkOS client ID                               |
+| `WORKOS_API_KEY`         | Server-only WorkOS API key                     |
+| `WORKOS_COOKIE_PASSWORD` | Session secret, at least 32 characters         |
+| `WORKOS_REDIRECT_URI`    | Registered deployed HTTPS callback             |
+
+Optional: `VITE_CONVEX_SITE_URL`, `WORKOS_API_HOSTNAME`, `TINYBIRD_API_URL`, `TINYBIRD_PIPE_READ_TOKEN`. Do not put test-user credentials in Doppler.
+
+The helper allowlists those keys. Public Convex values enter the build environment; server secrets go to a temporary `--secrets-file` and are deleted after upload. Doppler tokens and `TEST_USER_*` values never become Worker runtime secrets. It does not use `wrangler secret bulk`, which could change the live deployment.
+
+Updating Doppler takes effect on the next successful build. Wrangler secrets are additive: deleting a key in Doppler does not remove it from the Worker — delete obsolete Worker secrets in Cloudflare.
+
+`prd` and `preview` currently share the existing Convex and WorkOS environments, so previews are **not** isolated from production data. Point them at separate backends when you need isolation. Convex deploys remain separate from Workers: deploy compatible functions before a frontend that depends on them.
+
+## WorkOS callbacks
+
+Keep local `.localhost` redirect URIs. Do not store the local callback in `prd` or `preview`.
+
+| Origin     | Callback                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------- |
+| Production | `https://waverly-affiliate.waverly-d46.workers.dev/api/auth/callback`                           |
+| Previews   | `https://*-waverly-affiliate.waverly-d46.workers.dev/api/auth/callback` (this Worker's aliases) |
+
+The helper overrides `WORKOS_REDIRECT_URI` on preview deploys to that branch's alias. Sign in through the **branch alias** URL, not the version-hash URL, so OAuth cookies stay on the same host. Register matching [sign-in and sign-out URIs](/workos) for those origins.
+
+## Check a preview
+
+`node --test scripts/cloudflare.test.mjs` covers production guards, alias validity, and secret filtering. A feature-branch build should print preview URLs for all three Workers while each Worker's active production version stays unchanged.

@@ -11,11 +11,14 @@ In the WorkOS dashboard for this environment:
 
 1. Create roles with slugs `owner`, `admin`, and `member`. Make `member` the default.
 2. Enable Email + Password sign-in so seeded development users can sign in.
-3. On the [Redirects page](https://dashboard.workos.com/redirects), register:
-   - `/api/auth/callback` as a redirect URI
-   - `/api/auth/sign-in` as the sign-in endpoint
-   - the app origin (for example `https://affiliate.waverly.localhost/`) as a **sign-out URI** — the user menu sends that origin as the logout return URL, so every origin the app runs on needs an entry
+3. On the [Redirects page](https://dashboard.workos.com/redirects), register every origin the app runs on:
+   - Local: `https://affiliate.waverly.localhost/api/auth/callback` and `/api/auth/sign-in`
+   - Production Worker: `https://waverly-affiliate.waverly-d46.workers.dev/api/auth/callback` (and the matching sign-in endpoint)
+   - Preview wildcard: `https://*-waverly-affiliate.waverly-d46.workers.dev/api/auth/callback`, restricted to this Worker's preview hostnames
+   - each of those origins as a **sign-out URI** — the user menu sends the app origin as the logout return URL
    - the app homepage URL as the fallback after logout
+
+Keep the local `.localhost` entries. Do not put that local callback in Doppler `prd` or `preview`. See [Deployment](/deployment) for Worker URLs and how previews override `WORKOS_REDIRECT_URI`.
 
 Set both `WORKOS_CLIENT_ID` and `WORKOS_API_URL` on the Convex deployment:
 
