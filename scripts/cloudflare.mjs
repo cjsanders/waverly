@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
+import { previewBuildUrls, previewDeployArgs, previewSeedArgs } from './cloudflare-convex.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const apps = new Set(['affiliate', 'website', 'docs'])
@@ -17,7 +18,20 @@ const runtimeKeys = [
   'TINYBIRD_PIPE_READ_TOKEN',
 ]
 const buildKeys = ['VITE_CONVEX_URL', 'VITE_CONVEX_SITE_URL']
-const requiredKeys = [...runtimeKeys.slice(0, 4), 'VITE_CONVEX_URL']
+const convexPreviewKey = 'CONVEX_PREVIEW_DEPLOY_KEY'
+
+export function buildEnvironment(env, publicValues = {}) {
+  const selected = { ...env, ...selectSecrets(publicValues, buildKeys) }
+  for (const key of Object.keys(selected)) {
+    if (
+      /^(DOPPLER_|CLOUDFLARE_|CONVEX_|TEST_USER_|WAVERLY_CONVEX_)/.test(key) ||
+      runtimeKeys.includes(key)
+    ) {
+      delete selected[key]
+    }
+  }
+  return selected
+}
 
 export function buildBranch(env = process.env) {
   const branch = env.WORKERS_CI_BRANCH
@@ -73,18 +87,25 @@ async function downloadSecrets(mode) {
     )
   const url = new URL('https://api.doppler.com/v3/configs/config/secrets/download')
   url.searchParams.set('format', 'json')
-  url.searchParams.set('secrets', [...runtimeKeys, ...buildKeys].join(','))
+  const configKeys = mode === 'preview' ? [convexPreviewKey] : buildKeys
+  url.searchParams.set('secrets', [...runtimeKeys, ...configKeys].join(','))
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     signal: AbortSignal.timeout(30_000),
   })
   if (!response.ok) throw new Error(`Doppler download failed (HTTP ${response.status})`)
   const secrets = await response.json()
+  const requiredKeys = [
+    ...runtimeKeys.slice(0, 4),
+    mode === 'preview' ? convexPreviewKey : 'VITE_CONVEX_URL',
+  ]
   const missing = requiredKeys.filter((key) => !secrets[key])
   if (missing.length) throw new Error(`Missing Doppler values: ${missing.join(', ')}`)
   if (secrets.WORKOS_COOKIE_PASSWORD.length < 32)
     throw new Error('WORKOS_COOKIE_PASSWORD must contain at least 32 characters')
-  for (const key of ['VITE_CONVEX_URL', 'WORKOS_REDIRECT_URI']) {
+  for (const key of mode === 'preview'
+    ? ['WORKOS_REDIRECT_URI']
+    : ['VITE_CONVEX_URL', 'WORKOS_REDIRECT_URI']) {
     const urlValue = new URL(secrets[key])
     if (urlValue.protocol !== 'https:' || urlValue.hostname.endsWith('.localhost')) {
       throw new Error(`${key} must use a deployed HTTPS URL`)
@@ -107,22 +128,29 @@ async function main() {
   const args = deployArgs(mode, app, branch)
   const cwd = join(root, 'apps', app)
   const secrets = app === 'affiliate' ? await downloadSecrets(mode) : {}
-  const env = { ...process.env, ...selectSecrets(secrets, buildKeys) }
-  // Keep deployment credentials and server secrets out of the build process.
-  for (const key of Object.keys(env)) {
-    if (
-      key.startsWith('DOPPLER_') ||
-      key.startsWith('CLOUDFLARE_') ||
-      runtimeKeys.includes(key) ||
-      key.startsWith('TEST_USER_')
-    )
-      delete env[key]
-  }
-  run('bun', ['run', 'build'], cwd, env)
   let temporary
   try {
+    let publicValues = selectSecrets(secrets, buildKeys)
     if (app === 'affiliate') {
       temporary = await mkdtemp(join(tmpdir(), 'waverly-secrets-'))
+      if (mode === 'preview') {
+        const convexArgs = previewDeployArgs(branch, secrets[convexPreviewKey])
+        const urlFile = join(temporary, 'preview-urls.json')
+        const convexEnv = buildEnvironment(process.env)
+        // No shared backend URL may survive into preview provisioning or bundling.
+        for (const key of buildKeys) delete convexEnv[key]
+        convexEnv.CONVEX_DEPLOY_KEY = secrets[convexPreviewKey]
+        convexEnv.WAVERLY_CONVEX_PREVIEW_URL_FILE = urlFile
+        run('bunx', convexArgs, cwd, convexEnv)
+        // --preview-run only runs on creation. Retry the idempotent seed to recover
+        // a preview whose earlier build provisioned the database but failed seeding.
+        run('bunx', previewSeedArgs(branch, secrets[convexPreviewKey]), cwd, convexEnv)
+        publicValues = previewBuildUrls(JSON.parse(await readFile(urlFile, 'utf8')))
+      }
+    }
+    // Convex code and seed must succeed before building/uploading a Worker version.
+    run('bun', ['run', 'build'], cwd, buildEnvironment(process.env, publicValues))
+    if (app === 'affiliate') {
       const path = join(temporary, 'secrets.json')
       await writeFile(path, JSON.stringify(workerSecrets(secrets, mode, branch)), { mode: 0o600 })
       args.push('--secrets-file', path)
