@@ -50,25 +50,23 @@ Never put the production token on the preview trigger. Cloudflare stores product
 
 Required affiliate values in both deployed configs:
 
-| Name                     | Purpose                                                    |
-| ------------------------ | ---------------------------------------------------------- |
-| `VITE_CONVEX_URL`        | HTTPS Convex deployment URL embedded in the browser bundle |
-| `WORKOS_CLIENT_ID`       | WorkOS client ID                                           |
-| `WORKOS_API_KEY`         | Server-only WorkOS API key                                 |
-| `WORKOS_COOKIE_PASSWORD` | Session encryption secret, at least 32 characters          |
-| `WORKOS_REDIRECT_URI`    | Registered deployed HTTPS callback URL                     |
+| Name                     | Purpose                                           |
+| ------------------------ | ------------------------------------------------- |
+| `WORKOS_CLIENT_ID`       | WorkOS client ID                                  |
+| `WORKOS_API_KEY`         | Server-only WorkOS API key                        |
+| `WORKOS_COOKIE_PASSWORD` | Session encryption secret, at least 32 characters |
+| `WORKOS_REDIRECT_URI`    | Registered deployed HTTPS callback URL            |
 
-Optional: `VITE_CONVEX_SITE_URL`, `WORKOS_API_HOSTNAME`, `TINYBIRD_API_URL`, and `TINYBIRD_PIPE_READ_TOKEN`.
+Production also requires `VITE_CONVEX_URL` and may set `VITE_CONVEX_SITE_URL`. Preview requires `CONVEX_PREVIEW_DEPLOY_KEY` (a project preview deploy key stored only in `waverly-affiliate/preview`). Optional runtime values: `WORKOS_API_HOSTNAME`, `TINYBIRD_API_URL`, and `TINYBIRD_PIPE_READ_TOKEN`.
 
-The helper downloads an allowlist. Only public Convex values enter the build environment. Server secrets go into a temporary `--secrets-file` that Wrangler attaches to the new version (including previews), then the file is deleted. Test-user credentials and Doppler tokens are never uploaded as Worker runtime secrets.
+The helper downloads an allowlist. Only public Convex values enter the frontend build environment. Server secrets go into a temporary `--secrets-file` that Wrangler attaches to the new version (including previews), then the file is deleted. The Convex preview deploy key is passed only to Convex CLI subprocesses, never to Vite or Worker runtime bindings. Test-user credentials and Doppler tokens are never uploaded as Worker runtime secrets.
 
-Deployed `WORKOS_REDIRECT_URI` and `VITE_CONVEX_URL` must be HTTPS and must not use `.localhost`. The helper overrides the preview callback to that branch's alias. Register those URLs in WorkOS — see [WorkOS setup](/workos).
+Deployed `WORKOS_REDIRECT_URI` must be HTTPS and must not use `.localhost`. Production `VITE_CONVEX_URL` has the same restriction. The helper overrides the preview callback to that branch's alias. Register those URLs in WorkOS — see [WorkOS setup](/workos).
 
-<Aside type="caution" title="Shared backends">
-  The initial `dev`, `prd`, and `preview` configs share the existing Convex and WorkOS environments,
-  so a preview is not isolated from production data. Point preview at a separate backend when you
-  need isolation. Convex remains a separate deploy: push compatible functions before a frontend that
-  depends on them.
+<Aside type="caution" title="Shared WorkOS">
+  Affiliate previews provision an isolated Convex backend per non-`main` branch and do not fall back
+  to production Convex. WorkOS stays shared — database isolation does not create a separate tenant.
+  See [Convex previews](/convex-previews).
 </Aside>
 
 Updating Doppler takes effect on the next successful build. Wrangler secrets are additive: deleting a key in Doppler does not remove an existing Worker secret.
