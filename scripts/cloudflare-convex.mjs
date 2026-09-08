@@ -20,8 +20,7 @@ export function previewDeployArgs(branch, key) {
     throw new Error('CONVEX_PREVIEW_DEPLOY_KEY must be a project preview deploy key')
   }
   return [
-    '--no-install',
-    'convex',
+    'node_modules/convex/bin/main.js',
     'deploy',
     '--preview-name',
     convexPreviewName(branch),
@@ -39,8 +38,7 @@ export function previewDeployArgs(branch, key) {
 export function previewSeedArgs(branch, key) {
   previewDeployArgs(branch, key)
   return [
-    '--no-install',
-    'convex',
+    'node_modules/convex/bin/main.js',
     'run',
     '--preview-name',
     convexPreviewName(branch),

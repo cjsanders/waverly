@@ -141,10 +141,12 @@ async function main() {
         for (const key of buildKeys) delete convexEnv[key]
         convexEnv.CONVEX_DEPLOY_KEY = secrets[convexPreviewKey]
         convexEnv.WAVERLY_CONVEX_PREVIEW_URL_FILE = urlFile
-        run('bunx', convexArgs, cwd, convexEnv)
+        // Invoke Convex directly: bunx in the CI Bun version splits --cmd's
+        // whitespace-containing value into extra positional arguments.
+        run(process.execPath, convexArgs, cwd, convexEnv)
         // --preview-run only runs on creation. Retry the idempotent seed to recover
         // a preview whose earlier build provisioned the database but failed seeding.
-        run('bunx', previewSeedArgs(branch, secrets[convexPreviewKey]), cwd, convexEnv)
+        run(process.execPath, previewSeedArgs(branch, secrets[convexPreviewKey]), cwd, convexEnv)
         publicValues = previewBuildUrls(JSON.parse(await readFile(urlFile, 'utf8')))
       }
     }

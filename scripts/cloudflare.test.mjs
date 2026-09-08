@@ -2,7 +2,16 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+  access,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -21,7 +30,7 @@ import {
 } from './cloudflare-convex.mjs'
 
 async function exerciseDeployment(mode, failure) {
-  const directory = await mkdtemp(join(tmpdir(), 'waverly-deployment-test-'))
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'waverly-deployment-test-')))
   const log = join(directory, 'commands.jsonl')
   const captureScript = fileURLToPath(new URL('./cloudflare-convex.mjs', import.meta.url))
   const fixture = {
@@ -34,6 +43,13 @@ async function exerciseDeployment(mode, failure) {
     WORKOS_REDIRECT_URI: 'https://waverly-affiliate.waverly-d46.workers.dev/api/auth/callback',
   }
   try {
+    await mkdir(join(directory, 'scripts'), { recursive: true })
+    await mkdir(join(directory, 'apps/affiliate/node_modules/convex/bin'), { recursive: true })
+    await Promise.all(
+      ['cloudflare.mjs', 'cloudflare-convex.mjs'].map((script) =>
+        copyFile(new URL(script, import.meta.url), join(directory, 'scripts', script)),
+      ),
+    )
     const fetchMock = join(directory, 'fetch.mjs')
     await writeFile(
       fetchMock,
@@ -44,8 +60,8 @@ const { appendFileSync, readFileSync } = require('node:fs');
 const { basename } = require('node:path');
 const { spawnSync } = require('node:child_process');
 const args = process.argv.slice(2);
-const isConvex = args.includes('convex');
-const stage = isConvex ? 'convex-' + args[2] : basename(process.argv[1]) === 'bun' ? 'build' : 'worker';
+const isConvex = basename(process.argv[1]) === 'main.js';
+const stage = isConvex ? 'convex-' + args[0] : basename(process.argv[1]) === 'bun' ? 'build' : 'worker';
 const record = { stage, args, url: process.env.VITE_CONVEX_URL, site: process.env.VITE_CONVEX_SITE_URL,
   credentialNames: Object.keys(process.env).filter(key => /^(CONVEX_|DOPPLER_|CLOUDFLARE_|WORKOS_|TEST_USER_)/.test(key)),
   temporaryFile: process.env.WAVERLY_CONVEX_PREVIEW_URL_FILE };
@@ -65,19 +81,13 @@ if (stage === 'convex-deploy') {
 }
 `
     await Promise.all(
-      ['bun', 'bunx'].map((command) =>
+      ['bun', 'bunx', 'apps/affiliate/node_modules/convex/bin/main.js'].map((command) =>
         writeFile(join(directory, command), executable, { mode: 0o700 }),
       ),
     )
     const result = spawnSync(
       process.execPath,
-      [
-        '--import',
-        fetchMock,
-        fileURLToPath(new URL('./cloudflare.mjs', import.meta.url)),
-        'affiliate',
-        mode,
-      ],
+      ['--import', fetchMock, join(directory, 'scripts/cloudflare.mjs'), 'affiliate', mode],
       {
         encoding: 'utf8',
         env: {
@@ -124,6 +134,10 @@ test('preview entry point deploys and seeds Convex before building and uploading
     assert.equal(command.url, undefined)
     assert.equal(command.site, undefined)
   }
+  assert.equal(
+    commands[0].args[commands[0].args.indexOf('--cmd') + 1],
+    'node ../../scripts/cloudflare-convex.mjs capture',
+  )
   assert.deepEqual(commands[2].credentialNames, [])
   assert.equal(commands[2].url, 'https://isolated-preview.convex.cloud')
   assert.equal(commands[2].site, 'https://isolated-preview.convex.site')
@@ -172,8 +186,7 @@ test('Convex previews reuse one isolated deployment per branch and seed it', () 
   assert.ok(!args.includes('--prod'))
   assert.ok(!args.includes(key))
   assert.deepEqual(previewSeedArgs('feature/auth', key), [
-    '--no-install',
-    'convex',
+    'node_modules/convex/bin/main.js',
     'run',
     '--preview-name',
     convexPreviewName('feature/auth'),
