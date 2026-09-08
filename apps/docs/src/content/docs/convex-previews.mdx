@@ -1,11 +1,11 @@
 ---
 title: Convex previews
-description: Isolated Convex backends and synthetic seed data for affiliate Cloudflare previews.
+description: Isolated Convex backends and synthetic seed data for affiliate preview branches.
 ---
 
 Affiliate Cloudflare previews no longer share production Convex. Each non-`main` branch gets a stable Convex preview; later commits reuse that backend and its data. WorkOS stays shared — database isolation does not create a separate tenant. Production Convex is unchanged.
 
-Website and docs previews do not provision Convex.
+Website and docs previews do not provision Convex. Affiliate Worker and Doppler setup lives in the repository [DEPLOYMENT.md](https://github.com/cjsanders/waverly/blob/main/DEPLOYMENT.md).
 
 ## Doppler
 
