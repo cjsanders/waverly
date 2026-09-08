@@ -1,0 +1,59 @@
+---
+title: Convex previews
+description: Isolated Convex backends and synthetic seed data for affiliate PR previews.
+---
+
+Affiliate Cloudflare previews no longer share production Convex. Each non-`main` branch gets a stable Convex preview; later commits reuse that backend and its data. WorkOS stays shared — database isolation does not create a separate tenant. Production Convex is unchanged.
+
+Website and docs previews do not provision Convex.
+
+## Doppler
+
+Store `CONVEX_PREVIEW_DEPLOY_KEY` only in Doppler config `waverly-affiliate/preview`. It must be a **project preview deploy key** from the existing Convex project's settings. The existing read-only preview Doppler token can retrieve it; no extra Cloudflare Build token is needed.
+
+The helper rejects production, development, and broad project keys. It passes this key only to Convex CLI subprocesses — never to Vite or Worker runtime bindings.
+
+Preview builds ignore any fixed `VITE_CONVEX_URL` or deployment identifier still in Doppler. Production still requires `VITE_CONVEX_URL` (and may set `VITE_CONVEX_SITE_URL`) and does not provision or seed Convex.
+
+## Convex project defaults
+
+Set these **preview-only default environment variables** on the Convex project before the first preview is created:
+
+| Name                           | Value                                                      |
+| ------------------------------ | ---------------------------------------------------------- |
+| `WORKOS_CLIENT_ID`             | Same client ID as Doppler's affiliate preview config       |
+| `WORKOS_API_URL`               | `https://api.workos.com` for the shared WorkOS environment |
+| `WAVERLY_PREVIEW_SEED_ENABLED` | `true` — do not enable this on production                  |
+
+Preview defaults apply when a deployment is created. If an existing preview is missing the opt-in or has outdated WorkOS settings, update that preview's variables and rebuild. Do not reset its data just to change configuration.
+
+See [WorkOS setup](/workos) for why Convex needs both WorkOS values.
+
+## Branch reuse and expiration
+
+The preview name is derived from the full branch name plus a hash, so normalized-name collisions stay distinct. The helper deploys with `convex deploy --preview-name` and never uses destructive `--preview-create`.
+
+Cloudflare currently builds every non-`main` branch, so branches without a PR also get previews. Reusing a branch for another PR reuses its Convex preview until it expires. Convex expires preview deployments according to the team's plan. Rebuild an expired preview to recreate and seed it; an old Worker preview URL does not keep the backend alive. No production data is copied.
+
+## Deploy order
+
+For `node ../../scripts/cloudflare.mjs affiliate preview`:
+
+1. Read the preview-only deploy key from Doppler and validate its type.
+2. Create or reuse the branch's Convex preview and capture its canonical cloud/site URLs.
+3. Deploy that branch's schema and functions, then run the internal `previewSeed` mutation.
+4. Build the frontend with those URLs and upload a version to the existing `waverly-affiliate` Worker.
+
+A provisioning, backend deploy, seed, or URL-validation failure stops the build before a Worker version is uploaded. There is no fallback to the shared backend.
+
+## Seed data
+
+`apps/affiliate/convex/previewSeed.ts` is an internal mutation. It creates six synthetic products when the `products` table is empty, refuses to run unless `WAVERLY_PREVIEW_SEED_ENABLED` is `true`, and does not replace or append to an existing catalog. Fixture `imageId` values are placeholders, not uploaded images. The dashboard does not render products yet.
+
+Convex's `--preview-run previewSeed` seeds new deployments. The helper also reruns the idempotent mutation after deploy so an earlier failed seed can recover. Existing product IDs and edits are preserved. Emptying the products table causes the next successful build to seed again.
+
+## Validation
+
+Run `node --test scripts/cloudflare.test.mjs` for deploy-key validation, URL isolation, and secret filtering. Run `bun run --cwd apps/affiliate test` for seed schema, opt-in, and repeat-run safety. On an affiliate preview, confirm six synthetic products exist and a second build reuses the same Convex deployment and document IDs.
+
+Sources: [Convex preview deployments](https://docs.convex.dev/production/multiple-deployments#using-preview-deployments) and [seeding preview data](https://stack.convex.dev/seeding-data-for-preview-deployments).

@@ -26,6 +26,8 @@ bunx --bun convex env set WORKOS_API_URL https://api.workos.com
 
 The auth config reads both. The Convex CLI requires every variable the auth config touches, so a deployment without `WORKOS_API_URL` will not start. Use `https://api.workos.com` unless you are pointing Convex at a local WorkOS emulator.
 
+Affiliate Cloudflare previews provision an isolated Convex backend per branch. Set the same `WORKOS_CLIENT_ID` and `WORKOS_API_URL` as **preview default environment variables** on the Convex project (matching Doppler's affiliate preview config). WorkOS itself stays shared. See [Convex previews](/convex-previews).
+
 The Start app still needs the usual `WORKOS_*` values in `.env.local`.
 
 ## Organization kind
