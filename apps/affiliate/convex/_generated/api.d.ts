@@ -8,13 +8,17 @@
  * @module
  */
 
+import type * as previewSeed from "../previewSeed.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  previewSeed: typeof previewSeed;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
