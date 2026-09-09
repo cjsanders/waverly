@@ -7,19 +7,31 @@ A workspace is a WorkOS organization. Its `metadata.kind` decides which mode of 
 
 ## Modes
 
-| Kind     | Home        | What it is for                                                                                     |
-| -------- | ----------- | -------------------------------------------------------------------------------------------------- |
-| Creator  | `/creator`  | Share links, track sales, and get paid for what you promote.                                       |
-| Brand    | `/brand`    | Run campaigns, recruit creators, and pay commissions.                                              |
-| Operator | `/operator` | Network-wide brands, creators, and payouts. Provisioned by Waverly, not [onboarding](/onboarding). |
+| Kind     | Home        | What it is for                                                                                                   |
+| -------- | ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| Creator  | `/creator`  | Discover products, manage partnerships, track performance, and get paid.                                         |
+| Brand    | `/brand`    | Run a creator program: catalog, applications, placements, and billing.                                           |
+| Operator | `/operator` | Network-wide publishers, advertisers, links, and payouts. Provisioned by Waverly, not [onboarding](/onboarding). |
 
 Organizations without a valid `kind` are ignored at sign-in and cannot open the app.
+
+<Frame
+  caption="Creator workspace home after sign-in. The sidebar lists the live network pages; Overview walks a seven-step network map."
+  aspect="16/9"
+>
+  <img
+    src="/docs/workspaces-creator-overview.png"
+    alt="Northstar Media creator workspace overview with sidebar navigation, network health stepper, and earnings metrics"
+  />
+</Frame>
 
 ## Routes
 
 Each mode lives under its own prefix. Visiting a prefix that does not match the active workspace sends you to that workspace's home. `/dashboard` is a leftover entry point: it signs you in if needed, then hops into the workspace layout (first `/creator`, which then redirects if your workspace is a brand or operator).
 
 If you have memberships but the session has no active organization yet — a fresh sign-up, or a membership added elsewhere — the app selects your first workspace and shows “Opening …” while the session updates.
+
+Pages inside a workspace are selected with a `page` search parameter, for example `/creator?page=Product+catalog` or `/operator?page=Messages`. An unknown page falls back to Overview. The selected page is also remembered per organization in browser session storage.
 
 ## Switcher
 
@@ -31,14 +43,34 @@ The sidebar control shows the active workspace name and its kind (for example, �
 
 Workspaces in the list are ordered operator, then brand, then creator, and alphabetically within each kind.
 
+<Frame
+  caption="Switcher open on a brand workspace. PuroAir is active; Northstar Media is the creator workspace created from the same user."
+  aspect="16/9"
+>
+  <img
+    src="/docs/workspaces-switcher.png"
+    alt="Brand workspace with the sidebar switcher open, listing PuroAir as the current brand and Northstar Media as a creator workspace"
+  />
+</Frame>
+
 ## Navigation
 
-Only **Overview** is wired up so far. Other sidebar items render as “Coming soon.” Each mode also has its own primary action in the top bar.
+Each mode has a full sidebar. Items open the matching page in the same workspace; they are not placeholders.
 
-| Mode     | Sidebar                                       | Primary action | Empty overview                                                                     |
-| -------- | --------------------------------------------- | -------------- | ---------------------------------------------------------------------------------- |
-| Creator  | Overview, Campaigns, Links, Payouts, Reports  | New link       | Sales, commissions, and campaign performance appear once data starts flowing.      |
-| Brand    | Overview, Campaigns, Creators, Links, Reports | New campaign   | Creator activity, conversions, and campaign spend appear once data starts flowing. |
-| Operator | Overview, Brands, Creators, Payouts, Reports  | Invite brand   | Network-wide brands, creators, and payouts appear once data starts flowing.        |
+| Mode     | Sidebar groups                                             |
+| -------- | ---------------------------------------------------------- |
+| Creator  | Home, Discovery, Work, Insights, Organization              |
+| Brand    | Program, Creators, Reporting, Finance (Billing), Workspace |
+| Operator | Network, Marketplace, Performance, Finance, Operations     |
 
-The overview card title is **Nothing to show yet** until those pages have data.
+<Frame
+  caption="Brand workspace home. The sidebar is a creator-program nav (profile, commissions, applications, billing) instead of the creator discovery list."
+  aspect="16/9"
+>
+  <img
+    src="/docs/workspaces-brand-overview.png"
+    alt="PuroAir brand workspace overview with program metrics, action queue, and brand sidebar"
+  />
+</Frame>
+
+The footer also has shortcuts to **Messages** and alerts. See [Network workspaces](/network) for what is persisted, what is simulated, and how data is isolated per organization.

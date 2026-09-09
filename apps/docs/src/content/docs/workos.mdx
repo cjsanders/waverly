@@ -38,6 +38,6 @@ Set `metadata.kind` on every organization the app should open. Values other than
 
 The auth callback lists the user's active WorkOS memberships, reads each organization's kind, and writes the Convex mirror with the user's own access token. The signed-in layout re-syncs if it finds no mirror yet.
 
-Authorization later checks the `memberships` table, not the token's `org_id` claim, so a stale token after a workspace switch cannot grant access.
+Who can open a workspace is decided by the `memberships` table, not the token's `org_id` claim, so a stale token after a workspace switch cannot grant access. [Network records](/network) are the other way around: they stamp and query `tenantId` from the verified `org_id` claim.
 
-After sign-in, the overview shows the Convex session (role and organization) so a broken token chain is visible. **Convex did not accept the session** means the access token did not verify against that Convex deployment — check `WORKOS_CLIENT_ID` and `WORKOS_API_URL`.
+The user menu shows the WorkOS role and email. If Convex rejects the session, check `WORKOS_CLIENT_ID` and `WORKOS_API_URL` on that deployment.
