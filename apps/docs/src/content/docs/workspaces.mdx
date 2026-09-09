@@ -7,17 +7,19 @@ A workspace is a WorkOS organization. Its `metadata.kind` decides which mode of 
 
 ## Modes
 
-| Kind     | Home        | What it is for                                                                                     |
-| -------- | ----------- | -------------------------------------------------------------------------------------------------- |
-| Creator  | `/creator`  | Share links, track sales, and get paid for what you promote.                                       |
-| Brand    | `/brand`    | Run campaigns, recruit creators, and pay commissions.                                              |
-| Operator | `/operator` | Network-wide brands, creators, and payouts. Provisioned by Waverly, not [onboarding](/onboarding). |
+| Kind     | Home        | What it is for                                                                                            |
+| -------- | ----------- | --------------------------------------------------------------------------------------------------------- |
+| Creator  | `/creator`  | Discover products, manage placements, and get paid for what you promote.                                  |
+| Brand    | `/brand`    | Run a creator program, review applications, and pay commissions.                                          |
+| Operator | `/operator` | Network-wide publishers, advertisers, and payouts. Provisioned by Waverly, not [onboarding](/onboarding). |
 
 Organizations without a valid `kind` are ignored at sign-in and cannot open the app.
 
 ## Routes
 
 Each mode lives under its own prefix. Visiting a prefix that does not match the active workspace sends you to that workspace's home. `/dashboard` is a leftover entry point: it signs you in if needed, then hops into the workspace layout (first `/creator`, which then redirects if your workspace is a brand or operator).
+
+The selected page is the `page` search param — for example `/creator?page=Messages`. Invalid values fall back to Overview. The last page (and the overview journey step) is remembered in session storage for that organization.
 
 If you have memberships but the session has no active organization yet — a fresh sign-up, or a membership added elsewhere — the app selects your first workspace and shows “Opening …” while the session updates.
 
@@ -33,12 +35,42 @@ Workspaces in the list are ordered operator, then brand, then creator, and alpha
 
 ## Navigation
 
-Only **Overview** is wired up so far. Other sidebar items render as “Coming soon.” Each mode also has its own primary action in the top bar.
+Sidebar items are grouped by section. Every item opens a real page; there is no “Coming soon” stub.
 
-| Mode     | Sidebar                                       | Primary action | Empty overview                                                                     |
-| -------- | --------------------------------------------- | -------------- | ---------------------------------------------------------------------------------- |
-| Creator  | Overview, Campaigns, Links, Payouts, Reports  | New link       | Sales, commissions, and campaign performance appear once data starts flowing.      |
-| Brand    | Overview, Campaigns, Creators, Links, Reports | New campaign   | Creator activity, conversions, and campaign spend appear once data starts flowing. |
-| Operator | Overview, Brands, Creators, Payouts, Reports  | Invite brand   | Network-wide brands, creators, and payouts appear once data starts flowing.        |
+| Mode     | Sections                                                                                                                                                                                                                                                                                                                                               |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Creator  | **Home** Overview, Getting started · **Discovery** For you, Product catalog, Brand catalog, Cost-per-click, Loyalty programs, Lists · **Work** Opportunities, Projects, Portfolio, Partnerships, Placements, Tracking, Storefront · **Insights** Performance, Reports, Earnings, Payouts · **Organization** Publishers, Properties, Messages, Settings |
+| Brand    | **Program** Overview, Brand profile, Products & commissions, Deals & CPC, Samples · **Creators** Creator directory, Applications, Partnerships, Paid placements · **Reporting** Performance, Deep reports · **Finance** Billing · **Workspace** Messages, Settings                                                                                     |
+| Operator | **Network** Overview, Publishers · **Marketplace** Advertisers, Programs, Offers · **Performance** Links, Clicks, Conversions, Reports · **Finance** Balances, Payouts · **Operations** Providers, Messages, Settings                                                                                                                                  |
 
-The overview card title is **Nothing to show yet** until those pages have data.
+The overview header uses the workspace name (for example “Northstar Media overview” or “Network overview”). Creator **Getting started** is a pending-publisher review of the same seven-step journey.
+
+The first time a workspace opens, the app seeds a development catalog for that organization only. It does not reset records that are already there. See [Affiliate network](/network) for what is persisted versus simulated.
+
+<Frame caption="Creator workspace overview after the first seed" aspect="16/9">
+  <img
+    src="/docs/workspaces-creator-overview.png"
+    alt="Creator workspace overview with sidebar navigation, seven-step journey, and performance metrics"
+  />
+</Frame>
+
+<Frame caption="Sidebar switcher listing operator, brand, and creator workspaces" aspect="16/9">
+  <img
+    src="/docs/workspaces-switcher.png"
+    alt="Open workspace switcher showing operator, brand, and creator organizations"
+  />
+</Frame>
+
+<Frame caption="Brand workspace program overview" aspect="16/9">
+  <img
+    src="/docs/workspaces-brand-overview.png"
+    alt="Brand workspace overview with attributed sales, creator commissions, and an action queue"
+  />
+</Frame>
+
+<Frame caption="Operator network overview" aspect="16/9">
+  <img
+    src="/docs/workspaces-operator-overview.png"
+    alt="Operator workspace network overview with publisher earnings, economic flow, and provider freshness"
+  />
+</Frame>
