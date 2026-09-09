@@ -6,8 +6,8 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "portless affiliate.waverly vite dev",
-    "dev:convex": "bunx convex dev",
+    "dev": "doppler run -- portless affiliate.waverly vite dev",
+    "dev:convex": "doppler run -- bunx convex dev",
     "dev:workos": "bunx workos-emulate --host 127.0.0.1 --port 4100 --seed workos-emulate.config.yaml --signing-key .workos-emulate/signing-key.pem --kid waverly-local --issuer http://127.0.0.1:4100",
     "setup:agent": "bash scripts/setup-agent.sh",
     "predev:agent": "bun run setup:agent",

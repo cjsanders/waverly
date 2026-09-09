@@ -6,8 +6,12 @@ To run this application:
 
 ```bash
 bun install
-bun --bun run dev
+doppler login
+doppler setup --no-interactive
+bun run dev
 ```
+
+Install the [Doppler CLI](https://docs.doppler.com/docs/cli) first. The normal `dev` and `dev:convex` scripts automatically load this app's selected Doppler config (`dev` by default). Login/setup are one-time steps; later starts need only `bun run dev`. Run `doppler setup --config dev_personal` here to use personal overrides. See the repository README for starting all three apps together.
 
 # Building For Production
 
@@ -42,8 +46,8 @@ bun run check
 
 ## Setting up Convex
 
-- Set the `VITE_CONVEX_URL` and `CONVEX_DEPLOYMENT` environment variables in your `.env.local`. (Or run `bunx --bun convex init` to set them automatically.)
-- Run `bunx --bun convex dev` to start the Convex server.
+- Keep `VITE_CONVEX_URL`, `VITE_CONVEX_SITE_URL`, and `CONVEX_DEPLOYMENT` in this app's development Doppler config.
+- Run `bun run dev:convex` in a separate terminal to sync/watch that Convex development deployment with Doppler settings. Starting the frontend does not start the Convex watcher.
 - Configure token validation in each Convex deployment with `bunx --bun convex env set WORKOS_CLIENT_ID client_...`.
 
 ## Setting up WorkOS
@@ -56,7 +60,7 @@ Cloud agents can use isolated WorkOS Emulate and Convex backends without credent
 For development against real WorkOS:
 
 1. Copy your client ID and API key from the [WorkOS dashboard](https://dashboard.workos.com/api-keys).
-2. Fill in `.env.local`:
+2. Set these values in the selected development Doppler config (already populated for the shared Waverly `dev` config):
 
    ```bash
    WORKOS_CLIENT_ID=client_...
@@ -71,6 +75,8 @@ For development against real WorkOS:
    `https://affiliate.waverly.localhost/api/auth/sign-in` as the sign-in endpoint.
 4. Start the app and use the sign-in action on `/`.
 5. Optional: create an Email + Password user in WorkOS and set `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` so agents can open `/api/auth/test-login` instead of the hosted AuthKit screen.
+
+Existing `.env.local` files remain available for optional local-only values; Doppler takes precedence for matching keys. Do not use `.dev.vars` files with this Doppler-backed workflow, because Cloudflare loads those instead of process-environment secrets. Restart dev commands after updating secrets. The isolated `dev:agent` commands above do not require Doppler.
 
 ### What's wired up
 

@@ -21,11 +21,18 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the three-Worker GitHub deployment setup,
 
 ```sh
 bun install
-cp apps/affiliate/.env.example apps/affiliate/.env.local
+doppler login
+(cd apps/affiliate && doppler setup --no-interactive)
+(cd apps/website && doppler setup --no-interactive)
+(cd apps/docs && doppler setup --no-interactive)
 bun run dev
 ```
 
-Fill in the affiliate app's Convex and WorkOS values before starting it. Create the Convex development deployment from `apps/affiliate` with `bunx convex dev`.
+Install the [Doppler CLI](https://docs.doppler.com/docs/cli) first. Login and setup are one-time steps per machine/checkout; the app-level `doppler.yaml` files select each app's `dev` config. Every normal app `dev` script runs through Doppler, including when launched together with root `bun run dev`. Each app fetches only its own project's settings, after Turbo starts that app's task. Do not wrap the root command in a single `doppler run`.
+
+Keep affiliate's Convex and WorkOS values in Doppler. In a separate terminal, run `bun run --cwd apps/affiliate dev:convex` to sync/watch the configured Convex development deployment; this command also uses Doppler. The root `dev` command starts the web apps, not the Convex watcher.
+
+Existing `.env.local` files are left intact for optional local-only settings such as test-user credentials. Values supplied by Doppler take precedence over matching dotenv values. Avoid `.dev.vars` files for Doppler-backed affiliate development: Cloudflare gives those files a separate loading path that bypasses process-environment secrets. Restart the dev command after changing Doppler secrets. For personal overrides, select `dev_personal` with `doppler setup --config dev_personal` inside the relevant app directory; no script edit is needed.
 
 `bun install` also installs the Lefthook Git hooks. Commits fix and restage files with Oxlint, Oxfmt, and Prettier for Astro files. Pushes run typechecking and unit tests. Run a hook manually with `bunx lefthook run pre-commit` or temporarily bypass hooks with `LEFTHOOK=0 git commit`.
 
@@ -41,7 +48,7 @@ Each `dev` script is wrapped in [portless](https://github.com/vercel-labs/portle
 
 The `.waverly` segment keeps these names from colliding with other projects on the same machine. Portless assigns each server a random port through `PORT`, so the dev scripts do not pin ports. On first run it generates a local certificate authority and adds it to the system trust store, which may prompt for your password; `bunx portless doctor` diagnoses proxy or certificate problems. Safari needs `bunx portless hosts sync` once.
 
-The affiliate callback URL in `.env.local` is `https://affiliate.waverly.localhost/api/auth/callback`. Register that URL, and the matching `/api/auth/sign-in` URL, in the WorkOS development environment.
+The affiliate callback URL in the development Doppler config is `https://affiliate.waverly.localhost/api/auth/callback`. Register that URL, and the matching `/api/auth/sign-in` URL, in the WorkOS development environment.
 
 Astro backgrounds `astro dev` when it detects a coding agent, which makes portless drop the route as soon as the wrapper exits. Agents should set `ASTRO_DEV_BACKGROUND=1` when starting the website or docs servers so Astro stays in the foreground:
 
