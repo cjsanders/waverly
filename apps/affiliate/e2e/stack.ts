@@ -16,6 +16,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
@@ -50,17 +51,20 @@ const appDir = fileURLToPath(new URL('..', import.meta.url))
 const repoDir = path.resolve(appDir, '..', '..')
 const seedPath = path.join(appDir, 'e2e', 'workos-emulate.config.yaml')
 
-const children: { name: string; child: ChildProcess }[] = []
+type StackProcess = { name: string; child: ChildProcess; logPath: string }
+
+const children: StackProcess[] = []
+const logs: StackProcess[] = []
 let workDir: string | undefined
 let stopping = false
 
 export async function startStack() {
+  stopping = false
   workDir = mkdtempSync(path.join(tmpdir(), 'waverly-e2e-'))
 
   await startWorkosEmulator()
-  await startConvexBackend()
-  pushConvexFunctions()
-  buildApp()
+  await prepareConvexBackend()
+  await buildApp()
   await serveApp()
 }
 
@@ -68,6 +72,11 @@ export async function stopStack() {
   stopping = true
   await Promise.all(children.splice(0).map(({ child }) => terminate(child)))
   if (workDir) rmSync(workDir, { recursive: true, force: true })
+}
+
+/** Print captured service output when setup fails and keep it in the CI artifact directory. */
+export function reportStackLogs() {
+  for (const process of logs) printStackLog(process)
 }
 
 function terminate(child: ChildProcess) {
@@ -98,13 +107,40 @@ async function startWorkosEmulator() {
   await waitForHttp(`${WORKOS_URL}/sso/jwks/${WORKOS_CLIENT_ID}`, 'WorkOS emulator')
 }
 
-async function startConvexBackend() {
+async function prepareConvexBackend() {
+  let lastError: unknown
+
+  // The backend is disposable. Retry once from a fresh database if a runner has a transient
+  // startup/schema failure instead of letting the Convex CLI retry a wedged process for 30+ min.
+  /* oxlint-disable no-await-in-loop -- attempts must run serially because they share ports */
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    let backend: StackProcess | undefined
+    try {
+      backend = await startConvexBackend(attempt)
+      await waitForHttp(`${CONVEX_URL}/version`, 'Convex backend')
+      await pushConvexFunctions()
+      return
+    } catch (error) {
+      lastError = error
+      console.error(`Convex setup attempt ${attempt}/2 failed: ${String(error)}`)
+      if (backend) {
+        await stopProcess(backend)
+        printStackLog(backend)
+      }
+    }
+  }
+  /* oxlint-enable no-await-in-loop */
+
+  throw new Error(`Convex backend setup failed after 2 attempts`, { cause: lastError })
+}
+
+async function startConvexBackend(attempt: number) {
   const binary = await ensureConvexBackendBinary()
-  const dataDir = path.join(workDir!, 'convex')
+  const dataDir = path.join(workDir!, `convex-${attempt}`)
   mkdirSync(dataDir)
 
-  launch(
-    'convex-local-backend',
+  const backend = launch(
+    `convex-local-backend-${attempt}`,
     binary,
     [
       '--port',
@@ -122,10 +158,10 @@ async function startConvexBackend() {
     ],
     {},
   )
-  await waitForHttp(`${CONVEX_URL}/version`, 'Convex backend')
+  return backend
 }
 
-function pushConvexFunctions() {
+async function pushConvexFunctions() {
   const adminKey = execFileSync(
     convexBackendBinaryPath(),
     [
@@ -145,17 +181,19 @@ function pushConvexFunctions() {
     envFile,
     `CONVEX_SELF_HOSTED_URL=${CONVEX_URL}\nCONVEX_SELF_HOSTED_ADMIN_KEY=${adminKey}\n`,
   )
-  const convex = (...args: string[]) =>
-    run(bin('convex'), [...args, '--env-file', envFile], process.env)
+  const convex = (args: string[], timeoutMs?: number) =>
+    run(bin('convex'), [...args, '--env-file', envFile], process.env, timeoutMs)
 
-  convex('env', 'set', 'WORKOS_CLIENT_ID', WORKOS_CLIENT_ID)
-  convex('env', 'set', 'WORKOS_API_URL', WORKOS_URL)
+  await convex(['env', 'set', 'WORKOS_CLIENT_ID', WORKOS_CLIENT_ID])
+  await convex(['env', 'set', 'WORKOS_API_URL', WORKOS_URL])
   // Keeps crons quiet during tests, per the Convex testing guide.
-  convex('env', 'set', 'IS_TEST', 'true')
-  convex('deploy', '--yes')
+  await convex(['env', 'set', 'IS_TEST', 'true'])
+  await convex(['deploy', '--yes'], 120_000)
+  /* oxlint-disable no-await-in-loop -- seed mutations intentionally run in a stable order */
   for (const tenantId of E2E_TENANT_IDS) {
-    convex('run', 'network:seed', JSON.stringify({ tenantId }))
+    await convex(['run', 'network:seed', JSON.stringify({ tenantId })])
   }
+  /* oxlint-enable no-await-in-loop */
 }
 
 function appEnv() {
@@ -171,8 +209,8 @@ function appEnv() {
   }
 }
 
-function buildApp() {
-  run(bin('vite'), ['build'], appEnv())
+async function buildApp() {
+  await run(bin('vite'), ['build'], appEnv())
 }
 
 async function serveApp() {
@@ -239,13 +277,41 @@ function bin(name: string) {
   throw new Error(`Cannot find ${name} in node_modules/.bin; run bun install`)
 }
 
-function run(file: string, args: string[], env: NodeJS.ProcessEnv) {
+function run(file: string, args: string[], env: NodeJS.ProcessEnv, timeoutMs = 600_000) {
   console.log(`$ ${path.basename(file)} ${args.join(' ')}`)
-  execFileSync(file, args, { cwd: appDir, env, stdio: 'inherit' })
+  const child = spawn(file, args, { cwd: appDir, env, stdio: 'inherit' })
+
+  return new Promise<void>((resolve, reject) => {
+    let timedOut = false
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGTERM')
+      setTimeout(() => child.kill('SIGKILL'), 5_000).unref()
+    }, timeoutMs)
+
+    child.once('error', (error) => {
+      clearTimeout(timer)
+      reject(error)
+    })
+    child.once('exit', (code, signal) => {
+      clearTimeout(timer)
+      if (timedOut) {
+        reject(new Error(`${path.basename(file)} timed out after ${timeoutMs / 1_000}s`))
+      } else if (code === 0) {
+        resolve()
+      } else {
+        reject(new Error(`${path.basename(file)} exited with ${signal ?? code}`))
+      }
+    })
+  })
 }
 
 function launch(name: string, file: string, args: string[], env: NodeJS.ProcessEnv) {
-  const logPath = path.join(workDir!, `${name}.log`)
+  const logDir = process.env.CI
+    ? path.join(appDir, 'test-results', 'e2e-stack')
+    : path.join(workDir!, 'logs')
+  mkdirSync(logDir, { recursive: true })
+  const logPath = path.join(logDir, `${name}.log`)
   const log = createWriteStream(logPath)
   const child = spawn(file, args, {
     cwd: appDir,
@@ -259,8 +325,25 @@ function launch(name: string, file: string, args: string[], env: NodeJS.ProcessE
       console.error(`${name} exited with ${signal ?? code}; see ${logPath}`)
     }
   })
-  children.push({ name, child })
-  return child
+  const stackProcess = { name, child, logPath }
+  children.push(stackProcess)
+  logs.push(stackProcess)
+  return stackProcess
+}
+
+async function stopProcess(process: StackProcess) {
+  const index = children.indexOf(process)
+  if (index !== -1) children.splice(index, 1)
+  await terminate(process.child)
+}
+
+function printStackLog(process: StackProcess) {
+  if (!existsSync(process.logPath)) return
+  const output = readFileSync(process.logPath, 'utf8').trim()
+  if (!output) return
+  const maxLength = 40_000
+  const tail = output.length > maxLength ? output.slice(-maxLength) : output
+  console.error(`\n--- ${process.name} (${process.logPath}) ---\n${tail}\n--- end ---`)
 }
 
 async function waitForHttp(url: string, label: string, timeoutMs = 60_000) {
