@@ -5,7 +5,7 @@ description: Creator, brand, and operator modes, their URLs, and how to switch.
 
 A workspace is a WorkOS organization. Its `metadata.kind` decides which mode of the affiliate app it opens in. You can belong to several workspaces and switch between them; the active WorkOS organization on your session is the one the app uses.
 
-Workspace pages render on the server. The first HTML includes the shell and, on Messages, the inbox and selected conversation. See [SSR and prefetching](/ssr-and-prefetching) if you are adding a page.
+Workspace pages render on the server. See [SSR and prefetching](/ssr-and-prefetching) if you are adding a page.
 
 ## Modes
 
@@ -37,25 +37,21 @@ Workspaces in the list are ordered operator, then brand, then creator, and alpha
 
 ## Navigation
 
-Each mode has a live sidebar. Items are links: hover or keyboard focus starts the destination before you click. Messages also prefetches the inbox and the conversation that will open.
+Only **Overview** is wired up so far. Other sidebar items render as “Coming soon.” Each mode also has its own primary action in the top bar.
 
-<Frame
-  caption="Creator workspace Overview after the server render — sidebar links and fixture metrics, no loading placeholder"
-  aspect="16/9"
->
-  <img
-    src="/docs/workspaces-ssr-overview.png"
-    alt="Creator workspace Overview with a live sidebar and network health metrics"
-  />
-</Frame>
+| Mode     | Sidebar                                       | Primary action | Empty overview                                                                     |
+| -------- | --------------------------------------------- | -------------- | ---------------------------------------------------------------------------------- |
+| Creator  | Overview, Campaigns, Links, Payouts, Reports  | New link       | Sales, commissions, and campaign performance appear once data starts flowing.      |
+| Brand    | Overview, Campaigns, Creators, Links, Reports | New campaign   | Creator activity, conversions, and campaign spend appear once data starts flowing. |
+| Operator | Overview, Brands, Creators, Payouts, Reports  | Invite brand   | Network-wide brands, creators, and payouts appear once data starts flowing.        |
 
-| Mode     | Sidebar groups                                                                          |
-| -------- | --------------------------------------------------------------------------------------- |
-| Creator  | Home, Discovery, Work, Insights, Organization (includes Messages and Settings)          |
-| Brand    | Program, Creators, Reporting, Finance, Workspace (Messages and Settings)                |
-| Operator | Network, Marketplace, Performance, Finance, Operations (includes Messages and Settings) |
+The overview card title is **Nothing to show yet** until those pages have data.
 
-Most surfaces still render local fixture data. **Messages** is the live Convex inbox: the first response includes the thread list and the requested (or first) accessible conversation. Typing presence stays client-only.
+## First paint and prefetch
+
+Creator, brand, and operator homes render on the server. You should not see **Loading workspace…** on the first HTML. Hover or keyboard focus on a sidebar destination starts that page before you click.
+
+**Messages** is included in that first response — the inbox and the requested (or first) accessible conversation. Typing presence stays client-only. Other surfaces can still show the loading fallback later if a lazily loaded chunk is in flight.
 
 <Frame caption="Messages inbox and selected conversation included in the first HTML" aspect="16/9">
   <img
@@ -63,8 +59,6 @@ Most surfaces still render local fixture data. **Messages** is the live Convex i
     alt="Messages page with conversation list and an open thread"
   />
 </Frame>
-
-You should not see **Loading workspace…** on that first paint. The same fallback can still appear later if a lazily loaded surface is still fetching its chunk.
 
 ## Reporting dates
 
