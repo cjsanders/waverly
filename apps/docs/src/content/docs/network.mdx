@@ -1,0 +1,59 @@
+---
+title: Network workspaces
+description: Pages, persistence, and tenant isolation in creator, brand, and operator workspaces.
+---
+
+The authenticated [workspace](/workspaces) is the affiliate network: creator, brand, and operator surfaces that used to live in a separate prototype. The active WorkOS organization picks the mode. First visit to a workspace calls `network.initialize`, which seeds that organization's development catalog without wiping changes you have already made.
+
+## What is persisted
+
+These records live in Convex and are scoped to the active organization:
+
+- Message threads, replies, attachments, reactions, and read state
+- Typing rooms, session tokens, and upload authorizations
+- The backend foundation for publisher approval, offer edits, stable links, conversion imports, ledger entries, and payout reservation
+
+Message access requires a signed-in organization session and a matching network participant. Duplicate sends in the same organization are rejected by nonce.
+
+The selected page and saved product picks live in the browser, keyed by WorkOS organization. Direct links use the `page` (and optional `thread`) search parameters.
+
+<Frame
+  caption="Creator messages. Threads, replies, and unread state are stored in Convex for the active organization."
+  aspect="16/9"
+>
+  <img
+    src="/docs/network-messages.png"
+    alt="Creator workspace Messages page with a conversation list and an open thread with PuroAir"
+  />
+</Frame>
+
+<Frame
+  caption="Product catalog in a creator workspace. Terms and photography are local seed data; saving a product is kept in session storage for this organization."
+  aspect="16/9"
+>
+  <img
+    src="/docs/network-product-catalog.png"
+    alt="Creator product catalog with partnered products, commission rates, and fit scores"
+  />
+</Frame>
+
+## What is simulated
+
+Application and sample decisions, creator briefs and project progress, private rates, settings, campaigns, placements, storefront editing, and most operational actions stay in the UI. They do not contact brands, fulfill samples, send tracking traffic, import live provider data, or move money. Except for saved products, that local state can reset when you leave the workspace or refresh.
+
+The overview still walks a seven-step journey (health, approvals, offer, discover, link, sync and review, payout). Treat it as a guided map of the network, not a live production checklist.
+
+## Tenant isolation
+
+Every network record carries a `tenantId` taken only from the verified WorkOS `org_id` claim. Queries select that tenant, writes stamp it, and mutations treat cross-tenant IDs as missing. Workspace membership (who can open the app at all) is still decided by the Convex `memberships` table — see [WorkOS setup](/workos).
+
+Legacy fixture rows without a tenant remain schema-compatible for deployment migration, but public functions cannot read them.
+
+## Local and preview data
+
+The deterministic seed includes providers, advertisers, offers, publishers, links, conversions, and seller/creator program fixtures. Product photography and brand assets ship under `public/network` in the affiliate app. `network.seed` is an internal per-tenant catalog refresh; `network.reset` is a destructive development utility and needs an explicit confirmation.
+
+<Aside type="note" title="Deploy order">
+  Deploy the updated Convex functions before publishing an affiliate build that calls them. Cloud
+  deploy steps stay on the existing Convex and Cloudflare workflow.
+</Aside>
