@@ -37,7 +37,7 @@ Run `node --test scripts/cloudflare.test.mjs` to check preview command safety, a
 
 ## Doppler
 
-Each app has a `doppler.yaml` aimed at its `dev` config. Run `doppler login` once, then `doppler setup` in the app directory. For affiliate local development: `doppler run -- bun run dev`.
+Each app has a `doppler.yaml` aimed at its `dev` config. Run `doppler login` once, then `doppler setup --no-interactive` in each app directory. Normal `bun run dev` already wraps `doppler run` per app, including from the root command — do not wrap the root command in another `doppler run`. Affiliate `dev:convex` uses the same selected config. Personal overrides: `doppler setup --config dev_personal`. See [Local development](/local-development). The credential-free `dev:agent` stack does not use Doppler.
 
 Website and docs currently have no application secrets, so their Doppler projects need no CI token yet.
 
