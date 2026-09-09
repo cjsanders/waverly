@@ -17,6 +17,7 @@ export const get = query({
   handler: async (ctx) => {
     const user = await getViewerUser(ctx)
     if (!user) return null
+    const identity = await ctx.auth.getUserIdentity()
 
     const rows = await ctx.db
       .query('memberships')
@@ -35,7 +36,12 @@ export const get = query({
         a.organization.name.localeCompare(b.organization.name),
     )
 
-    return { user, memberships }
+    return {
+      user,
+      memberships,
+      organizationId: stringClaim(identity?.org_id),
+      role: stringClaim(identity?.role),
+    }
   },
 })
 
@@ -114,3 +120,7 @@ export const sync = mutation({
     )
   },
 })
+
+function stringClaim(value: unknown) {
+  return typeof value === 'string' ? value : null
+}

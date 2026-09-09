@@ -15,9 +15,20 @@ export const getWorkOS = createServerOnlyFn(() => {
   client = new WorkOS(apiKey, {
     clientId: process.env.WORKOS_CLIENT_ID,
     apiHostname: process.env.WORKOS_API_HOSTNAME,
+    https: process.env.WORKOS_API_HTTPS !== 'false',
+    port: optionalPort(process.env.WORKOS_API_PORT),
   })
   return client
 })
+
+function optionalPort(value: string | undefined) {
+  if (!value) return undefined
+  const port = Number(value)
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error(`WORKOS_API_PORT must be a valid port, received ${JSON.stringify(value)}`)
+  }
+  return port
+}
 
 export type WorkOSMembership = {
   role: string

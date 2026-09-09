@@ -52,5 +52,7 @@ describe.skipIf(!apiKey)('Stagehand smoke test', () => {
 
     await expect(page.url()).resolves.toContain(new URL(baseUrl).hostname)
     await expect(page.title()).resolves.not.toBe('')
+    // The landing page rendered through the Worker, not an error page from the platform.
+    await page.waitForSelector('text=Sign in with WorkOS', { timeout: 15_000 })
   })
 })

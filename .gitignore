@@ -5,6 +5,8 @@ dist/
 .nimbus/
 .output/
 coverage/
+test-results/
+playwright-report/
 .wrangler/
 .amp/portals/
 

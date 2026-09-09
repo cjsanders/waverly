@@ -1,4 +1,10 @@
-Welcome to your new TanStack Start app!
+# Waverly affiliate workspace
+
+The app has organization-aware creator, brand, and operator workspaces. The network functionality
+originally prototyped in Orion now lives directly in `/creator`, `/brand`, and `/operator`. Users
+who belong to multiple WorkOS organizations can switch between them from the workspace control in
+the sidebar. See [the network feature map](docs/network-features.md) for the current scope,
+persistence boundaries, architecture, and test coverage.
 
 # Getting Started
 
@@ -21,19 +27,6 @@ To build this application for production:
 bun --bun run build
 ```
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
 ## Linting & Formatting
 
 The monorepo uses [Oxlint](https://oxc.rs/docs/guide/usage/linter.html) and [Oxfmt](https://oxc.rs/docs/guide/usage/formatter.html). Run them from the repository root:
@@ -48,7 +41,7 @@ bun run check
 
 - Keep `VITE_CONVEX_URL`, `VITE_CONVEX_SITE_URL`, and `CONVEX_DEPLOYMENT` in this app's development Doppler config.
 - Run `bun run dev:convex` in a separate terminal to sync/watch that Convex development deployment with Doppler settings. Starting the frontend does not start the Convex watcher.
-- Configure token validation in each Convex deployment with `bunx --bun convex env set WORKOS_CLIENT_ID client_...`.
+- Configure token validation in each Convex deployment with `bunx --bun convex env set WORKOS_CLIENT_ID client_...` and `bunx --bun convex env set WORKOS_API_URL https://api.workos.com`. The auth config reads both; `WORKOS_API_URL` lets tests point Convex at a WorkOS emulator.
 
 ## Setting up WorkOS
 
@@ -71,8 +64,11 @@ For development against real WorkOS:
    ```
 
 3. On the dashboard's [Redirects page](https://dashboard.workos.com/redirects), add
-   `https://affiliate.waverly.localhost/api/auth/callback` as a redirect URI and
-   `https://affiliate.waverly.localhost/api/auth/sign-in` as the sign-in endpoint.
+   `https://affiliate.waverly.localhost/api/auth/callback` as a redirect URI,
+   `https://affiliate.waverly.localhost/api/auth/sign-in` as the sign-in endpoint, and
+   `https://affiliate.waverly.localhost/` as a sign-out URI (the user menu sends the app origin as
+   the logout return URL, so every origin the app runs on needs an entry). Set the app homepage URL
+   as the fallback.
 4. Start the app and use the sign-in action on `/`.
 5. Optional: create an Email + Password user in WorkOS and set `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` so agents can open `/api/auth/test-login` instead of the hosted AuthKit screen.
 
@@ -105,6 +101,39 @@ In the WorkOS dashboard for the environment:
 Onboarding creates brand and creator organizations through the API. Operator organizations are
 provisioned by Waverly (for example by the dev seed script), never through onboarding.
 
+### Network workspaces
+
+Workspace mode comes from each WorkOS organization's `metadata.kind`. The matching creator, brand,
+or operator experience opens automatically, and the sidebar switcher changes both the active WorkOS
+organization and the route. Network seed data currently supports local and preview development;
+tenant isolation must be applied before real partner or financial records are introduced.
+
+## Testing
+
+Three tiers, from fastest to most realistic:
+
+- `bun run test` runs Vitest. Plain unit tests live in `src/**/*.test.ts`. Convex functions are
+  tested in `convex/**/*.test.ts` with [`convex-test`](https://docs.convex.dev/testing/convex-test),
+  which runs them in-process on the edge runtime; `t.withIdentity({ org_id, role })` fakes the WorkOS
+  token claims, so workspace logic needs no WorkOS at all.
+- `bun run test:e2e` runs Playwright against a production build with every dependency on localhost,
+  so it needs no secrets and works offline after the first run:
+  - the [WorkOS emulator](https://github.com/workos/emulate) on port 4100, seeded from
+    `e2e/workos-emulate.config.yaml` (its authorize endpoint signs in the first seeded user without a
+    login page);
+  - a local [Convex backend](https://github.com/get-convex/convex-backend) on ports 3210 and 3211,
+    with the functions pushed to it and `WORKOS_API_URL` pointed at the emulator so access tokens
+    verify against the emulator's JWKS. The binary is downloaded once into `~/.cache/waverly`;
+  - `vite preview` on port 4173, built with `CLOUDFLARE_ENV=e2e` so the `env.e2e` vars in
+    `wrangler.jsonc` aim AuthKit at the emulator.
+
+  Run `bunx playwright install chromium` once before the first run. `e2e/stack.ts` is the harness;
+  Playwright's global setup starts the stack and its global teardown stops it.
+
+CI runs both tiers in `.github/workflows/ci.yml`. Pull-request preview deployment is configured in
+Cloudflare Builds; see the repository-level `DEPLOYMENT.md` rather than adding a second GitHub
+Actions deployment path.
+
 ## Shadcn
 
 Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
@@ -124,7 +153,7 @@ This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) an
 1. Authenticate with `bunx wrangler login`.
 2. Provide `VITE_CONVEX_URL` to the build environment. It is compiled into the client bundle and cannot be supplied later as a Worker secret.
 3. Add `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD`, and `TINYBIRD_PIPE_READ_TOKEN` with `bunx wrangler secret put <NAME>`.
-4. Configure `WORKOS_CLIENT_ID`, `WORKOS_REDIRECT_URI`, `WORKOS_API_HOSTNAME`, and `TINYBIRD_API_URL` as Worker variables in Cloudflare. Register the production callback and sign-in URLs in WorkOS.
+4. Configure `WORKOS_CLIENT_ID`, `WORKOS_REDIRECT_URI`, and `TINYBIRD_API_URL` as Worker variables in Cloudflare. `WORKOS_API_HOSTNAME`, `WORKOS_API_HTTPS`, and `WORKOS_API_PORT` ship as `vars` in `wrangler.jsonc`. Register the production callback and sign-in URLs in WorkOS.
 5. Run `bun run deploy`.
 
 Cloudflare and Convex are separate deployments. Deploy Convex schema/functions and set its `WORKOS_CLIENT_ID` independently before deploying a Worker build that uses them.

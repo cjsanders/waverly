@@ -7,6 +7,7 @@ export const Route = createFileRoute('/dashboard')({
   beforeLoad: ({ context, location }) => {
     if (!context.user) {
       throw redirect({
+        reloadDocument: true,
         href: `/api/auth/sign-in?returnPathname=${encodeURIComponent(location.href)}`,
       })
     }

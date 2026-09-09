@@ -1,20 +1,24 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useCallback } from 'react'
 
-import { AppShell } from '#/components/app-shell'
-import { EmptyOverview } from '#/components/empty-overview'
+import { NetworkWorkspace } from '#/features/network/NetworkWorkspace'
+import { parseWorkspaceSearch, type WorkspaceSearch } from '#/features/network/workspace-search'
 import { redirectUnlessKind } from '#/lib/mode-routes'
 
 export const Route = createFileRoute('/_app/_workspace/creator/')({
+  validateSearch: parseWorkspaceSearch,
   beforeLoad: ({ context }) => redirectUnlessKind(context.workspace, 'creator'),
-  component: Overview,
+  component: CreatorWorkspace,
 })
 
-function Overview() {
-  return (
-    <AppShell title="Overview">
-      <EmptyOverview>
-        Your sales, commissions, and campaign performance will appear here once data starts flowing.
-      </EmptyOverview>
-    </AppShell>
+function CreatorWorkspace() {
+  const navigate = useNavigate({ from: '/creator/' })
+  const search = Route.useSearch()
+  const onSearchChange = useCallback(
+    (next: WorkspaceSearch, replace = false) => {
+      void navigate({ search: next, replace, resetScroll: true })
+    },
+    [navigate],
   )
+  return <NetworkWorkspace mode="creator" search={search} onSearchChange={onSearchChange} />
 }
