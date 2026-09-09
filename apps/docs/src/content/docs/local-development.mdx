@@ -1,0 +1,55 @@
+---
+title: Local development
+description: Doppler-backed bun run dev, personal overrides, and the credential-free agent stack.
+---
+
+Install the [Doppler CLI](https://docs.doppler.com/docs/cli) first. Each app has a `doppler.yaml` that selects its own `dev` config (`waverly-affiliate`, `waverly-website`, `waverly-docs`). Login and setup are one-time steps per machine or checkout:
+
+```sh
+bun install
+doppler login
+(cd apps/affiliate && doppler setup --no-interactive)
+(cd apps/website && doppler setup --no-interactive)
+(cd apps/docs && doppler setup --no-interactive)
+bun run dev
+```
+
+Every normal app `dev` script already runs through `doppler run`, including when Turbo starts all three from the root. Each app loads only its own project after its task starts. Do not wrap the root command in a single `doppler run`.
+
+`bun run dev` starts the three web apps. It does not start Convex. In a second terminal:
+
+```sh
+bun run --cwd apps/affiliate dev:convex
+```
+
+That watcher uses the same selected Doppler config as affiliate `dev`. Keep Convex and WorkOS values in Doppler, not in committed env files.
+
+## Local URLs
+
+[Portless](https://github.com/vercel-labs/portless) gives each app a stable HTTPS hostname:
+
+| App       | URL                                   |
+| --------- | ------------------------------------- |
+| Affiliate | `https://affiliate.waverly.localhost` |
+| Website   | `https://website.waverly.localhost`   |
+| Docs      | `https://docs.waverly.localhost`      |
+
+The development Doppler config registers `https://affiliate.waverly.localhost/api/auth/callback`. Add that URL and `/api/auth/sign-in` in the WorkOS development environment. See [WorkOS setup](/workos).
+
+## Overrides and precedence
+
+Existing `.env.local` files stay available for optional local-only values such as `TEST_USER_EMAIL` and `TEST_USER_PASSWORD`. Matching keys from Doppler win over dotenv.
+
+Do not use `.dev.vars` for Doppler-backed affiliate development. Cloudflare loads that file on a path that bypasses process-environment secrets.
+
+Restart the relevant `dev` or `dev:convex` process after you change Doppler values.
+
+For personal overrides, select `dev_personal` inside the app directory. No script edit is required:
+
+```sh
+doppler setup --config dev_personal
+```
+
+## Cloud Agents
+
+The isolated `setup:agent` / `dev:agent` stack does not use Doppler. It refuses to start when local variable files would select a shared backend. See [Agent login](/agent-login).

@@ -18,6 +18,8 @@ bun run dev:agent
 
 This starts WorkOS Emulate, Convex, and the affiliate app with a deterministic test user. The setup stores its signing key and database under ignored local directories and refuses to start when local variable files would select a shared backend or override the emulator. Browser Convex traffic is proxied through the affiliate origin, so forwarded browsers do not connect to the agent's loopback address directly.
 
+These agent commands do not require Doppler. The normal `bun run dev` path is separate and loads each app's Doppler config automatically. See [Local development](/local-development).
+
 To use real WorkOS instead, enable Email + Password in its dashboard, create a user, and set `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` in `apps/affiliate/.env.local`. Never commit those values or set them in production.
 
 ## Sign in
