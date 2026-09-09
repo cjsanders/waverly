@@ -40,4 +40,8 @@ The auth callback lists the user's active WorkOS memberships, reads each organiz
 
 Authorization later checks the `memberships` table, not the token's `org_id` claim, so a stale token after a workspace switch cannot grant access.
 
-After sign-in, the overview shows the Convex session (role and organization) so a broken token chain is visible. **Convex did not accept the session** means the access token did not verify against that Convex deployment — check `WORKOS_CLIENT_ID` and `WORKOS_API_URL`.
+## Tenant isolation
+
+[Network](/network) records (publishers, offers, links, conversions, messages, payouts) use the verified `org_id` as Convex `tenantId`. Cross-tenant IDs return the same not-found error as a missing row.
+
+If the workspace banner says **The network data could not connect**, the user is signed in but Convex rejected the token or could not seed the tenant — check `WORKOS_CLIENT_ID` and `WORKOS_API_URL`.

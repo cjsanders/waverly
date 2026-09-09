@@ -1,0 +1,46 @@
+---
+title: Affiliate network
+description: Pages, persistence, and tenant isolation in creator, brand, and operator workspaces.
+---
+
+The signed-in affiliate app is the Waverly network. [Workspace](/workspaces) kind picks the creator, brand, or operator experience; every page below is scoped to the active WorkOS organization.
+
+## Overview
+
+The home page keeps a seven-step guided journey: Health, Approvals, Offer, Discover, Link, Sync & review, and Payout. Search, filters, product and brand details, report date ranges, CSV exports, organization switching, mobile navigation, and browser back/forward work across the relevant pages. Saved product selections persist per workspace in browser session storage.
+
+## What is persisted
+
+| Layer               | What it covers                                                                                                                                                        |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Convex              | Message threads, replies, attachments, reactions, and read state. Typing rooms, upload authorizations, and attachment claims use the same organization boundary.      |
+| Browser session     | The selected page and saved products, keyed by WorkOS organization. The `page` URL param is the shareable link; invalid pages fall back to Overview.                  |
+| Simulated in the UI | Application and sample decisions, creator briefs, project progress, private rates, settings, campaigns, placements, storefront editing, and most operational actions. |
+
+Simulated actions do not contact brands, fulfill samples, distribute tracking traffic, import live provider data, or send money. Other than saved products, that UI state may reset when you leave the workspace or refresh.
+
+The backend still has the foundation for publisher approval, offer edits, immutable link versions, idempotent conversion imports, an append-only ledger, and payout reservation. Those APIs are tested independently of the simulated screens. Mutations record the real session identity on actor audit fields.
+
+<Frame caption="Messages persist in Convex for the active organization" aspect="16/9">
+  <img src="/docs/network-messages.png" alt="Workspace messages inbox with a thread and composer" />
+</Frame>
+
+## Tenant isolation
+
+Every network record carries a `tenantId` taken only from the verified WorkOS `org_id` claim. Queries select that tenant, writes stamp it, and a record from another organization looks like it does not exist.
+
+[WorkOS setup](/workos) still authorizes who can open a workspace from the Convex `memberships` table, so a stale token after a switch cannot grant access. Network data uses the current `org_id` so two organizations never share publishers, offers, links, conversions, or messages.
+
+Legacy fixture rows without a tenant remain schema-compatible for migration, but public functions cannot read them.
+
+## Development catalog
+
+The first authenticated visit to a workspace calls `network.initialize`. It seeds that tenant only when the catalog is empty, and it does not reset existing changes.
+
+The deterministic fixture includes providers, advertisers, offers, publishers, properties, links, conversions, and daily performance, plus seller and creator commercial programs. Product photography and brand assets live under `apps/affiliate/public/network`.
+
+`network.seed` is an internal, repeatable per-tenant catalog refresh. `network.reset` is an internal per-tenant development utility and requires an explicit destructive confirmation.
+
+<Aside type="note" title="Deploy order">
+  Deploy the updated Convex functions before publishing an affiliate build that calls them.
+</Aside>
