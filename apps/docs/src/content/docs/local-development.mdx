@@ -1,0 +1,59 @@
+---
+title: Local development
+description: Doppler-backed bun run dev, Convex watch, and the credential-free agent stack.
+---
+
+Normal `bun run dev` commands load each app's selected Doppler config. Install the [Doppler CLI](https://docs.doppler.com/docs/cli) first. The credential-free [agent login](/agent-login) stack does not use Doppler.
+
+## One-time setup
+
+Login and setup are per machine and checkout. Each app has a `doppler.yaml` that selects its `waverly-<app>` project and the `dev` config.
+
+```sh
+bun install
+doppler login
+(cd apps/affiliate && doppler setup --no-interactive)
+(cd apps/website && doppler setup --no-interactive)
+(cd apps/docs && doppler setup --no-interactive)
+```
+
+For personal overrides in one app, run `doppler setup --config dev_personal` in that app directory. No script edit is required.
+
+## Start the apps
+
+```sh
+bun run dev
+```
+
+Root `dev` starts the three web apps through Turbo. Each app's own `dev` script already wraps the server in `doppler run`, so every process fetches only that project's settings. Do not wrap the root command in a single `doppler run`.
+
+| App       | URL                                   |
+| --------- | ------------------------------------- |
+| Affiliate | `https://affiliate.waverly.localhost` |
+| Website   | `https://website.waverly.localhost`   |
+| Docs      | `https://docs.waverly.localhost`      |
+
+Website and docs currently have no application secrets. Affiliate keeps Convex and [WorkOS](/workos) values in Doppler. The development callback is `https://affiliate.waverly.localhost/api/auth/callback`.
+
+## Convex watcher
+
+Root `dev` does not start Convex. In a second terminal:
+
+```sh
+bun run --cwd apps/affiliate dev:convex
+```
+
+That command uses the same selected Doppler config. Keep `VITE_CONVEX_URL`, `VITE_CONVEX_SITE_URL`, and `CONVEX_DEPLOYMENT` there.
+
+## Local files
+
+Existing `.env.local` files can still supply optional local-only values such as `TEST_USER_EMAIL` and `TEST_USER_PASSWORD`. Doppler wins on matching keys.
+
+<Aside type="caution" title="Skip .dev.vars">
+  Do not use `.dev.vars` for Doppler-backed affiliate development. Cloudflare loads that file on a
+  path that bypasses process-environment secrets.
+</Aside>
+
+Restart the affected `dev` process after you change Doppler values.
+
+The isolated `setup:agent` / `dev:agent` commands stay independent of Doppler. See [Agent login](/agent-login).
