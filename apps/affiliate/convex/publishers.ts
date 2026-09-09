@@ -1,19 +1,16 @@
-import { requireNetworkSession } from './networkAccess'
+import { requireNetworkSession, requireTenantDocument } from './networkAccess'
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 
 export const list = query({
   args: { status: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    const status = args.status
-    if (status) {
-      return ctx.db
-        .query('publishers')
-        .withIndex('by_status', (q) => q.eq('status', status))
-        .collect()
-    }
-    return ctx.db.query('publishers').collect()
+    const { tenantId } = await requireNetworkSession(ctx)
+    const rows = await ctx.db
+      .query('publishers')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .collect()
+    return args.status ? rows.filter((row) => row.status === args.status) : rows
   },
 })
 
@@ -24,9 +21,12 @@ export const approvePublisher = mutation({
     actor: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    const publisher = await ctx.db.get(args.publisherId)
-    if (!publisher) throw new Error('Publisher not found')
+    const session = await requireNetworkSession(ctx)
+    const publisher = requireTenantDocument(
+      await ctx.db.get(args.publisherId),
+      session.tenantId,
+      'Publisher not found',
+    )
     const now = Date.now()
     await ctx.db.patch(args.publisherId, {
       status: 'active',
@@ -37,7 +37,7 @@ export const approvePublisher = mutation({
           status: 'active',
           reason: args.reason,
           changedAt: now,
-          changedBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+          changedBy: session.tokenIdentifier,
         },
       ],
     })
@@ -52,9 +52,12 @@ export const approveProperty = mutation({
     actor: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    const property = await ctx.db.get(args.propertyId)
-    if (!property) throw new Error('Property not found')
+    const session = await requireNetworkSession(ctx)
+    const property = requireTenantDocument(
+      await ctx.db.get(args.propertyId),
+      session.tenantId,
+      'Property not found',
+    )
     const now = Date.now()
     await ctx.db.patch(args.propertyId, {
       approvalStatus: 'approved',
@@ -65,7 +68,7 @@ export const approveProperty = mutation({
           status: 'approved',
           reason: args.reason,
           changedAt: now,
-          changedBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+          changedBy: session.tokenIdentifier,
         },
       ],
     })

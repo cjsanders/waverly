@@ -1,4 +1,4 @@
-import { requireNetworkSession } from './networkAccess'
+import { requireNetworkSession, requireTenantDocument } from './networkAccess'
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import {
@@ -11,10 +11,12 @@ import {
 export const recentSyncs = query({
   args: { providerId: v.id('providers'), limit: v.optional(v.number()) },
   handler: async (ctx, { providerId, limit = 10 }) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
+    requireTenantDocument(await ctx.db.get(providerId), tenantId, 'Provider not found')
     return ctx.db
       .query('providerSyncRuns')
       .withIndex('by_providerId_startedAt', (q) => q.eq('providerId', providerId))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .order('desc')
       .take(Math.min(Math.max(limit, 1), 100))
   },
@@ -43,16 +45,50 @@ export const importConversion = mutation({
     attributionSnapshot: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
+    requireTenantDocument(await ctx.db.get(args.providerId), tenantId, 'Provider not found')
+    requireTenantDocument(
+      await ctx.db.get(args.providerAccountId),
+      tenantId,
+      'Provider account not found',
+    )
+    requireTenantDocument(await ctx.db.get(args.syncRunId), tenantId, 'Sync run not found')
+    requireTenantDocument(await ctx.db.get(args.publisherId), tenantId, 'Publisher not found')
+    requireTenantDocument(await ctx.db.get(args.propertyId), tenantId, 'Property not found')
+    requireTenantDocument(await ctx.db.get(args.advertiserId), tenantId, 'Advertiser not found')
+    requireTenantDocument(await ctx.db.get(args.programId), tenantId, 'Program not found')
+    if (args.offerId) {
+      requireTenantDocument(await ctx.db.get(args.offerId), tenantId, 'Offer not found')
+    }
+    if (args.linkId) {
+      requireTenantDocument(await ctx.db.get(args.linkId), tenantId, 'Link not found')
+    }
+    if (args.linkVersionId) {
+      requireTenantDocument(
+        await ctx.db.get(args.linkVersionId),
+        tenantId,
+        'Link version not found',
+      )
+    }
     const existingRaw = await ctx.db
       .query('providerRawRecords')
       .withIndex('by_providerId_externalRecordId', (q) => q.eq('providerId', args.providerId))
-      .filter((q) => q.eq(q.field('externalRecordId'), args.externalRecordId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('tenantId'), tenantId),
+          q.eq(q.field('externalRecordId'), args.externalRecordId),
+        ),
+      )
       .unique()
     const existingConversion = await ctx.db
       .query('conversions')
       .withIndex('by_providerId_providerTransactionId', (q) => q.eq('providerId', args.providerId))
-      .filter((q) => q.eq(q.field('providerTransactionId'), args.providerTransactionId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('tenantId'), tenantId),
+          q.eq(q.field('providerTransactionId'), args.providerTransactionId),
+        ),
+      )
       .unique()
 
     if (existingRaw?.payloadHash === args.payloadHash && existingConversion) {
@@ -68,7 +104,10 @@ export const importConversion = mutation({
       commissionRuleId = existingConversion.commissionRuleId
       commissionRuleSnapshot = existingConversion.commissionRuleSnapshot
     } else {
-      const ruleDocuments = await ctx.db.query('commissionRules').collect()
+      const ruleDocuments = await ctx.db
+        .query('commissionRules')
+        .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+        .collect()
       const applicableRules = ruleDocuments.filter((rule) => {
         if (!rule.active) return false
         if (rule.scopeType === 'network_default') return true
@@ -104,6 +143,7 @@ export const importConversion = mutation({
     }
 
     const conversionFields = {
+      tenantId,
       providerId: args.providerId,
       providerTransactionId: args.providerTransactionId,
       publisherId: args.publisherId,
@@ -137,6 +177,7 @@ export const importConversion = mutation({
     }
 
     const rawFields = {
+      tenantId,
       providerId: args.providerId,
       providerAccountId: args.providerAccountId,
       syncRunId: args.syncRunId,

@@ -220,6 +220,7 @@ export function MessagesSurface({
   )
   const sendPersistedMessage = useMutation(api.messages.send)
   const generateAttachmentUploadUrl = useMutation(api.messages.generateAttachmentUploadUrl)
+  const registerAttachmentUpload = useMutation(api.messages.registerAttachmentUpload)
   const togglePersistedReaction = useMutation(api.messages.toggleReaction)
   const markThreadRead = useMutation(api.messages.markRead)
   const [mobileView, setMobileView] = useState<'list' | 'chat'>(initialThreadId ? 'chat' : 'list')
@@ -320,7 +321,7 @@ export function MessagesSurface({
       }> = []
       for (const file of pendingAttachments) {
         const contentType = attachmentContentType(file)
-        const uploadUrl = await generateAttachmentUploadUrl({
+        const { uploadUrl, authorizationToken } = await generateAttachmentUploadUrl({
           threadKey: selectedThread.id,
           identityKey: identity,
         })
@@ -333,6 +334,10 @@ export function MessagesSurface({
         const uploadResult = (await uploadResponse.json()) as { storageId?: string }
         if (!uploadResult.storageId)
           throw new Error(`${file.name} did not return a storage reference.`)
+        await registerAttachmentUpload({
+          authorizationToken,
+          storageId: uploadResult.storageId as Id<'_storage'>,
+        })
         attachments.push({
           storageId: uploadResult.storageId as Id<'_storage'>,
           name: file.name,

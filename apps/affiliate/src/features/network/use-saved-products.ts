@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 
 /** Browser-local curation survives page navigation without pretending to publish changes. */
-export function useSavedProducts(identity: string, defaultIds: string[]) {
-  const key = `waverly.workspace.${identity}.saved-products.v1`
+export function useSavedProducts(tenantId: string, identity: string, defaultIds: string[]) {
+  const key = `waverly.workspace.${tenantId}.${identity}.saved-products.v1`
   const [saved, setSaved] = useState<Set<string>>(() => {
     try {
       const value: unknown = JSON.parse(window.sessionStorage.getItem(key) ?? 'null')

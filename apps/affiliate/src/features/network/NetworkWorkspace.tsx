@@ -51,9 +51,10 @@ const creatorPortalPages = new Set([
 
 export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorkspaceProps) {
   const workspace = useWorkspace()
+  const tenantId = workspace.organization.workosOrganizationId
   const { viewer } = useRouteContext({ from: '/_app' })
   const mounted = useHydrated()
-  const [restored] = useState(() => readWorkspaceSession(mode))
+  const [restored] = useState(() => readWorkspaceSession(mode, tenantId))
   const identity: NetworkIdentity =
     mode === 'operator' ? 'operator' : mode === 'brand' ? 'puroair' : 'northstar'
   const requestedPage = search.page ?? restored?.currentPage ?? 'Overview'
@@ -71,14 +72,14 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
     }
     try {
       window.sessionStorage.setItem(
-        workspaceSessionKey,
+        workspaceSessionKey(tenantId),
         JSON.stringify({ kind: mode, currentPage, activeStep }),
       )
     } catch {
       /* Storage may be unavailable; URL navigation still works. */
     }
     contentRef.current?.scrollTo({ top: 0 })
-  }, [activeStep, currentPage, mode, onSearchChange, search.thread, search.page])
+  }, [activeStep, currentPage, mode, onSearchChange, search.thread, search.page, tenantId])
 
   const nav = <NetworkNav currentPage={currentPage} onPageChange={setCurrentPage} />
   const handleStepChange = (step: number) => {
@@ -185,6 +186,7 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
                 <ReportingSurface identity={identity} />
               ) : discoveryPageViews[currentPage] ? (
                 <DiscoverySurface
+                  tenantId={tenantId}
                   identity={identity}
                   key={`${identity}-${currentPage}`}
                   view={discoveryPageViews[currentPage]}

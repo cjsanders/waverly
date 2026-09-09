@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop -- Preserve ordered writes inside a single Convex transaction. */
-import { requireNetworkSession } from './networkAccess'
+import { requireNetworkSession, requireTenantDocument } from './networkAccess'
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import { mutation, query, type MutationCtx, type QueryCtx } from './_generated/server'
@@ -26,6 +26,7 @@ const reactionEmoji = v.union(
 const reactionOptions: ReactionEmoji[] = ['👍', '❤️', '🎉', '😂', '👀']
 const maxAttachments = 4
 const maxAttachmentBytes = 10 * 1024 * 1024
+const uploadAuthorizationLifetimeMs = 10 * 60 * 1_000
 const allowedContentTypes = new Set([
   'image/jpeg',
   'image/png',
@@ -84,12 +85,14 @@ async function requireParticipantByThreadId(
   ctx: QueryCtx | MutationCtx,
   threadId: Id<'messageThreads'>,
   identity: IdentityKey,
+  tenantId: string,
 ) {
   const participant = await ctx.db
     .query('messageThreadParticipants')
     .withIndex('by_threadId_and_identityKey', (q) =>
       q.eq('threadId', threadId).eq('identityKey', identity),
     )
+    .filter((q) => q.eq(q.field('tenantId'), tenantId))
     .unique()
   if (!participant) throw new Error('This workspace identity cannot access that conversation.')
   return participant
@@ -99,13 +102,15 @@ async function requireThreadParticipant(
   ctx: QueryCtx | MutationCtx,
   threadKey: string,
   identity: IdentityKey,
+  tenantId: string,
 ) {
   const thread = await ctx.db
     .query('messageThreads')
     .withIndex('by_key', (q) => q.eq('key', threadKey))
+    .filter((q) => q.eq(q.field('tenantId'), tenantId))
     .unique()
   if (!thread) throw new Error('Conversation not found.')
-  await requireParticipantByThreadId(ctx, thread._id, identity)
+  await requireParticipantByThreadId(ctx, thread._id, identity, tenantId)
   return thread
 }
 
@@ -121,19 +126,21 @@ export const listThreads = query({
   args: { identityKey },
   returns: v.array(threadSummary),
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
     const participantRows = await ctx.db
       .query('messageThreadParticipants')
       .withIndex('by_identityKey', (q) => q.eq('identityKey', args.identityKey))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .take(50)
 
     const rows = await Promise.all(
       participantRows.map(async (participant) => {
         const thread = await ctx.db.get('messageThreads', participant.threadId)
-        if (!thread) return null
+        if (!thread || thread.tenantId !== tenantId) return null
         const threadParticipants = await ctx.db
           .query('messageThreadParticipants')
           .withIndex('by_threadId', (q) => q.eq('threadId', participant.threadId))
+          .filter((q) => q.eq(q.field('tenantId'), tenantId))
           .take(10)
         const counterpart = threadParticipants.find((row) => row.identityKey !== args.identityKey)
         return {
@@ -159,17 +166,19 @@ export const listMessages = query({
   args: { threadKey: v.string(), identityKey },
   returns: v.array(message),
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    const thread = await requireThreadParticipant(ctx, args.threadKey, args.identityKey)
+    const { tenantId } = await requireNetworkSession(ctx)
+    const thread = await requireThreadParticipant(ctx, args.threadKey, args.identityKey, tenantId)
     const rows = await ctx.db
       .query('messageEntries')
       .withIndex('by_threadId_and_sentAt', (q) => q.eq('threadId', thread._id))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .order('desc')
       .take(100)
 
     const attachmentRows = await ctx.db
       .query('messageAttachments')
       .withIndex('by_threadId', (q) => q.eq('threadId', thread._id))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .take(400)
     const hydratedAttachments = (
       await Promise.all(
@@ -197,6 +206,7 @@ export const listMessages = query({
     const reactionRows = await ctx.db
       .query('messageReactions')
       .withIndex('by_threadId', (q) => q.eq('threadId', thread._id))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .take(500)
     const reactionsByMessage = new Map<string, Map<ReactionEmoji, Set<IdentityKey>>>()
     for (const reaction of reactionRows) {
@@ -237,11 +247,60 @@ export const listMessages = query({
 
 export const generateAttachmentUploadUrl = mutation({
   args: { threadKey: v.string(), identityKey },
-  returns: v.string(),
+  returns: v.object({ uploadUrl: v.string(), authorizationToken: v.string() }),
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    await requireThreadParticipant(ctx, args.threadKey, args.identityKey)
-    return await ctx.storage.generateUploadUrl()
+    const { tenantId } = await requireNetworkSession(ctx)
+    const thread = await requireThreadParticipant(ctx, args.threadKey, args.identityKey, tenantId)
+    const authorizationToken = crypto.randomUUID()
+    await ctx.db.insert('messageUploadAuthorizations', {
+      tenantId,
+      token: authorizationToken,
+      threadId: thread._id,
+      identityKey: args.identityKey,
+      createdAt: Date.now(),
+    })
+    return {
+      uploadUrl: await ctx.storage.generateUploadUrl(),
+      authorizationToken,
+    }
+  },
+})
+
+export const registerAttachmentUpload = mutation({
+  args: { authorizationToken: v.string(), storageId: v.id('_storage') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { tenantId } = await requireNetworkSession(ctx)
+    const authorization = await ctx.db
+      .query('messageUploadAuthorizations')
+      .withIndex('by_token', (q) => q.eq('token', args.authorizationToken))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
+      .unique()
+    if (!authorization || authorization.createdAt + uploadAuthorizationLifetimeMs < Date.now()) {
+      throw new Error('This upload authorization is invalid or expired.')
+    }
+    if (!(await ctx.db.system.get('_storage', args.storageId))) {
+      throw new Error('The uploaded file could not be found.')
+    }
+    const claimed = await ctx.db
+      .query('messageUploads')
+      .withIndex('by_storageId', (q) => q.eq('storageId', args.storageId))
+      .unique()
+    const attached = await ctx.db
+      .query('messageAttachments')
+      .withIndex('by_storageId', (q) => q.eq('storageId', args.storageId))
+      .unique()
+    if (claimed || attached) throw new Error('This upload has already been claimed.')
+
+    await ctx.db.insert('messageUploads', {
+      tenantId,
+      storageId: args.storageId,
+      threadId: authorization.threadId,
+      identityKey: authorization.identityKey,
+      createdAt: Date.now(),
+    })
+    await ctx.db.delete(authorization._id)
+    return null
   },
 })
 
@@ -255,7 +314,7 @@ export const send = mutation({
   },
   returns: v.id('messageEntries'),
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
     const body = args.body.trim()
     const attachments = args.attachments ?? []
     if (body.length === 0 && attachments.length === 0) {
@@ -266,10 +325,11 @@ export const send = mutation({
     if (attachments.length > maxAttachments)
       throw new Error(`Add up to ${maxAttachments} attachments per message.`)
 
-    const thread = await requireThreadParticipant(ctx, args.threadKey, args.identityKey)
+    const thread = await requireThreadParticipant(ctx, args.threadKey, args.identityKey, tenantId)
     const duplicate = await ctx.db
       .query('messageEntries')
       .withIndex('by_clientNonce', (q) => q.eq('clientNonce', args.clientNonce))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .unique()
     if (duplicate) {
       if (duplicate.threadId !== thread._id || duplicate.senderIdentityKey !== args.identityKey) {
@@ -292,6 +352,15 @@ export const send = mutation({
         throw new Error(`${name} was attached more than once.`)
       seenStorageIds.add(attachment.storageId)
 
+      const upload = await ctx.db
+        .query('messageUploads')
+        .withIndex('by_storageId', (q) => q.eq('storageId', attachment.storageId))
+        .filter((q) => q.eq(q.field('tenantId'), tenantId))
+        .unique()
+      if (!upload || upload.threadId !== thread._id || upload.identityKey !== args.identityKey) {
+        throw new Error(`${name} was not uploaded for this organization and conversation.`)
+      }
+
       const used = await ctx.db
         .query('messageAttachments')
         .withIndex('by_storageId', (q) => q.eq('storageId', attachment.storageId))
@@ -311,6 +380,7 @@ export const send = mutation({
 
     const sentAt = Date.now()
     const messageId = await ctx.db.insert('messageEntries', {
+      tenantId,
       threadId: thread._id,
       senderIdentityKey: args.identityKey,
       senderLabel: senderLabel(args.identityKey),
@@ -321,6 +391,7 @@ export const send = mutation({
 
     for (const attachment of normalizedAttachments) {
       await ctx.db.insert('messageAttachments', {
+        tenantId,
         threadId: thread._id,
         messageId,
         storageId: attachment.storageId,
@@ -329,6 +400,12 @@ export const send = mutation({
         size: attachment.size,
         createdAt: sentAt,
       })
+      const upload = await ctx.db
+        .query('messageUploads')
+        .withIndex('by_storageId', (q) => q.eq('storageId', attachment.storageId))
+        .filter((q) => q.eq(q.field('tenantId'), tenantId))
+        .unique()
+      if (upload) await ctx.db.delete(upload._id)
     }
 
     const attachmentPreview =
@@ -343,6 +420,7 @@ export const send = mutation({
     const participants = await ctx.db
       .query('messageThreadParticipants')
       .withIndex('by_threadId', (q) => q.eq('threadId', thread._id))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .take(10)
     for (const row of participants) {
       await ctx.db.patch('messageThreadParticipants', row._id, {
@@ -358,10 +436,13 @@ export const toggleReaction = mutation({
   args: { messageId: v.id('messageEntries'), identityKey, emoji: reactionEmoji },
   returns: v.object({ active: v.boolean() }),
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    const targetMessage = await ctx.db.get('messageEntries', args.messageId)
-    if (!targetMessage) throw new Error('Message not found.')
-    await requireParticipantByThreadId(ctx, targetMessage.threadId, args.identityKey)
+    const { tenantId } = await requireNetworkSession(ctx)
+    const targetMessage = requireTenantDocument(
+      await ctx.db.get('messageEntries', args.messageId),
+      tenantId,
+      'Message not found.',
+    )
+    await requireParticipantByThreadId(ctx, targetMessage.threadId, args.identityKey, tenantId)
 
     const existing = await ctx.db
       .query('messageReactions')
@@ -371,6 +452,7 @@ export const toggleReaction = mutation({
           .eq('identityKey', args.identityKey)
           .eq('emoji', args.emoji),
       )
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .unique()
     if (existing) {
       await ctx.db.delete(existing._id)
@@ -378,6 +460,7 @@ export const toggleReaction = mutation({
     }
 
     await ctx.db.insert('messageReactions', {
+      tenantId,
       threadId: targetMessage.threadId,
       messageId: args.messageId,
       identityKey: args.identityKey,
@@ -392,14 +475,20 @@ export const markRead = mutation({
   args: { threadKey: v.string(), identityKey },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
     const thread = await ctx.db
       .query('messageThreads')
       .withIndex('by_key', (q) => q.eq('key', args.threadKey))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .unique()
     if (!thread) return null
 
-    const participant = await requireParticipantByThreadId(ctx, thread._id, args.identityKey)
+    const participant = await requireParticipantByThreadId(
+      ctx,
+      thread._id,
+      args.identityKey,
+      tenantId,
+    )
     if (participant.unreadCount > 0) {
       await ctx.db.patch('messageThreadParticipants', participant._id, { unreadCount: 0 })
     }

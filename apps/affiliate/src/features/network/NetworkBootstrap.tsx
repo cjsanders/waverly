@@ -3,7 +3,7 @@ import { useConvexAuth, useMutation } from 'convex/react'
 import { useEffect, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 
-/** Ensures the network's development fixture exists without resetting existing records. */
+/** Ensures the active organization's development fixture exists without resetting its records. */
 export function NetworkBootstrap() {
   const { isAuthenticated } = useConvexAuth()
   const initialize = useMutation(api.network.initialize)

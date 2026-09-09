@@ -49,6 +49,7 @@ export default defineSchema(
       .index('by_user_organization', ['userId', 'organizationId']),
 
     publishers: defineTable({
+      tenantId: v.optional(v.string()),
       slug: v.string(),
       name: v.string(),
       status: v.string(),
@@ -58,10 +59,12 @@ export default defineSchema(
       statusHistory: v.optional(v.array(statusChange)),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_slug', ['slug'])
       .index('by_status', ['status']),
 
     properties: defineTable({
+      tenantId: v.optional(v.string()),
       publisherId: v.id('publishers'),
       name: v.string(),
       type: v.string(),
@@ -73,10 +76,12 @@ export default defineSchema(
       statusHistory: v.optional(v.array(statusChange)),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_publisherId', ['publisherId'])
       .index('by_publisherId_approvalStatus', ['publisherId', 'approvalStatus']),
 
     providers: defineTable({
+      tenantId: v.optional(v.string()),
       key: v.string(),
       name: v.string(),
       status: v.string(),
@@ -84,9 +89,12 @@ export default defineSchema(
       createdAt: v.number(),
       updatedAt: v.number(),
       metadata: v.optional(v.any()),
-    }).index('by_key', ['key']),
+    })
+      .index('by_tenantId', ['tenantId'])
+      .index('by_key', ['key']),
 
     providerAccounts: defineTable({
+      tenantId: v.optional(v.string()),
       providerId: v.id('providers'),
       externalAccountRef: v.string(),
       connectionStatus: v.string(),
@@ -95,10 +103,12 @@ export default defineSchema(
       updatedAt: v.number(),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_providerId', ['providerId'])
       .index('by_providerId_externalAccountRef', ['providerId', 'externalAccountRef']),
 
     advertisers: defineTable({
+      tenantId: v.optional(v.string()),
       slug: v.string(),
       name: v.string(),
       status: v.string(),
@@ -106,10 +116,12 @@ export default defineSchema(
       updatedAt: v.number(),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_slug', ['slug'])
       .index('by_status', ['status']),
 
     programs: defineTable({
+      tenantId: v.optional(v.string()),
       providerId: v.id('providers'),
       advertiserId: v.id('advertisers'),
       externalProgramRef: v.string(),
@@ -120,11 +132,13 @@ export default defineSchema(
       updatedAt: v.number(),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_providerId', ['providerId'])
       .index('by_advertiserId', ['advertiserId'])
       .index('by_advertiserId_providerId', ['advertiserId', 'providerId']),
 
     offers: defineTable({
+      tenantId: v.optional(v.string()),
       advertiserId: v.id('advertisers'),
       programId: v.id('programs'),
       providerId: v.id('providers'),
@@ -143,12 +157,14 @@ export default defineSchema(
       terms: v.optional(v.any()),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_slug', ['slug'])
       .index('by_programId', ['programId'])
       .index('by_advertiserId', ['advertiserId'])
       .index('by_status_featured', ['status', 'featured']),
 
     links: defineTable({
+      tenantId: v.optional(v.string()),
       publisherId: v.id('publishers'),
       propertyId: v.id('properties'),
       advertiserId: v.id('advertisers'),
@@ -162,12 +178,14 @@ export default defineSchema(
       updatedAt: v.number(),
       reporting: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_slug', ['slug'])
       .index('by_publisherId', ['publisherId'])
       .index('by_publisherId_createdAt', ['publisherId', 'createdAt'])
       .index('by_offerId', ['offerId']),
 
     linkVersions: defineTable({
+      tenantId: v.optional(v.string()),
       linkId: v.id('links'),
       version: v.number(),
       providerId: v.id('providers'),
@@ -181,10 +199,12 @@ export default defineSchema(
       attributionDefaults: v.optional(v.any()),
       providerSnapshot: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_linkId_version', ['linkId', 'version'])
       .index('by_providerId', ['providerId']),
 
     clicks: defineTable({
+      tenantId: v.optional(v.string()),
       linkId: v.id('links'),
       linkVersionId: v.id('linkVersions'),
       publisherId: v.id('publishers'),
@@ -194,10 +214,12 @@ export default defineSchema(
       attribution: v.optional(v.any()),
       request: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_linkId_clickedAt', ['linkId', 'clickedAt'])
       .index('by_publisherId_clickedAt', ['publisherId', 'clickedAt']),
 
     commissionRules: defineTable({
+      tenantId: v.optional(v.string()),
       scopeType: v.string(),
       publisherId: v.optional(v.id('publishers')),
       offerId: v.optional(v.id('offers')),
@@ -210,12 +232,14 @@ export default defineSchema(
       createdBy: v.string(),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_publisherId_offerId_active', ['publisherId', 'offerId', 'active'])
       .index('by_publisherId_programId_active', ['publisherId', 'programId', 'active'])
       .index('by_publisherId_active', ['publisherId', 'active'])
       .index('by_scopeType_active', ['scopeType', 'active']),
 
     conversions: defineTable({
+      tenantId: v.optional(v.string()),
       providerId: v.id('providers'),
       providerTransactionId: v.string(),
       publisherId: v.id('publishers'),
@@ -239,12 +263,14 @@ export default defineSchema(
       providerSnapshot: v.optional(v.any()),
       reversal: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_providerId_providerTransactionId', ['providerId', 'providerTransactionId'])
       .index('by_publisherId_occurredAt', ['publisherId', 'occurredAt'])
       .index('by_linkId', ['linkId'])
       .index('by_status', ['status']),
 
     providerSyncRuns: defineTable({
+      tenantId: v.optional(v.string()),
       providerId: v.id('providers'),
       providerAccountId: v.id('providerAccounts'),
       externalRunRef: v.optional(v.string()),
@@ -258,10 +284,12 @@ export default defineSchema(
       warnings: v.optional(v.array(v.string())),
       cursor: v.optional(v.string()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_providerId_startedAt', ['providerId', 'startedAt'])
       .index('by_providerAccountId_startedAt', ['providerAccountId', 'startedAt']),
 
     providerRawRecords: defineTable({
+      tenantId: v.optional(v.string()),
       providerId: v.id('providers'),
       providerAccountId: v.id('providerAccounts'),
       syncRunId: v.id('providerSyncRuns'),
@@ -274,11 +302,13 @@ export default defineSchema(
       normalizedConversionId: v.optional(v.id('conversions')),
       raw: v.any(),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_providerId_externalRecordId', ['providerId', 'externalRecordId'])
       .index('by_providerId_providerTransactionId', ['providerId', 'providerTransactionId'])
       .index('by_syncRunId', ['syncRunId']),
 
     ledgerEntries: defineTable({
+      tenantId: v.optional(v.string()),
       publisherId: v.id('publishers'),
       conversionId: v.optional(v.id('conversions')),
       payoutId: v.optional(v.id('payouts')),
@@ -293,6 +323,7 @@ export default defineSchema(
       memo: v.string(),
       snapshot: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_idempotencyKey', ['idempotencyKey'])
       .index('by_publisherId_effectiveAt', ['publisherId', 'effectiveAt'])
       .index('by_publisherId_balanceState', ['publisherId', 'balanceState'])
@@ -300,6 +331,7 @@ export default defineSchema(
       .index('by_payoutId', ['payoutId']),
 
     payouts: defineTable({
+      tenantId: v.optional(v.string()),
       publisherId: v.id('publishers'),
       status: v.string(),
       currency: v.string(),
@@ -313,10 +345,12 @@ export default defineSchema(
       createdBy: v.string(),
       metadata: v.optional(v.any()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_publisherId_createdAt', ['publisherId', 'createdAt'])
       .index('by_status', ['status']),
 
     payoutItems: defineTable({
+      tenantId: v.optional(v.string()),
       payoutId: v.id('payouts'),
       publisherId: v.id('publishers'),
       ledgerEntryId: v.id('ledgerEntries'),
@@ -324,10 +358,30 @@ export default defineSchema(
       currency: v.string(),
       createdAt: v.number(),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_payoutId', ['payoutId'])
       .index('by_ledgerEntryId', ['ledgerEntryId']),
 
+    dailyMetrics: defineTable({
+      tenantId: v.optional(v.string()),
+      scope: v.string(),
+      date: v.string(),
+      occurredAt: v.number(),
+      clicks: v.number(),
+      uniqueClicks: v.number(),
+      conversions: v.number(),
+      orderValueCents: v.number(),
+      grossCommissionCents: v.number(),
+      publisherEarningsCents: v.number(),
+      waverlyRevenueCents: v.number(),
+      reversals: v.number(),
+      currency: v.string(),
+    })
+      .index('by_tenantId', ['tenantId'])
+      .index('by_tenantId_date', ['tenantId', 'date']),
+
     messageThreads: defineTable({
+      tenantId: v.optional(v.string()),
       key: v.string(),
       subject: v.string(),
       team: v.string(),
@@ -336,10 +390,12 @@ export default defineSchema(
       lastMessagePreview: v.string(),
       createdAt: v.number(),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_key', ['key'])
       .index('by_lastMessageAt', ['lastMessageAt']),
 
     messageThreadParticipants: defineTable({
+      tenantId: v.optional(v.string()),
       threadId: v.id('messageThreads'),
       identityKey: v.union(
         v.literal('operator'),
@@ -353,11 +409,13 @@ export default defineSchema(
       unreadCount: v.number(),
       joinedAt: v.number(),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_identityKey', ['identityKey'])
       .index('by_threadId', ['threadId'])
       .index('by_threadId_and_identityKey', ['threadId', 'identityKey']),
 
     messageEntries: defineTable({
+      tenantId: v.optional(v.string()),
       threadId: v.id('messageThreads'),
       senderIdentityKey: v.string(),
       senderLabel: v.string(),
@@ -365,10 +423,32 @@ export default defineSchema(
       sentAt: v.number(),
       clientNonce: v.optional(v.string()),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_threadId_and_sentAt', ['threadId', 'sentAt'])
       .index('by_clientNonce', ['clientNonce']),
 
+    messageUploadAuthorizations: defineTable({
+      tenantId: v.optional(v.string()),
+      token: v.string(),
+      threadId: v.id('messageThreads'),
+      identityKey: v.string(),
+      createdAt: v.number(),
+    })
+      .index('by_tenantId', ['tenantId'])
+      .index('by_token', ['token']),
+
+    messageUploads: defineTable({
+      tenantId: v.optional(v.string()),
+      storageId: v.id('_storage'),
+      threadId: v.id('messageThreads'),
+      identityKey: v.string(),
+      createdAt: v.number(),
+    })
+      .index('by_tenantId', ['tenantId'])
+      .index('by_storageId', ['storageId']),
+
     messageAttachments: defineTable({
+      tenantId: v.optional(v.string()),
       threadId: v.id('messageThreads'),
       messageId: v.id('messageEntries'),
       storageId: v.id('_storage'),
@@ -377,11 +457,13 @@ export default defineSchema(
       size: v.number(),
       createdAt: v.number(),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_threadId', ['threadId'])
       .index('by_messageId', ['messageId'])
       .index('by_storageId', ['storageId']),
 
     messageReactions: defineTable({
+      tenantId: v.optional(v.string()),
       threadId: v.id('messageThreads'),
       messageId: v.id('messageEntries'),
       identityKey: v.union(
@@ -400,6 +482,7 @@ export default defineSchema(
       ),
       createdAt: v.number(),
     })
+      .index('by_tenantId', ['tenantId'])
       .index('by_threadId', ['threadId'])
       .index('by_messageId', ['messageId'])
       .index('by_messageId_and_identityKey_and_emoji', ['messageId', 'identityKey', 'emoji']),

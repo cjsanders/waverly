@@ -32,6 +32,11 @@ const WORKOS_CLIENT_ID = 'client_e2e'
 // The emulator accepts any bearer token as this key.
 const WORKOS_API_KEY = 'sk_test_default'
 const WORKOS_COOKIE_PASSWORD = 'e2e-only-cookie-password-not-a-secret-0123456789'
+const E2E_TENANT_IDS = [
+  'org_01E2E00000000000000000BRAND',
+  'org_01E2E000000000000000CREATOR',
+  'org_01E2E000000000000000OPERATOR',
+]
 
 const CONVEX_PORT = 3210
 const CONVEX_SITE_PORT = 3211
@@ -148,7 +153,9 @@ function pushConvexFunctions() {
   // Keeps crons quiet during tests, per the Convex testing guide.
   convex('env', 'set', 'IS_TEST', 'true')
   convex('deploy', '--yes')
-  convex('run', 'network:seed', '{}')
+  for (const tenantId of E2E_TENANT_IDS) {
+    convex('run', 'network:seed', JSON.stringify({ tenantId }))
+  }
 }
 
 function appEnv() {

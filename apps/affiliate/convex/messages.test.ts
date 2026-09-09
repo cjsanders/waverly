@@ -8,10 +8,16 @@ import { api } from './_generated/api'
 import schema from './schema'
 
 const modules = import.meta.glob('./**/*.ts')
+const tenantId = 'org-a'
 
-async function seedConversation(t: ReturnType<typeof convexTest>) {
+function testIdentity(subject: string, organizationId = tenantId) {
+  return { subject, tokenIdentifier: `test|${subject}`, org_id: organizationId }
+}
+
+async function seedConversation(t: ReturnType<typeof convexTest>, organizationId = tenantId) {
   return await t.run(async (ctx) => {
     const threadId = await ctx.db.insert('messageThreads', {
+      tenantId: organizationId,
       key: 'test-thread',
       subject: 'Test conversation',
       team: 'Partner operations',
@@ -22,6 +28,7 @@ async function seedConversation(t: ReturnType<typeof convexTest>) {
     })
     for (const participant of ['operator', 'northstar'] as const) {
       await ctx.db.insert('messageThreadParticipants', {
+        tenantId: organizationId,
         threadId,
         identityKey: participant,
         title: 'Test conversation',
@@ -31,6 +38,7 @@ async function seedConversation(t: ReturnType<typeof convexTest>) {
       })
     }
     const messageId = await ctx.db.insert('messageEntries', {
+      tenantId: organizationId,
       threadId,
       senderIdentityKey: 'operator',
       senderLabel: 'Waverly Operator',
@@ -46,8 +54,8 @@ describe('message collaboration', () => {
   test('both seeded participants resolve the same thread and can reply to each other', async () => {
     const t = convexTest(schema, modules)
     await seedConversation(t)
-    const operator = t.withIdentity({ subject: 'operator', tokenIdentifier: 'test|operator' })
-    const northstar = t.withIdentity({ subject: 'northstar', tokenIdentifier: 'test|northstar' })
+    const operator = t.withIdentity(testIdentity('operator'))
+    const northstar = t.withIdentity(testIdentity('northstar'))
 
     const operatorThreads = await operator.query(api.messages.listThreads, {
       identityKey: 'operator',
@@ -98,9 +106,9 @@ describe('message collaboration', () => {
   test('participants can toggle shared reactions and non-participants are refused', async () => {
     const t = convexTest(schema, modules)
     const { messageId } = await seedConversation(t)
-    const operator = t.withIdentity({ subject: 'operator', tokenIdentifier: 'test|operator' })
-    const northstar = t.withIdentity({ subject: 'northstar', tokenIdentifier: 'test|northstar' })
-    const outsider = t.withIdentity({ subject: 'avery', tokenIdentifier: 'test|avery' })
+    const operator = t.withIdentity(testIdentity('operator'))
+    const northstar = t.withIdentity(testIdentity('northstar'))
+    const outsider = t.withIdentity(testIdentity('avery'))
 
     await operator.mutation(api.messages.toggleReaction, {
       messageId,
@@ -144,11 +152,19 @@ describe('message collaboration', () => {
   test('attachment-only messages are accepted and empty messages are refused', async () => {
     const t = convexTest(schema, modules)
     await seedConversation(t)
-    const operator = t.withIdentity({ subject: 'operator', tokenIdentifier: 'test|operator' })
+    const operator = t.withIdentity(testIdentity('operator'))
+    const authorization = await operator.mutation(api.messages.generateAttachmentUploadUrl, {
+      threadKey: 'test-thread',
+      identityKey: 'operator',
+    })
     const stored = await t.run(
       async (ctx) =>
         await ctx.storage.store(new Blob(['quarterly summary'], { type: 'text/plain' })),
     )
+    await operator.mutation(api.messages.registerAttachmentUpload, {
+      authorizationToken: authorization.authorizationToken,
+      storageId: stored,
+    })
 
     const messageId = await operator.mutation(api.messages.send, {
       threadKey: 'test-thread',
@@ -200,9 +216,9 @@ describe('message collaboration', () => {
     const t = convexTest(schema, modules)
     registerPresence(t)
     await seedConversation(t)
-    const operator = t.withIdentity({ subject: 'operator', tokenIdentifier: 'test|operator' })
-    const northstar = t.withIdentity({ subject: 'northstar', tokenIdentifier: 'test|northstar' })
-    const outsider = t.withIdentity({ subject: 'avery', tokenIdentifier: 'test|avery' })
+    const operator = t.withIdentity(testIdentity('operator'))
+    const northstar = t.withIdentity(testIdentity('northstar'))
+    const outsider = t.withIdentity(testIdentity('avery'))
 
     const session = await operator.mutation(api.presence.heartbeat, {
       roomId: 'typing:test-thread',
@@ -231,5 +247,36 @@ describe('message collaboration', () => {
       identityKey: 'northstar',
     })
     expect(afterDisconnect).toEqual([])
+  })
+
+  test('upload and presence tokens cannot be replayed after switching organizations', async () => {
+    const t = convexTest(schema, modules)
+    registerPresence(t)
+    await seedConversation(t, 'org-a')
+    await seedConversation(t, 'org-b')
+    const orgA = t.withIdentity(testIdentity('operator', 'org-a'))
+    const orgB = t.withIdentity(testIdentity('operator', 'org-b'))
+
+    const authorization = await orgA.mutation(api.messages.generateAttachmentUploadUrl, {
+      threadKey: 'test-thread',
+      identityKey: 'operator',
+    })
+    const stored = await t.run(async (ctx) => await ctx.storage.store(new Blob(['private'])))
+    await expect(
+      orgB.mutation(api.messages.registerAttachmentUpload, {
+        authorizationToken: authorization.authorizationToken,
+        storageId: stored,
+      }),
+    ).rejects.toThrow(/invalid or expired/i)
+
+    const presenceSession = await orgA.mutation(api.presence.heartbeat, {
+      roomId: 'typing:test-thread',
+      userId: 'operator',
+      sessionId: 'org-a-tab',
+      interval: 3_000,
+    })
+    await expect(
+      orgB.query(api.presence.list, { roomToken: presenceSession.roomToken }),
+    ).rejects.toThrow(/does not belong to this organization/i)
   })
 })

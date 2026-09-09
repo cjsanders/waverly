@@ -1,6 +1,9 @@
 import type { OrganizationKind } from '#/lib/workspace'
 import { availablePages, workflowSteps } from './navigation'
-export const workspaceSessionKey = 'waverly-network.workspace-session.v1'
+
+export function workspaceSessionKey(tenantId: string) {
+  return `waverly-network.workspace-session.${tenantId}.v1`
+}
 
 export interface WorkspaceSessionState {
   kind: OrganizationKind
@@ -8,9 +11,12 @@ export interface WorkspaceSessionState {
   activeStep: number
 }
 
-export function readWorkspaceSession(kind: OrganizationKind): WorkspaceSessionState | null {
+export function readWorkspaceSession(
+  kind: OrganizationKind,
+  tenantId: string,
+): WorkspaceSessionState | null {
   try {
-    const stored = window.sessionStorage.getItem(workspaceSessionKey)
+    const stored = window.sessionStorage.getItem(workspaceSessionKey(tenantId))
     if (!stored) return null
     const parsed = JSON.parse(stored) as Partial<WorkspaceSessionState>
     if (parsed.kind !== kind) return null

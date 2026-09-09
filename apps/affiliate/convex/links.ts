@@ -1,4 +1,4 @@
-import { requireNetworkSession } from './networkAccess'
+import { requireNetworkSession, requireTenantDocument } from './networkAccess'
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { nextLinkVersion, targetRequiresNewVersion } from './domain/links'
@@ -14,14 +14,15 @@ const targetArgs = {
 export const resolve = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
     const link = await ctx.db
       .query('links')
       .withIndex('by_slug', (q) => q.eq('slug', slug))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .unique()
     if (!link || link.status !== 'active' || !link.currentVersionId) return null
     const version = await ctx.db.get(link.currentVersionId)
-    return version ? { link, version } : null
+    return version?.tenantId === tenantId ? { link, version } : null
   },
 })
 
@@ -38,15 +39,26 @@ export const create = mutation({
     ...targetArgs,
   },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
+    const session = await requireNetworkSession(ctx)
+    const { tenantId } = session
+    requireTenantDocument(await ctx.db.get(args.publisherId), tenantId, 'Publisher not found')
+    requireTenantDocument(await ctx.db.get(args.propertyId), tenantId, 'Property not found')
+    requireTenantDocument(await ctx.db.get(args.advertiserId), tenantId, 'Advertiser not found')
+    requireTenantDocument(await ctx.db.get(args.providerId), tenantId, 'Provider not found')
+    requireTenantDocument(await ctx.db.get(args.programId), tenantId, 'Program not found')
+    if (args.offerId) {
+      requireTenantDocument(await ctx.db.get(args.offerId), tenantId, 'Offer not found')
+    }
     const existing = await ctx.db
       .query('links')
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .unique()
     if (existing) throw new Error('This Waverly link slug is already in use')
 
     const now = Date.now()
     const linkId = await ctx.db.insert('links', {
+      tenantId,
       publisherId: args.publisherId,
       propertyId: args.propertyId,
       advertiserId: args.advertiserId,
@@ -60,6 +72,7 @@ export const create = mutation({
       reporting: args.reporting,
     })
     const versionId = await ctx.db.insert('linkVersions', {
+      tenantId,
       linkId,
       version: 1,
       providerId: args.providerId,
@@ -68,7 +81,7 @@ export const create = mutation({
       normalizedDestinationUrl: args.normalizedDestinationUrl,
       providerTrackingUrl: args.providerTrackingUrl,
       createdAt: now,
-      createdBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+      createdBy: session.tokenIdentifier,
       changeReason: 'initial_target',
     })
     await ctx.db.patch(linkId, { currentVersionId: versionId })
@@ -84,11 +97,21 @@ export const changeTarget = mutation({
     ...targetArgs,
   },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    const link = await ctx.db.get(args.linkId)
-    if (!link?.currentVersionId) throw new Error('Link or current version not found')
-    const current = await ctx.db.get(link.currentVersionId)
-    if (!current) throw new Error('Current link version not found')
+    const session = await requireNetworkSession(ctx)
+    const { tenantId } = session
+    const link = requireTenantDocument(
+      await ctx.db.get(args.linkId),
+      tenantId,
+      'Link or current version not found',
+    )
+    if (!link.currentVersionId) throw new Error('Link or current version not found')
+    const current = requireTenantDocument(
+      await ctx.db.get(link.currentVersionId),
+      tenantId,
+      'Current link version not found',
+    )
+    requireTenantDocument(await ctx.db.get(args.providerId), tenantId, 'Provider not found')
+    requireTenantDocument(await ctx.db.get(args.programId), tenantId, 'Program not found')
 
     const changed = targetRequiresNewVersion(
       {
@@ -111,6 +134,7 @@ export const changeTarget = mutation({
     const now = Date.now()
     const version = nextLinkVersion(link.currentVersion)
     const versionId = await ctx.db.insert('linkVersions', {
+      tenantId,
       linkId: args.linkId,
       version,
       providerId: args.providerId,
@@ -119,7 +143,7 @@ export const changeTarget = mutation({
       normalizedDestinationUrl: args.normalizedDestinationUrl,
       providerTrackingUrl: args.providerTrackingUrl,
       createdAt: now,
-      createdBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+      createdBy: session.tokenIdentifier,
       changeReason: args.reason,
     })
     await ctx.db.patch(args.linkId, {
@@ -138,9 +162,8 @@ export const updateReporting = mutation({
     reporting: v.optional(v.any()),
   },
   handler: async (ctx, { linkId, ...changes }) => {
-    await requireNetworkSession(ctx)
-    const link = await ctx.db.get(linkId)
-    if (!link) throw new Error('Link not found')
+    const { tenantId } = await requireNetworkSession(ctx)
+    requireTenantDocument(await ctx.db.get(linkId), tenantId, 'Link not found')
     await ctx.db.patch(linkId, { ...changes, updatedAt: Date.now() })
     return linkId
   },

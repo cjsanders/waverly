@@ -13,7 +13,22 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { cn } from '#/lib/utils'
-import { homePaths, kindLabels, type Membership, type Viewer } from '#/lib/workspace'
+import {
+  homePaths,
+  kindLabels,
+  type Membership,
+  type OrganizationKind,
+  type Viewer,
+} from '#/lib/workspace'
+
+const kindBadgeClasses = {
+  operator:
+    'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300',
+  brand:
+    'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-300',
+  creator:
+    'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300',
+} satisfies Record<OrganizationKind, string>
 
 /** Sidebar control showing the active workspace and letting the user switch between theirs. */
 export function WorkspaceSwitcher({
@@ -87,13 +102,20 @@ export function WorkspaceSwitcher({
                   {kindLabels[membership.organization.kind]} · {formatRole(membership.role)}
                 </span>
               </span>
-              {active ? (
-                <Check className="size-4" aria-label="Current workspace" />
-              ) : (
-                <Badge variant="outline" className="text-[10px]">
+              <span className="flex shrink-0 items-center gap-2">
+                <Badge
+                  variant="outline"
+                  dot
+                  className={cn('text-[10px]', kindBadgeClasses[membership.organization.kind])}
+                >
                   {kindLabels[membership.organization.kind]}
                 </Badge>
-              )}
+                <Check
+                  className={cn('size-4', !active && 'invisible')}
+                  aria-label={active ? 'Current workspace' : undefined}
+                  aria-hidden={!active}
+                />
+              </span>
             </DropdownMenuItem>
           )
         })}

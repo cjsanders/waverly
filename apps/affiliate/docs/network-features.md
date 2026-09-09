@@ -16,18 +16,18 @@ The seven-step guided journey is retained on the overview. Search, filters, prod
 
 ## Persistence and development-data boundaries
 
-- **Persisted in Convex:** shared message threads, replies, attachments, reactions and read state. Typing indicators use the Convex presence component. Message access requires a real authenticated session and a matching network participant. Nonces prevent duplicate sends.
-- **Browser session:** the selected page and saved products. The `page` URL parameter supports direct links and history; invalid pages fall back to the active organization's overview.
+- **Persisted in Convex:** message threads, replies, attachments, reactions and read state are scoped to the active WorkOS organization. Typing rooms, room/session tokens, upload authorizations and attachment claims carry the same boundary. Message access requires a real authenticated organization session and a matching network participant. Nonces prevent duplicate sends within an organization.
+- **Browser session:** the selected page and saved products are keyed by WorkOS organization. The `page` URL parameter supports direct links and history; invalid pages fall back to the active organization's overview.
 - **Simulated in the UI:** application and sample decisions, creator briefs and project progress, private rates, settings, campaigns, placements, storefront editing, and operational actions. These do not yet contact brands, fulfill samples, distribute tracking traffic, import live provider data, or send money. Other than saved products, simulation state may reset when leaving its workspace or refreshing.
 - **Backend foundation:** publisher/property approval, offer edits, stable links with immutable destination versions, idempotent conversion imports with snapshotted commission terms, append-only ledger entries, and payout reservation/settlement. These APIs are retained and tested independently of the simulated UI. Backend mutations record the real session identity for actor audit fields.
 
-The current fixture-backed network records are shared development data. WorkOS controls which organization and workspace mode the UI opens, but the imported network tables are not yet tenant-isolated. Do not introduce real partner, customer, or financial records until organization IDs and server-side permissions are enforced throughout those tables and functions.
+Every network record carries a `tenantId` derived only from the verified WorkOS `org_id` claim. Queries select that tenant, writes stamp it, and mutations treat cross-tenant IDs as missing. Legacy fixture rows without a tenant remain schema-compatible for deployment migration but are inaccessible through public functions.
 
 ## Data and initialization
 
 The deterministic fixture contains 3 providers, 20 advertisers, 24 offers/programs, 15 publishers, 30 properties, 100 links, 180 conversions and 90 daily performance records. Seller and creator fixtures add commercial programs, applications, samples, placements and reporting. Product photography and brand assets are local under `public/network`; no asset-generation service is required.
 
-`network.initialize` requires authentication and seeds only an empty database on first workspace access. It does not reset existing changes. `network.seed` is an internal, repeatable catalog refresh; `network.reset` remains an internal development utility with an explicit destructive confirmation. Schema validation is enabled and the original Waverly `products` table is preserved.
+`network.initialize` requires an authenticated organization and seeds only that tenant on first workspace access. It does not reset existing changes. `network.seed` is an internal, repeatable per-tenant catalog refresh; `network.reset` remains an internal per-tenant development utility with an explicit destructive confirmation. Schema validation is enabled and the original Waverly `products` table is preserved.
 
 ## Architecture
 

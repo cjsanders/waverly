@@ -128,7 +128,7 @@ const money = new Intl.NumberFormat('en-US', {
 })
 
 const integer = new Intl.NumberFormat('en-US')
-const discoveryViewKey = 'waverly-network.discovery-view.v1'
+const discoveryViewKey = (tenantId: string) => `waverly-network.${tenantId}.discovery-view.v1`
 const catalogImageStyle: CSSProperties = {
   width: '100%',
   height: '100%',
@@ -1741,15 +1741,18 @@ function ListsView() {
 }
 
 export function DiscoverySurface({
+  tenantId,
   identity,
   view,
   onSurfaceChange,
 }: {
+  tenantId: string
   identity: string
   view: DiscoveryView
   onSurfaceChange?: () => void
 }) {
   const [saved, setSaved] = useSavedProducts(
+    tenantId,
     identity,
     catalog.filter((_, index) => index % 6 === 0).map((item) => item.id),
   )
@@ -1758,11 +1761,11 @@ export function DiscoverySurface({
 
   useEffect(() => {
     try {
-      window.sessionStorage.setItem(discoveryViewKey, view)
+      window.sessionStorage.setItem(discoveryViewKey(tenantId), view)
     } catch {
       /* Optional browser preference. */
     }
-  }, [view])
+  }, [tenantId, view])
 
   const toggleSaved = (id: string) => {
     setSaved((current) => {

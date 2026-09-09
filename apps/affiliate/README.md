@@ -106,7 +106,9 @@ provisioned by Waverly (for example by the dev seed script), never through onboa
 Workspace mode comes from each WorkOS organization's `metadata.kind`. The matching creator, brand,
 or operator experience opens automatically, and the sidebar switcher changes both the active WorkOS
 organization and the route. Network seed data currently supports local and preview development;
-tenant isolation must be applied before real partner or financial records are introduced.
+every persisted network record, upload authorization, attachment and presence room is isolated by the
+active WorkOS organization claim. Legacy unscoped fixture rows remain inaccessible while deployments
+migrate to the tenant-aware schema.
 
 ## Testing
 

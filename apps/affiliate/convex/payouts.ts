@@ -1,20 +1,26 @@
 /* eslint-disable no-await-in-loop -- Preserve ordered writes inside a single Convex transaction. */
-import { requireNetworkSession } from './networkAccess'
+import { requireNetworkSession, requireTenantDocument } from './networkAccess'
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 
 export const list = query({
   args: { publisherId: v.optional(v.id('publishers')) },
   handler: async (ctx, { publisherId }) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
     if (publisherId) {
+      requireTenantDocument(await ctx.db.get(publisherId), tenantId, 'Publisher not found')
       return ctx.db
         .query('payouts')
         .withIndex('by_publisherId_createdAt', (q) => q.eq('publisherId', publisherId))
+        .filter((q) => q.eq(q.field('tenantId'), tenantId))
         .order('desc')
         .collect()
     }
-    return ctx.db.query('payouts').order('desc').collect()
+    return ctx.db
+      .query('payouts')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .order('desc')
+      .collect()
   },
 })
 
@@ -27,14 +33,20 @@ export const create = mutation({
     actor: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
+    const session = await requireNetworkSession(ctx)
+    const { tenantId } = session
+    requireTenantDocument(await ctx.db.get(args.publisherId), tenantId, 'Publisher not found')
     if (args.ledgerEntryIds.length === 0)
       throw new Error('Select at least one payable ledger entry')
     if (new Set(args.ledgerEntryIds.map(String)).size !== args.ledgerEntryIds.length) {
       throw new Error('A ledger entry can only appear once in a payout')
     }
     const entries = await Promise.all(args.ledgerEntryIds.map((id) => ctx.db.get(id)))
-    if (entries.some((entry) => !entry || entry.publisherId !== args.publisherId)) {
+    if (
+      entries.some(
+        (entry) => !entry || entry.tenantId !== tenantId || entry.publisherId !== args.publisherId,
+      )
+    ) {
       throw new Error('Every payout item must belong to the selected publisher')
     }
     if (entries.some((entry) => entry?.balanceState !== 'payable')) {
@@ -45,6 +57,7 @@ export const create = mutation({
         ctx.db
           .query('payoutItems')
           .withIndex('by_ledgerEntryId', (q) => q.eq('ledgerEntryId', ledgerEntryId))
+          .filter((q) => q.eq(q.field('tenantId'), tenantId))
           .first(),
       ),
     )
@@ -56,6 +69,7 @@ export const create = mutation({
 
     const now = Date.now()
     const payoutId = await ctx.db.insert('payouts', {
+      tenantId,
       publisherId: args.publisherId,
       status: 'scheduled',
       currency: 'USD',
@@ -64,12 +78,13 @@ export const create = mutation({
       periodEnd: args.periodEnd,
       scheduledAt: now,
       createdAt: now,
-      createdBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+      createdBy: session.tokenIdentifier,
     })
 
     for (const entry of entries) {
       if (!entry) continue
       await ctx.db.insert('payoutItems', {
+        tenantId,
         payoutId,
         publisherId: args.publisherId,
         ledgerEntryId: entry._id,
@@ -79,6 +94,7 @@ export const create = mutation({
       })
     }
     await ctx.db.insert('ledgerEntries', {
+      tenantId,
       publisherId: args.publisherId,
       payoutId,
       entryType: 'payout_scheduled',
@@ -87,11 +103,12 @@ export const create = mutation({
       currency: 'USD',
       effectiveAt: now,
       createdAt: now,
-      createdBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+      createdBy: session.tokenIdentifier,
       idempotencyKey: `payout:${payoutId}:scheduled`,
       memo: 'Funds reserved for scheduled payout',
     })
     await ctx.db.insert('ledgerEntries', {
+      tenantId,
       publisherId: args.publisherId,
       payoutId,
       entryType: 'payout_scheduled',
@@ -100,7 +117,7 @@ export const create = mutation({
       currency: 'USD',
       effectiveAt: now,
       createdAt: now,
-      createdBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+      createdBy: session.tokenIdentifier,
       idempotencyKey: `payout:${payoutId}:scheduled-balance`,
       memo: 'Funds moved into scheduled balance',
     })
@@ -111,9 +128,13 @@ export const create = mutation({
 export const markPaid = mutation({
   args: { payoutId: v.id('payouts'), actor: v.string(), externalPayoutRef: v.string() },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    const payout = await ctx.db.get(args.payoutId)
-    if (!payout) throw new Error('Payout not found')
+    const session = await requireNetworkSession(ctx)
+    const { tenantId } = session
+    const payout = requireTenantDocument(
+      await ctx.db.get(args.payoutId),
+      tenantId,
+      'Payout not found',
+    )
     if (payout.status === 'paid') return args.payoutId
     const now = Date.now()
     await ctx.db.patch(args.payoutId, {
@@ -122,6 +143,7 @@ export const markPaid = mutation({
       externalPayoutRef: args.externalPayoutRef,
     })
     await ctx.db.insert('ledgerEntries', {
+      tenantId,
       publisherId: payout.publisherId,
       payoutId: args.payoutId,
       entryType: 'payout_paid',
@@ -130,11 +152,12 @@ export const markPaid = mutation({
       currency: 'USD',
       effectiveAt: now,
       createdAt: now,
-      createdBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+      createdBy: session.tokenIdentifier,
       idempotencyKey: `payout:${args.payoutId}:paid`,
       memo: 'Scheduled payout completed',
     })
     await ctx.db.insert('ledgerEntries', {
+      tenantId,
       publisherId: payout.publisherId,
       payoutId: args.payoutId,
       entryType: 'payout_paid',
@@ -143,7 +166,7 @@ export const markPaid = mutation({
       currency: 'USD',
       effectiveAt: now,
       createdAt: now,
-      createdBy: (await requireNetworkSession(ctx)).tokenIdentifier,
+      createdBy: session.tokenIdentifier,
       idempotencyKey: `payout:${args.payoutId}:paid-balance`,
       memo: 'Publisher payout completed',
     })

@@ -7,11 +7,11 @@ import { modules } from './test.setup'
 describe('network integration', () => {
   test('seed validates against the schema and is repeatable without duplicating data', async () => {
     const t = convexTest(schema, modules)
-    await t.mutation(internal.network.seed, {})
-    const user = t.withIdentity({ subject: 'network-user' })
+    await t.mutation(internal.network.seed, { tenantId: 'org-a' })
+    const user = t.withIdentity({ subject: 'network-user', org_id: 'org-a' })
     const before = await user.query(api.network.summary, {})
     expect(before).toMatchObject({ providers: 3, publishers: 15, conversions: 180 })
-    await t.mutation(internal.network.seed, {})
+    await t.mutation(internal.network.seed, { tenantId: 'org-a' })
     expect(await user.query(api.network.summary, {})).toEqual(before)
     expect(
       (await user.query(api.messages.listThreads, { identityKey: 'puroair' })).length,
@@ -26,12 +26,81 @@ describe('network integration', () => {
       'Sign in',
     )
   })
+
+  test('organization sessions can only read and mutate their own records', async () => {
+    const t = convexTest(schema, modules)
+    await t.mutation(internal.network.seed, { tenantId: 'org-a' })
+    await t.mutation(internal.network.seed, { tenantId: 'org-b' })
+    const orgA = t.withIdentity({ subject: 'shared-user', org_id: 'org-a' })
+    const orgB = t.withIdentity({ subject: 'shared-user', org_id: 'org-b' })
+
+    expect(await orgA.query(api.network.summary, {})).toMatchObject({
+      providers: 3,
+      publishers: 15,
+      conversions: 180,
+    })
+    expect(await orgB.query(api.network.summary, {})).toMatchObject({
+      providers: 3,
+      publishers: 15,
+      conversions: 180,
+    })
+
+    const orgAPublisher = await t.run(async (ctx) =>
+      ctx.db
+        .query('publishers')
+        .withIndex('by_tenantId', (q) => q.eq('tenantId', 'org-a'))
+        .first(),
+    )
+    expect(orgAPublisher).not.toBeNull()
+    await expect(
+      orgB.mutation(api.publishers.approvePublisher, {
+        publisherId: orgAPublisher!._id,
+        reason: 'cross-tenant attempt',
+        actor: 'ignored',
+      }),
+    ).rejects.toThrow('Publisher not found')
+
+    await orgA.mutation(api.messages.send, {
+      threadKey: 'puroair-avery-placement',
+      identityKey: 'avery',
+      body: 'Only organization A should see this.',
+      clientNonce: 'same-nonce-across-organizations',
+      attachments: [],
+    })
+    await orgB.mutation(api.messages.send, {
+      threadKey: 'puroair-avery-placement',
+      identityKey: 'avery',
+      body: 'Only organization B should see this.',
+      clientNonce: 'same-nonce-across-organizations',
+      attachments: [],
+    })
+    const orgAMessages = await orgA.query(api.messages.listMessages, {
+      threadKey: 'puroair-avery-placement',
+      identityKey: 'avery',
+    })
+    const orgBMessages = await orgB.query(api.messages.listMessages, {
+      threadKey: 'puroair-avery-placement',
+      identityKey: 'avery',
+    })
+    expect(orgAMessages.at(-1)?.text).toBe('Only organization A should see this.')
+    expect(orgBMessages.at(-1)?.text).toBe('Only organization B should see this.')
+  })
+
+  test('a session without an active organization cannot access network records', async () => {
+    const t = convexTest(schema, modules)
+    const user = t.withIdentity({ subject: 'network-user' })
+    await expect(user.query(api.network.summary, {})).rejects.toThrow('Select an organization')
+  })
 })
 
 test('link edits append a version while preserving the original destination', async () => {
   const t = convexTest(schema, modules)
-  await t.mutation(internal.network.seed, {})
-  const user = t.withIdentity({ subject: 'link-editor', issuer: 'https://test.example' })
+  await t.mutation(internal.network.seed, { tenantId: 'org-a' })
+  const user = t.withIdentity({
+    subject: 'link-editor',
+    issuer: 'https://test.example',
+    org_id: 'org-a',
+  })
   const { link, original } = await t.run(async (ctx) => {
     const link = (await ctx.db.query('links').first())!
     return { link, original: (await ctx.db.get(link.currentVersionId!))! }
@@ -60,8 +129,8 @@ test('link edits append a version while preserving the original destination', as
 
 test('payouts reserve funds once, preserve ledger history, and settle idempotently', async () => {
   const t = convexTest(schema, modules)
-  await t.mutation(internal.network.seed, {})
-  const user = t.withIdentity({ subject: 'finance-user' })
+  await t.mutation(internal.network.seed, { tenantId: 'org-a' })
+  const user = t.withIdentity({ subject: 'finance-user', org_id: 'org-a' })
   const publisher = await t.run(async (ctx) => (await ctx.db.query('publishers').first())!)
   const credit = await user.mutation(api.ledger.append, {
     publisherId: publisher._id,
@@ -108,8 +177,8 @@ test('payouts reserve funds once, preserve ledger history, and settle idempotent
 
 test('provider imports deduplicate transactions and retain the original commission terms', async () => {
   const t = convexTest(schema, modules)
-  await t.mutation(internal.network.seed, {})
-  const user = t.withIdentity({ subject: 'provider-user' })
+  await t.mutation(internal.network.seed, { tenantId: 'org-a' })
+  const user = t.withIdentity({ subject: 'provider-user', org_id: 'org-a' })
   const fixture = await t.run(async (ctx) => {
     const conversion = (await ctx.db.query('conversions').first())!
     const account = (await ctx.db

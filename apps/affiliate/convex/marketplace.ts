@@ -1,20 +1,20 @@
-import { requireNetworkSession } from './networkAccess'
+import { requireNetworkSession, requireTenantDocument } from './networkAccess'
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 
 export const listOffers = query({
   args: { status: v.optional(v.string()), featured: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
-    if (args.status !== undefined && args.featured !== undefined) {
-      return ctx.db
-        .query('offers')
-        .filter((q) =>
-          q.and(q.eq(q.field('status'), args.status), q.eq(q.field('featured'), args.featured)),
-        )
-        .collect()
-    }
-    return ctx.db.query('offers').collect()
+    const { tenantId } = await requireNetworkSession(ctx)
+    const rows = await ctx.db
+      .query('offers')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .collect()
+    return rows.filter(
+      (row) =>
+        (args.status === undefined || row.status === args.status) &&
+        (args.featured === undefined || row.featured === args.featured),
+    )
   },
 })
 
@@ -28,10 +28,9 @@ export const updateOffer = mutation({
     terms: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    await requireNetworkSession(ctx)
+    const { tenantId } = await requireNetworkSession(ctx)
     const { offerId, ...changes } = args
-    const offer = await ctx.db.get(offerId)
-    if (!offer) throw new Error('Offer not found')
+    requireTenantDocument(await ctx.db.get(offerId), tenantId, 'Offer not found')
     if (
       changes.defaultPublisherShareBps !== undefined &&
       (!Number.isInteger(changes.defaultPublisherShareBps) ||

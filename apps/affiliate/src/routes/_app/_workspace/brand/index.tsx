@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { NetworkWorkspace } from '#/features/network/NetworkWorkspace'
 import { parseWorkspaceSearch, type WorkspaceSearch } from '#/features/network/workspace-search'
 import { redirectUnlessKind } from '#/lib/mode-routes'
+import { useWorkspace } from '#/lib/workspace'
 
 export const Route = createFileRoute('/_app/_workspace/brand/')({
   validateSearch: parseWorkspaceSearch,
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_app/_workspace/brand/')({
 })
 
 function BrandWorkspace() {
+  const workspace = useWorkspace()
   const navigate = useNavigate({ from: '/brand/' })
   const search = Route.useSearch()
   const onSearchChange = useCallback(
@@ -20,5 +22,12 @@ function BrandWorkspace() {
     },
     [navigate],
   )
-  return <NetworkWorkspace mode="brand" search={search} onSearchChange={onSearchChange} />
+  return (
+    <NetworkWorkspace
+      key={workspace.organization.workosOrganizationId}
+      mode="brand"
+      search={search}
+      onSearchChange={onSearchChange}
+    />
+  )
 }

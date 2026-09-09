@@ -21,11 +21,23 @@ import { networkMessageThreads } from '../shared/networkMessages'
 export const summary = queryGeneric({
   args: {},
   handler: async (ctx) => {
-    await requireNetworkSession(ctx)
-    const providerRows = await ctx.db.query('providers').collect()
-    const publisherRows = await ctx.db.query('publishers').collect()
-    const conversionRows = await ctx.db.query('conversions').collect()
-    const ledgerRows = await ctx.db.query('ledgerEntries').collect()
+    const { tenantId } = await requireNetworkSession(ctx)
+    const providerRows = await ctx.db
+      .query('providers')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .collect()
+    const publisherRows = await ctx.db
+      .query('publishers')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .collect()
+    const conversionRows = await ctx.db
+      .query('conversions')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .collect()
+    const ledgerRows = await ctx.db
+      .query('ledgerEntries')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .collect()
     return {
       providers: providerRows.length,
       publishers: publisherRows.length,
@@ -44,6 +56,8 @@ export const summary = queryGeneric({
 const networkTables = [
   'messageReactions',
   'messageAttachments',
+  'messageUploads',
+  'messageUploadAuthorizations',
   'messageEntries',
   'messageThreadParticipants',
   'messageThreads',
@@ -68,12 +82,18 @@ const networkTables = [
 ] as const
 
 export const reset = internalMutationGeneric({
-  args: { confirmation: v.literal('DELETE_AND_RESEED_NETWORK') },
+  args: {
+    tenantId: v.string(),
+    confirmation: v.literal('DELETE_AND_RESEED_NETWORK'),
+  },
   returns: v.object({ reset: v.boolean(), deleted: v.number() }),
-  handler: async (ctx) => {
+  handler: async (ctx, { tenantId }) => {
     let deleted = 0
     for (const table of networkTables) {
-      const rows = await ctx.db.query(table).take(1_000)
+      const rows = await ctx.db
+        .query(table)
+        .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+        .take(1_000)
       if (rows.length === 1_000) {
         throw new Error(
           `Refusing to reset ${table}: the table is larger than the seed safety limit.`,
@@ -89,25 +109,27 @@ export const reset = internalMutationGeneric({
 })
 
 export const seed = internalMutationGeneric({
-  args: {},
+  args: { tenantId: v.string() },
   returns: v.object({
     seeded: v.boolean(),
     refreshed: v.boolean(),
     reason: v.union(v.literal('seeded'), v.literal('network_catalog_refreshed')),
     counts: v.any(),
   }),
-  handler: async (ctx) => {
+  handler: async (ctx, { tenantId }) => {
     const seedMessaging = async () => {
       for (const thread of networkMessageThreads) {
         const existingThread = await ctx.db
           .query('messageThreads')
           .withIndex('by_key', (q) => q.eq('key', thread.key))
+          .filter((q) => q.eq(q.field('tenantId'), tenantId))
           .unique()
         const lastMessage = thread.messages.at(-1)
         if (!lastMessage) continue
         const threadId =
           existingThread?._id ??
           (await ctx.db.insert('messageThreads', {
+            tenantId,
             key: thread.key,
             subject: thread.subject,
             team: thread.team,
@@ -127,6 +149,7 @@ export const seed = internalMutationGeneric({
           const existingParticipants = await ctx.db
             .query('messageThreadParticipants')
             .withIndex('by_threadId', (q) => q.eq('threadId', threadId))
+            .filter((q) => q.eq(q.field('tenantId'), tenantId))
             .take(10)
           const existingParticipant = existingParticipants.find(
             (row) => row.identityKey === participant.identityKey,
@@ -138,6 +161,7 @@ export const seed = internalMutationGeneric({
             })
           } else {
             await ctx.db.insert('messageThreadParticipants', {
+              tenantId,
               threadId,
               identityKey: participant.identityKey,
               title: participant.title,
@@ -150,6 +174,7 @@ export const seed = internalMutationGeneric({
         if (existingThread) continue
         for (const message of thread.messages) {
           await ctx.db.insert('messageEntries', {
+            tenantId,
             threadId,
             senderIdentityKey: message.senderIdentityKey,
             senderLabel: message.senderLabel,
@@ -163,12 +188,14 @@ export const seed = internalMutationGeneric({
     const existing = await ctx.db
       .query('providers')
       .withIndex('by_key', (q) => q.eq('key', 'amazon'))
+      .filter((q) => q.eq(q.field('tenantId'), tenantId))
       .unique()
     if (existing) {
       for (const provider of providers) {
         const row = await ctx.db
           .query('providers')
           .withIndex('by_key', (q) => q.eq('key', provider.key))
+          .filter((q) => q.eq(q.field('tenantId'), tenantId))
           .unique()
         if (row) {
           await ctx.db.patch(row._id, {
@@ -184,6 +211,7 @@ export const seed = internalMutationGeneric({
         const row = await ctx.db
           .query('advertisers')
           .withIndex('by_slug', (q) => q.eq('slug', advertiser.key))
+          .filter((q) => q.eq(q.field('tenantId'), tenantId))
           .unique()
         if (row) {
           await ctx.db.patch(row._id, {
@@ -203,6 +231,7 @@ export const seed = internalMutationGeneric({
         const row = await ctx.db
           .query('offers')
           .withIndex('by_slug', (q) => q.eq('slug', offer.key))
+          .filter((q) => q.eq(q.field('tenantId'), tenantId))
           .unique()
         if (row) {
           await ctx.db.patch(row.programId, {
@@ -270,6 +299,7 @@ export const seed = internalMutationGeneric({
 
     for (const provider of providers) {
       const providerId = await ctx.db.insert('providers', {
+        tenantId,
         key: provider.key,
         name: provider.name,
         status: provider.status === 'healthy' ? 'connected' : 'attention',
@@ -280,6 +310,7 @@ export const seed = internalMutationGeneric({
       })
       providerIds.set(provider.key, providerId)
       const accountId = await ctx.db.insert('providerAccounts', {
+        tenantId,
         providerId,
         externalAccountRef: `waverly-${provider.key}-network`,
         connectionStatus: provider.status === 'healthy' ? 'connected' : 'delayed',
@@ -290,6 +321,7 @@ export const seed = internalMutationGeneric({
       })
       providerAccountIds.set(provider.key, accountId)
       await ctx.db.insert('providerSyncRuns', {
+        tenantId,
         providerId,
         providerAccountId: accountId,
         externalRunRef: `seed-${provider.key}-latest`,
@@ -309,6 +341,7 @@ export const seed = internalMutationGeneric({
       advertiserIds.set(
         advertiser.key,
         await ctx.db.insert('advertisers', {
+          tenantId,
           slug: advertiser.key,
           name: advertiser.name,
           status: 'active',
@@ -326,6 +359,7 @@ export const seed = internalMutationGeneric({
       publisherIds.set(
         publisher.key,
         await ctx.db.insert('publishers', {
+          tenantId,
           slug: publisher.key,
           name: publisher.name,
           status: publisher.status,
@@ -352,6 +386,7 @@ export const seed = internalMutationGeneric({
       propertyIds.set(
         property.key,
         await ctx.db.insert('properties', {
+          tenantId,
           publisherId,
           name: property.name,
           type: property.type,
@@ -376,6 +411,7 @@ export const seed = internalMutationGeneric({
       const providerId = providerIds.get(item.providerKey)
       const advertiserId = advertiserIds.get(item.advertiserKey)
       const programId = await ctx.db.insert('programs', {
+        tenantId,
         providerId,
         advertiserId,
         externalProgramRef: `program-${item.key}`,
@@ -388,6 +424,7 @@ export const seed = internalMutationGeneric({
       })
       programIds.set(item.key, programId)
       const offerId = await ctx.db.insert('offers', {
+        tenantId,
         advertiserId,
         programId,
         providerId,
@@ -428,6 +465,7 @@ export const seed = internalMutationGeneric({
     }
 
     const networkRuleId = await ctx.db.insert('commissionRules', {
+      tenantId,
       scopeType: 'network_default',
       publisherShareBps: 7400,
       active: true,
@@ -439,6 +477,7 @@ export const seed = internalMutationGeneric({
     ruleIds.set('network', networkRuleId)
     for (const publisher of publishers) {
       const ruleId = await ctx.db.insert('commissionRules', {
+        tenantId,
         scopeType: 'publisher_default',
         publisherId: publisherIds.get(publisher.key),
         publisherShareBps: publisher.shareBps,
@@ -455,6 +494,7 @@ export const seed = internalMutationGeneric({
       const offer = programOffers.find((candidate) => candidate.key === item.offerKey)!
       const advertiser = advertisers.find((candidate) => candidate.key === offer.advertiserKey)!
       const linkId = await ctx.db.insert('links', {
+        tenantId,
         publisherId: publisherIds.get(item.publisherKey),
         propertyId: propertyIds.get(item.propertyKey),
         advertiserId: advertiserIds.get(advertiser.key),
@@ -473,6 +513,7 @@ export const seed = internalMutationGeneric({
       linkIds.set(item.key, linkId)
       const destination = `https://${offer.advertiserKey}.example/products/${item.slug}`
       const versionId = await ctx.db.insert('linkVersions', {
+        tenantId,
         linkId,
         version: 1,
         providerId: providerIds.get(offer.providerKey),
@@ -495,6 +536,7 @@ export const seed = internalMutationGeneric({
       const publisher = publishers.find((item) => item.key === conversion.publisherKey)!
       const ruleId = ruleIds.get(conversion.publisherKey) ?? networkRuleId
       const conversionId = await ctx.db.insert('conversions', {
+        tenantId,
         providerId: providerIds.get(conversion.providerKey),
         providerTransactionId: conversion.providerTransactionId,
         publisherId: publisherIds.get(conversion.publisherKey),
@@ -537,6 +579,7 @@ export const seed = internalMutationGeneric({
               ? 'payable'
               : 'paid'
       await ctx.db.insert('ledgerEntries', {
+        tenantId,
         publisherId: publisherIds.get(conversion.publisherKey),
         conversionId,
         entryType: 'conversion_earning',
@@ -556,6 +599,7 @@ export const seed = internalMutationGeneric({
       if (conversion.status === 'reversed') {
         const reversedAt = conversion.occurredAt + 3 * 86_400_000
         await ctx.db.insert('ledgerEntries', {
+          tenantId,
           publisherId: publisherIds.get(conversion.publisherKey),
           conversionId,
           entryType: 'conversion_reversal',
@@ -577,6 +621,7 @@ export const seed = internalMutationGeneric({
 
     for (const day of dailyPerformance) {
       await ctx.db.insert('dailyMetrics', {
+        tenantId,
         scope: 'network',
         ...day,
         currency: 'USD',
@@ -599,9 +644,13 @@ export const initialize = mutation({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
-    await requireNetworkSession(ctx)
-    if (!(await ctx.db.query('providers').first())) {
-      await ctx.runMutation(internal.network.seed, {})
+    const { tenantId } = await requireNetworkSession(ctx)
+    const existing = await ctx.db
+      .query('providers')
+      .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+      .first()
+    if (!existing) {
+      await ctx.runMutation(internal.network.seed, { tenantId })
     }
     return null
   },
