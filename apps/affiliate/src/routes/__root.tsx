@@ -41,7 +41,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       context.convexQueryClient.serverHttpClient?.setAuth(auth.accessToken)
     }
 
-    return { user: auth.user }
+    return {
+      user: auth.user,
+      /** Session claims for the organization WorkOS selected at sign-in or after a switch. */
+      session: auth.user ? { organizationId: auth.organizationId, role: auth.role } : null,
+    }
   },
   component: () => <Outlet />,
   shellComponent: RootDocument,

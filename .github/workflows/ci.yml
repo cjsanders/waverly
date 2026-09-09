@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, typecheck, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # setup-bun reads the version from the packageManager field in package.json.
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+
+  affiliate-e2e:
+    name: Affiliate end-to-end
+    runs-on: ubuntu-latest
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v5
+      # setup-bun reads the version from the packageManager field in package.json.
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+
+      - name: Read pinned tool versions
+        id: versions
+        run: |
+          echo "convex_backend=$(grep -o "CONVEX_BACKEND_RELEASE = '[^']*'" apps/affiliate/e2e/stack.ts | cut -d"'" -f2)" >> "$GITHUB_OUTPUT"
+          echo "playwright=$(grep -o '"@playwright/test": "[^"]*"' apps/affiliate/package.json | cut -d'"' -f4)" >> "$GITHUB_OUTPUT"
+
+      # The harness downloads the Convex backend binary on first run; keep it between runs.
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/waverly/convex-local-backend
+          key: convex-local-backend-${{ runner.os }}-${{ runner.arch }}-${{ steps.versions.outputs.convex_backend }}
+
+      - uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.versions.outputs.playwright }}
+
+      - name: Install Chromium
+        working-directory: apps/affiliate
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run Playwright against the WorkOS emulator and a local Convex backend
+        working-directory: apps/affiliate
+        run: bun run test:e2e
+
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: affiliate-e2e-results
+          path: apps/affiliate/test-results
+          retention-days: 7

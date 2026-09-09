@@ -11,10 +11,14 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { cn } from '#/lib/utils'
+import { useHydrated } from '#/lib/use-hydrated'
 
 /** Signed-in user block for the sidebar footer: avatar and name that open a sign-out menu. */
 export function UserMenu({ className }: { className?: string }) {
   const { user, role, loading } = useAuth()
+  const mounted = useHydrated()
+
+  if (!mounted) return <UserMenuSkeleton className={className} />
 
   if (!user) {
     return loading ? <UserMenuSkeleton className={className} /> : null

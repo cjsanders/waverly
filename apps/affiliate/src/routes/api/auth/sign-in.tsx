@@ -7,11 +7,18 @@ export const Route = createFileRoute('/api/auth/sign-in')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const returnPathname = new URL(request.url).searchParams.get('returnPathname')
+        const searchParams = new URL(request.url).searchParams
+        const returnPathname = searchParams.get('returnPathname')
+        const organizationId = searchParams.get('organizationId')
         const emulatedRedirect = getEmulatedSignInRedirect(request, returnPathname)
         if (emulatedRedirect) return emulatedRedirect
 
-        const url = await getSignInUrl(returnPathname ? { data: { returnPathname } } : undefined)
+        const url = await getSignInUrl({
+          data: {
+            ...(returnPathname ? { returnPathname } : {}),
+            ...(organizationId ? { organizationId } : {}),
+          },
+        })
 
         return new Response(null, {
           status: 307,

@@ -7,7 +7,11 @@ export async function handleSignOut(request: Request): Promise<Response> {
   if (!auth.user) return redirectTo(returnTo)
 
   const authkit = await getAuthkit()
-  const emulated = import.meta.env.DEV && process.env.WORKOS_EMULATE === 'true'
+  const apiHostname = process.env.WORKOS_API_HOSTNAME
+  const emulated =
+    process.env.WORKOS_EMULATE === 'true' ||
+    (process.env.WORKOS_API_HTTPS === 'false' &&
+      (apiHostname === 'localhost' || apiHostname === '127.0.0.1'))
   const { logoutUrl } = await authkit.signOut(auth.sessionId, {
     // Emulate validates redirect hosts even though its loopback logout page is
     // never opened. The app performs the final same-origin redirect below.
