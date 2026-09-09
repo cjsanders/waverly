@@ -30,7 +30,9 @@ The Bun version comes from the repository's `packageManager` field. Cloudflare i
 
 ## Doppler
 
-Each app has a `doppler.yaml` pointing at its development config. Run `doppler login` once, then `doppler setup` inside the app directory. For affiliate local development, run `doppler run -- bun run dev`.
+Each app has a `doppler.yaml` pointing at its development config. Run `doppler login` once, then `doppler setup --no-interactive` inside each app directory. Normal `bun run dev` commands now invoke `doppler run` inside each app, so the root command also loads each project's settings independently. Affiliate's `bun run dev:convex` uses the same selected Doppler config. Use `doppler setup --config dev_personal` inside an app for personal overrides. The credential-free `dev:agent` stack stays independent of Doppler.
+
+Existing `.env.local` files may still supply optional local-only values, but matching values supplied by Doppler take precedence. Do not use `.dev.vars` files for Doppler-backed affiliate development, because that Cloudflare loading path bypasses process-environment secrets. Restart local dev processes after updating Doppler values. See the root README for the complete local setup.
 
 The website and docs currently have no application secrets, so their Doppler projects are ready for future configuration and need no CI token yet. For affiliate, create read-only service tokens for configs `prd` and `preview`, and save them as encrypted **Cloudflare Build secrets**, not Worker runtime secrets:
 
