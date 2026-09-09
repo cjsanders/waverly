@@ -2,6 +2,9 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanst
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { getAuth } from '@workos/authkit-tanstack-react-start'
+import { getAuthAction } from '@workos/authkit-tanstack-react-start/client'
+import { AppProviders } from '../components/app-providers'
+import { authQueryOptions, clientAuth } from '../lib/auth-state'
 import faviconUrl from '@waverly/design-system/brand/waverly-icon.svg?url'
 import { useEffect } from 'react'
 
@@ -35,23 +38,38 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     ],
   }),
   beforeLoad: async ({ context }) => {
-    const auth = await getAuth()
+    const auth = await context.queryClient.ensureQueryData({
+      ...authQueryOptions(getAuthAction),
+      queryFn: async () => {
+        const serverClient = context.convexQueryClient.serverHttpClient
+        if (!serverClient) return getAuthAction()
 
-    if (auth.user) {
-      context.convexQueryClient.serverHttpClient?.setAuth(auth.accessToken)
-    } else {
-      context.convexQueryClient.serverHttpClient?.clearAuth()
-    }
+        const auth = await getAuth()
+        if (auth.user) serverClient.setAuth(auth.accessToken)
+        else serverClient.clearAuth()
+        return clientAuth(auth)
+      },
+    })
 
     return {
+      auth,
       user: auth.user,
       /** Session claims for the organization WorkOS selected at sign-in or after a switch. */
       session: auth.user ? { organizationId: auth.organizationId, role: auth.role } : null,
     }
   },
-  component: () => <Outlet />,
+  component: RootComponent,
   shellComponent: RootDocument,
 })
+
+function RootComponent() {
+  const { auth, convexClient } = Route.useRouteContext()
+  return (
+    <AppProviders auth={auth} convexClient={convexClient}>
+      <Outlet />
+    </AppProviders>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (

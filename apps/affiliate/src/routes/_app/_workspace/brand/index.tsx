@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback } from 'react'
 
-import { loadWorkspaceData } from '#/features/network/queries'
+import { loadWorkspace } from '#/features/network/load-workspace'
 import { NetworkWorkspace } from '#/features/network/NetworkWorkspace'
 import { parseWorkspaceSearch, type WorkspaceSearch } from '#/features/network/workspace-search'
 import { redirectUnlessKind } from '#/lib/mode-routes'
@@ -10,7 +10,7 @@ import { useWorkspace } from '#/lib/workspace'
 export const Route = createFileRoute('/_app/_workspace/brand/')({
   validateSearch: parseWorkspaceSearch,
   loaderDeps: ({ search }) => search,
-  loader: loadWorkspaceData,
+  loader: loadWorkspace,
   beforeLoad: ({ context }) => redirectUnlessKind(context.workspace, 'brand'),
   component: BrandWorkspace,
 })

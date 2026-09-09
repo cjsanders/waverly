@@ -17,7 +17,17 @@ import { kindLabels, useWorkspace, type OrganizationKind } from '#/lib/workspace
 import { useHydrated } from '#/lib/use-hydrated'
 import { useRouteContext } from '@tanstack/react-router'
 import { Orbit } from 'lucide-react'
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import {
+  CreatorPortalSurface,
+  CreatorWorkspaceSurface,
+  DiscoverySurface,
+  ReportingSurface,
+  SellerPortalSurface,
+  MessagesSurface,
+  SettingsSurface,
+  creatorPortalPages,
+} from './surfaces'
 import { NetworkBootstrap } from './NetworkBootstrap'
 import { availablePages } from './navigation'
 import { workspaceIdentity } from './queries'
@@ -39,16 +49,6 @@ type NetworkWorkspaceProps = {
   search: WorkspaceSearch
   onSearchChange: (search: WorkspaceSearch, replace?: boolean) => void
 }
-
-const creatorPortalPages = new Set([
-  'Opportunities',
-  'Projects',
-  'Portfolio',
-  'Publishers',
-  'Performance',
-  'Earnings',
-  'Payouts',
-])
 
 export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorkspaceProps) {
   const workspace = useWorkspace()
@@ -205,33 +205,3 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
     </AppShell>
   )
 }
-
-const CreatorPortalSurface = lazy(() =>
-  import('./CreatorPortalSurface').then((module) => ({ default: module.CreatorPortalSurface })),
-)
-
-const CreatorWorkspaceSurface = lazy(() =>
-  import('./CreatorWorkspaceSurface').then((module) => ({
-    default: module.CreatorWorkspaceSurface,
-  })),
-)
-
-const DiscoverySurface = lazy(() =>
-  import('./DiscoverySurface').then((module) => ({ default: module.DiscoverySurface })),
-)
-
-const ReportingSurface = lazy(() =>
-  import('./ReportingSurface').then((module) => ({ default: module.ReportingSurface })),
-)
-
-const SellerPortalSurface = lazy(() =>
-  import('./SellerPortalSurface').then((module) => ({ default: module.SellerPortalSurface })),
-)
-
-const MessagesSurface = lazy(() =>
-  import('./MessagesSurface').then((module) => ({ default: module.MessagesSurface })),
-)
-
-const SettingsSurface = lazy(() =>
-  import('./SettingsSurface').then((module) => ({ default: module.SettingsSurface })),
-)
