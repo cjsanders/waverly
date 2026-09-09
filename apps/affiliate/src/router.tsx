@@ -18,7 +18,10 @@ export interface RouterContext {
 }
 
 export function getRouter() {
-  const convexUrl = import.meta.env.VITE_CONVEX_URL
+  const convexUrl =
+    import.meta.env.VITE_CONVEX_BROWSER_PROXY === 'true' && typeof window !== 'undefined'
+      ? window.location.origin
+      : import.meta.env.VITE_CONVEX_URL
 
   if (!convexUrl) {
     throw new Error('VITE_CONVEX_URL is required')

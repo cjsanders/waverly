@@ -8,6 +8,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "setup:agent": "bun run --cwd apps/affiliate setup:agent",
+    "dev:agent": "bun run --cwd apps/affiliate dev:agent",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",

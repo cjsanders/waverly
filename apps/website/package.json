@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "portless website.waverly astro dev",
+    "dev": "doppler run -- portless website.waverly astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",

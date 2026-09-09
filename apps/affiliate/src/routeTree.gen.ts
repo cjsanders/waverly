@@ -16,6 +16,7 @@ import { Route as AppWorkspaceRouteImport } from './routes/_app/_workspace'
 import { Route as AppOnboardingRouteImport } from './routes/_app/onboarding'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
+import { Route as ApiAuthSignOutRouteImport } from './routes/api/auth/sign-out'
 import { Route as ApiAuthTestLoginRouteImport } from './routes/api/auth/test-login'
 import { Route as AppWorkspaceBrandIndexRouteImport } from './routes/_app/_workspace/brand/index'
 import { Route as AppWorkspaceCreatorIndexRouteImport } from './routes/_app/_workspace/creator/index'
@@ -54,6 +55,11 @@ const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
   path: '/api/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSignOutRoute = ApiAuthSignOutRouteImport.update({
+  id: '/api/auth/sign-out',
+  path: '/api/auth/sign-out',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthTestLoginRoute = ApiAuthTestLoginRouteImport.update({
   id: '/api/auth/test-login',
   path: '/api/auth/test-login',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AppOnboardingRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-out': typeof ApiAuthSignOutRoute
   '/api/auth/test-login': typeof ApiAuthTestLoginRoute
   '/brand/': typeof AppWorkspaceBrandIndexRoute
   '/creator/': typeof AppWorkspaceCreatorIndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-out': typeof ApiAuthSignOutRoute
   '/api/auth/test-login': typeof ApiAuthTestLoginRoute
   '/brand': typeof AppWorkspaceBrandIndexRoute
   '/creator': typeof AppWorkspaceCreatorIndexRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/_app/onboarding': typeof AppOnboardingRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-out': typeof ApiAuthSignOutRoute
   '/api/auth/test-login': typeof ApiAuthTestLoginRoute
   '/_app/_workspace/brand/': typeof AppWorkspaceBrandIndexRoute
   '/_app/_workspace/creator/': typeof AppWorkspaceCreatorIndexRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/sign-out'
     | '/api/auth/test-login'
     | '/brand/'
     | '/creator/'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/sign-out'
     | '/api/auth/test-login'
     | '/brand'
     | '/creator'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/_app/onboarding'
     | '/api/auth/callback'
     | '/api/auth/sign-in'
+    | '/api/auth/sign-out'
     | '/api/auth/test-login'
     | '/_app/_workspace/brand/'
     | '/_app/_workspace/creator/'
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthSignInRoute: typeof ApiAuthSignInRoute
+  ApiAuthSignOutRoute: typeof ApiAuthSignOutRoute
   ApiAuthTestLoginRoute: typeof ApiAuthTestLoginRoute
 }
 
@@ -209,6 +222,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/sign-in'
       fullPath: '/api/auth/sign-in'
       preLoaderRoute: typeof ApiAuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/sign-out': {
+      id: '/api/auth/sign-out'
+      path: '/api/auth/sign-out'
+      fullPath: '/api/auth/sign-out'
+      preLoaderRoute: typeof ApiAuthSignOutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/test-login': {
@@ -276,6 +296,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthSignInRoute: ApiAuthSignInRoute,
+  ApiAuthSignOutRoute: ApiAuthSignOutRoute,
   ApiAuthTestLoginRoute: ApiAuthTestLoginRoute,
 }
 export const routeTree = rootRouteImport

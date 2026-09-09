@@ -14,7 +14,7 @@ import { cn } from '#/lib/utils'
 
 /** Signed-in user block for the sidebar footer: avatar and name that open a sign-out menu. */
 export function UserMenu({ className }: { className?: string }) {
-  const { user, role, loading, signOut } = useAuth()
+  const { user, role, loading } = useAuth()
 
   if (!user) {
     return loading ? <UserMenuSkeleton className={className} /> : null
@@ -50,7 +50,9 @@ export function UserMenu({ className }: { className?: string }) {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void signOut({ returnTo: '/' })}>
+        <DropdownMenuItem
+          onSelect={() => window.location.assign('/api/auth/sign-out?returnTo=%2F')}
+        >
           <LogOut />
           Sign out
         </DropdownMenuItem>

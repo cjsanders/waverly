@@ -1,6 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "waverly-affiliate",
+  "account_id": "d464b0c0c3eb92aeb343cc1a2bb1c177",
+  "workers_dev": true,
+  "preview_urls": true,
   "compatibility_date": "2026-09-03",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
@@ -16,6 +19,12 @@
   // into the Worker. Production deploy stays on the top-level secrets list.
   "env": {
     "dev": {
+      "vars": {
+        "WORKOS_EMULATE": "false",
+        "WORKOS_API_HOSTNAME": "api.workos.com",
+        "WORKOS_API_HTTPS": "true",
+        "WORKOS_API_PORT": "",
+      },
       "secrets": {
         "required": [
           "WORKOS_CLIENT_ID",

@@ -29,10 +29,8 @@ fi
 echo "[setup] Installing workspace dependencies from bun.lock"
 bun install --frozen-lockfile
 
-if [[ ! -f apps/affiliate/.env.local ]]; then
-  cp -- apps/affiliate/.env.example apps/affiliate/.env.local
-  echo "[setup] Created apps/affiliate/.env.local from its template"
-fi
+echo "[setup] Preparing local agent backends"
+bun run setup:agent
 
 if [[ ! -f apps/e2e/.env ]]; then
   cp -- apps/e2e/.env.example apps/e2e/.env

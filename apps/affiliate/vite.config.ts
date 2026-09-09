@@ -54,7 +54,7 @@ const config = defineConfig(({ command, mode }) => {
   return {
     resolve: { tsconfigPaths: true },
     server: {
-      allowedHosts: process.env.AMP_ORB ? true : undefined,
+      allowedHosts: process.env.AGENT_LOCAL_BACKENDS === 'true' ? true : undefined,
     },
     plugins: [
       trustForwardedHost(),

@@ -9,6 +9,7 @@
  */
 
 import type * as lib_access from "../lib/access.js";
+import type * as previewSeed from "../previewSeed.js";
 import type * as viewer from "../viewer.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "lib/access": typeof lib_access;
+  previewSeed: typeof previewSeed;
   viewer: typeof viewer;
 }>;
 
