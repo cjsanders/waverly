@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import { useEffect } from 'react'
 
@@ -35,7 +35,6 @@ function WorkspaceLayout() {
 
 function SelectWorkspace({ membership }: { membership: Membership }) {
   const { switchToOrganization } = useAuth()
-  const router = useRouter()
   const organizationId = membership.organization.workosOrganizationId
 
   useEffect(() => {
@@ -48,7 +47,7 @@ function SelectWorkspace({ membership }: { membership: Membership }) {
         console.error('Failed to select workspace', result.error)
         return
       }
-      await router.invalidate()
+      window.location.reload()
     }
 
     void select()
@@ -56,7 +55,7 @@ function SelectWorkspace({ membership }: { membership: Membership }) {
     return () => {
       cancelled = true
     }
-  }, [organizationId, router, switchToOrganization])
+  }, [organizationId, switchToOrganization])
 
   return (
     <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">

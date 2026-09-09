@@ -39,6 +39,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
     if (auth.user) {
       context.convexQueryClient.serverHttpClient?.setAuth(auth.accessToken)
+    } else {
+      context.convexQueryClient.serverHttpClient?.clearAuth()
     }
 
     return {

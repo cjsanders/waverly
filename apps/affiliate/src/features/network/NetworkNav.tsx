@@ -5,15 +5,14 @@ import { WorkspaceSwitcher } from '#/components/workspace-switcher'
 import {
   SideNav,
   SideNavHeading,
-  SideNavItem,
   SideNavSection,
   VStack,
   useSideNavRenderMode,
 } from '#/features/network/ui/primitives'
 import { Logo, LogoIcon } from '@waverly/design-system/brand'
-import { useRouteContext } from '@tanstack/react-router'
+import { Link, useRouteContext } from '@tanstack/react-router'
 import { useState } from 'react'
-import { kindLabels, useWorkspace } from '#/lib/workspace'
+import { homePaths, kindLabels, useWorkspace } from '#/lib/workspace'
 
 import { navForKind, navIcons } from './navigation'
 export function NetworkNav({
@@ -72,15 +71,22 @@ export function NetworkNav({
     >
       {sections.map((section) => (
         <SideNavSection key={section.title} title={section.title}>
-          {section.items.map((item) => (
-            <SideNavItem
-              key={item}
-              label={item}
-              icon={navIcons[item]}
-              isSelected={currentPage === item}
-              onClick={() => onPageChange(item)}
-            />
-          ))}
+          {section.items.map((item) => {
+            const IconComponent = navIcons[item]
+            return (
+              <Link
+                key={item}
+                to={homePaths[kind]}
+                search={{ page: item }}
+                preload="intent"
+                aria-current={currentPage === item ? 'page' : undefined}
+                className={`waverly-nav-item${currentPage === item ? ' waverly-nav-item-selected' : ''}`}
+              >
+                <IconComponent aria-hidden />
+                <span>{item}</span>
+              </Link>
+            )
+          })}
         </SideNavSection>
       ))}
     </SideNav>
