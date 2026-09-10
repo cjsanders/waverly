@@ -19,7 +19,12 @@ export const Route = createFileRoute('/_app')({
     if (!viewer) {
       // The sign-in hook did not mirror this user yet (or failed); do it now and re-read.
       await syncViewerFn()
-      viewer = await context.queryClient.fetchQuery({ ...viewerQuery, staleTime: 0 })
+      // The SSR client's consistent timestamp predates the sync mutation. Re-read at the
+      // latest timestamp so a newly mirrored account is visible in this request.
+      viewer = context.convexQueryClient.serverHttpClient
+        ? await context.convexQueryClient.serverHttpClient.query(api.viewer.get, {})
+        : await context.queryClient.fetchQuery({ ...viewerQuery, staleTime: 0 })
+      context.queryClient.setQueryData(viewerQuery.queryKey, viewer)
     }
 
     if (!viewer) throw new Error('Could not load your account')

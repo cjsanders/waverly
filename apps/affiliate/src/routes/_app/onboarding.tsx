@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import { Logo } from '@waverly/design-system/brand'
 import { Button } from '@waverly/design-system/ui/button'
@@ -44,8 +44,6 @@ const choices: {
 function Onboarding() {
   const { viewer } = Route.useRouteContext()
   const { switchToOrganization } = useAuth()
-  const router = useRouter()
-  const navigate = useNavigate()
   const [kind, setKind] = useState<CreateWorkspaceInput['kind']>('creator')
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -61,8 +59,7 @@ function Onboarding() {
       const switched = await switchToOrganization(created.workosOrganizationId)
       if (switched && 'error' in switched) throw new Error(switched.error)
 
-      await router.invalidate()
-      await navigate({ to: homePaths[created.kind] })
+      window.location.assign(homePaths[created.kind])
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Something went wrong')
       setPending(false)
