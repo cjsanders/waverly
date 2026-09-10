@@ -1,0 +1,73 @@
+---
+title: Overview metrics
+description: How headline tiles drive the trend chart on creator, brand, and operator homes.
+---
+
+Overview is the workspace home (`?page=Overview`, or no `page`). A single metric strip sits above a daily trend chart. Choosing a tile changes the chart. Numbers today come from the local fixture; they are not live provider data.
+
+The [workspace](/workspaces) page covers modes, URLs, and switching. This page is only the home metrics and chart.
+
+## Metric strip
+
+One card, one column per metric. Each tile has a sentence-case title, a subtitle, a trend pill against the **prior 30 days**, and a sparkline from the current period's daily series.
+
+Tiles that carry a series are buttons. They set `aria-pressed` on the selected metric and redraw the chart. **Payable now** is a point-in-time balance (next payout date in the subtitle) and does not switch the chart.
+
+| Mode     | Tiles                                                                    |
+| -------- | ------------------------------------------------------------------------ |
+| Creator  | Order value, Conversions, Earnings, Payable now                          |
+| Operator | Order value, Conversions, Publisher earnings, Waverly revenue            |
+| Brand    | Attributed sales, Creator conversions, Creator commissions, Program ROAS |
+
+Creator and operator values are scoped by workspace. Brand tiles use the same daily fixture as the chart — including ROAS, which divides attributed sales by commissions plus a fixed placement-spend constant.
+
+<Frame
+  caption="Creator Overview: Order value selected, with sparklines and a prior-period trend pill"
+  aspect="16/9"
+>
+  <img
+    src="/docs/overview-creator.png"
+    alt="Creator Overview with Order value, Conversions, Earnings, and Payable now tiles above an Order value by day chart"
+  />
+</Frame>
+
+## Trend chart
+
+The chart title follows the selected tile (`Order value by day`, `Conversions by day`, and so on). Copy under the title says to pick a metric above.
+
+What to read:
+
+- **Last 30 days** — smooth sunset curve over a fading fill, latest day marked
+- **Previous 30 days** — thinner dashed comparison line
+- **Zero baseline** — the fill does not exaggerate a change
+- **UTC day axis** — same calendar day on the server and in the browser
+- **Grouped tooltip** — one day, both periods
+
+The SVG measures its container, so the first HTML reserves the height and the chart paints after hydration.
+
+<Frame caption="Selecting Conversions switches the chart scale and series" aspect="16/9">
+  <img
+    src="/docs/overview-creator-conversions.png"
+    alt="Creator Overview with Conversions selected and a count-scale Conversions by day chart"
+  />
+</Frame>
+
+<Frame caption="Brand Overview tiles and chart use the same daily series" aspect="16/9">
+  <img
+    src="/docs/overview-brand.png"
+    alt="Brand Overview with Attributed sales selected, a warning banner, the trend chart, and an action queue"
+  />
+</Frame>
+
+## Chrome
+
+The affiliate app sets its own tokens: cool white canvas, saturated ocean primary, deep-navy sidebar (`data-mode="dark"`), and a sunset accent reserved for data. The shared design-system package is unchanged.
+
+Settings groups render as titled cards in a split panel. Messages uses the same inset.
+
+<Frame caption="Settings groups as titled cards in the split panel" aspect="16/9">
+  <img
+    src="/docs/overview-settings.png"
+    alt="Settings page with Organization profile, Notifications, Data connections, and Payout preferences"
+  />
+</Frame>
