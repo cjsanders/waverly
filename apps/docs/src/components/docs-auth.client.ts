@@ -1,6 +1,6 @@
 import { mount } from '@cloudflare/nimbus-docs/client'
 
-type SessionResponse = { user: { id: string; email: string } | null }
+import { shouldShowDocsAuthWhen, type DocsSessionJson } from '@/lib/docs-auth'
 
 function initAuth(root: HTMLElement): () => void {
   const controller = new AbortController()
@@ -12,17 +12,18 @@ function initAuth(root: HTMLElement): () => void {
         signal: controller.signal,
       })
       if (!response.ok) return
-      const data = (await response.json()) as SessionResponse
+      const data = (await response.json()) as DocsSessionJson
       const signedIn = Boolean(data.user)
       root.dataset.signedIn = signedIn ? 'true' : 'false'
+      root.dataset.authEnabled = data.authEnabled ? 'true' : 'false'
       for (const el of root.querySelectorAll<HTMLElement>('[data-docs-when="signed-in"]')) {
-        el.hidden = !signedIn
+        el.hidden = !shouldShowDocsAuthWhen('signed-in', data)
       }
       for (const el of root.querySelectorAll<HTMLElement>('[data-docs-when="signed-out"]')) {
-        el.hidden = signedIn
+        el.hidden = !shouldShowDocsAuthWhen('signed-out', data)
       }
     } catch {
-      // Keep the signed-out markup when the session endpoint is unavailable.
+      // Keep Sign in / Sign out / Internal hidden when the session endpoint is unavailable.
     }
   })()
 

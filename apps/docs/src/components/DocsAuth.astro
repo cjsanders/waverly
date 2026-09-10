@@ -1,18 +1,11 @@
----
-interface Props {
-  internalHref: string;
-}
-
-const { internalHref } = Astro.props;
----
-
 <div class="flex items-center gap-1">
   <a
-    href={internalHref}
+    href="/api/auth/sign-in?returnPathname=/internal"
     data-docs-when="signed-out"
+    hidden
     class="px-2 py-1 rounded-md text-[0.8125rem] font-medium no-underline text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
   >
-    Team
+    Sign in
   </a>
   <a
     href="/api/auth/sign-out"

@@ -106,7 +106,7 @@ const sectionLinkClass = (active: boolean) => [
 
     <div class="flex items-center gap-2 shrink-0">
       <slot name="actions" />
-      <DocsAuth internalHref={internalSection?.href ?? "/internal"} />
+      <DocsAuth />
       {config.search !== false && <SearchTrigger />}
       {
         config.github && (

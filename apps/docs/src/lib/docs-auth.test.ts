@@ -8,6 +8,7 @@ import {
   legacyRedirectPath,
   sanitizeReturnPath,
   sealSession,
+  shouldShowDocsAuthWhen,
   unsealSession,
   type DocsAuthEnv,
 } from './docs-auth'
@@ -96,11 +97,22 @@ describe('handleDocsRequest', () => {
     expect(await response.text()).toBe('team')
   })
 
-  it('fails closed when WorkOS is missing in production', async () => {
+  it('fails closed with a generic 404 when WorkOS is missing in production', async () => {
     const response = await handleDocsRequest(request('/internal'), {}, async () => {
       throw new Error('should not serve internal docs')
     })
-    expect(response.status).toBe(503)
+    expect(response.status).toBe(404)
+    const body = await response.text()
+    expect(body).toContain('Page not found')
+    expect(body).not.toContain('WorkOS')
+  })
+
+  it('hides unconfigured sign-in as a generic 404', async () => {
+    const response = await handleDocsRequest(request('/api/auth/sign-in'), {}, async () => {
+      throw new Error('should not start WorkOS')
+    })
+    expect(response.status).toBe(404)
+    expect(await response.text()).not.toContain('WorkOS')
   })
 
   it('redirects retired public URLs into the internal section', async () => {
@@ -155,6 +167,41 @@ describe('handleDocsRequest', () => {
       env,
       async () => new Response('nope'),
     )
-    expect(await response.json()).toEqual({ user: { id: 'user_1', email: 'ops@waverly.com' } })
+    expect(await response.json()).toEqual({
+      user: { id: 'user_1', email: 'ops@waverly.com' },
+      authEnabled: true,
+    })
+  })
+
+  it('reports that auth is disabled when WorkOS is missing', async () => {
+    const response = await handleDocsRequest(
+      request('/api/auth/session'),
+      {},
+      async () => new Response('nope'),
+    )
+    expect(await response.json()).toEqual({ user: null, authEnabled: false })
+  })
+})
+
+describe('docs auth header controls', () => {
+  it('keeps Sign in hidden unless WorkOS is configured and the visitor is signed out', () => {
+    expect(shouldShowDocsAuthWhen('signed-out', { user: null, authEnabled: false })).toBe(false)
+    expect(shouldShowDocsAuthWhen('signed-out', { user: null, authEnabled: true })).toBe(true)
+    expect(
+      shouldShowDocsAuthWhen('signed-out', {
+        user: { id: 'user_1', email: 'ops@waverly.com' },
+        authEnabled: true,
+      }),
+    ).toBe(false)
+  })
+
+  it('shows Internal and Sign out only when a session exists', () => {
+    expect(shouldShowDocsAuthWhen('signed-in', { user: null, authEnabled: true })).toBe(false)
+    expect(
+      shouldShowDocsAuthWhen('signed-in', {
+        user: { id: 'user_1', email: 'ops@waverly.com' },
+        authEnabled: true,
+      }),
+    ).toBe(true)
   })
 })

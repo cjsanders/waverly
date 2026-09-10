@@ -215,18 +215,34 @@ function htmlError(title: string, message: string, status: number): Response {
   )
 }
 
+function notFoundPage(): Response {
+  return htmlError('Page not found', 'This page does not exist.', 404)
+}
+
+export type DocsSessionJson = {
+  user: DocsUser | null
+  authEnabled: boolean
+}
+
+export function docsSessionJson(user: DocsUser | null, env: DocsAuthEnv): DocsSessionJson {
+  return { user, authEnabled: isAuthConfigured(env) }
+}
+
+export function shouldShowDocsAuthWhen(
+  when: 'signed-in' | 'signed-out',
+  session: Pick<DocsSessionJson, 'user' | 'authEnabled'>,
+): boolean {
+  const signedIn = Boolean(session.user)
+  if (when === 'signed-in') return signedIn
+  return session.authEnabled && !signedIn
+}
+
 async function handleSignIn(
   request: Request,
   env: DocsAuthEnv,
   options: DocsAuthOptions,
 ): Promise<Response> {
-  if (!isAuthConfigured(env)) {
-    return htmlError(
-      'Docs sign-in is not configured',
-      'Set WORKOS_CLIENT_ID, WORKOS_API_KEY, and WORKOS_COOKIE_PASSWORD on the docs worker.',
-      503,
-    )
-  }
+  if (!isAuthConfigured(env)) return notFoundPage()
 
   const url = new URL(request.url)
   const returnPath = sanitizeReturnPath(url.searchParams.get('returnPathname'))
@@ -251,13 +267,7 @@ async function handleCallback(
   env: DocsAuthEnv,
   options: DocsAuthOptions,
 ): Promise<Response> {
-  if (!isAuthConfigured(env) || !env.WORKOS_COOKIE_PASSWORD) {
-    return htmlError(
-      'Docs sign-in is not configured',
-      'WorkOS is not configured for this docs site.',
-      503,
-    )
-  }
+  if (!isAuthConfigured(env) || !env.WORKOS_COOKIE_PASSWORD) return notFoundPage()
 
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
@@ -329,7 +339,7 @@ function handleSignOut(request: Request): Response {
 
 async function handleSession(request: Request, env: DocsAuthEnv): Promise<Response> {
   const user = await readSession(request, env)
-  return json({ user })
+  return json(docsSessionJson(user, env))
 }
 
 export async function handleDocsRequest(
@@ -354,13 +364,7 @@ export async function handleDocsRequest(
 
   if (!isInternalPath(path)) return next()
   if (bypass) return next()
-  if (!isAuthConfigured(env)) {
-    return htmlError(
-      'Internal docs are unavailable',
-      'WorkOS is not configured on this docs deployment.',
-      503,
-    )
-  }
+  if (!isAuthConfigured(env)) return notFoundPage()
 
   const user = await readSession(request, env)
   if (!user) {
