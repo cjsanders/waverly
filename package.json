@@ -11,7 +11,7 @@
     "setup:agent": "bun run --cwd apps/affiliate setup:agent",
     "dev:agent": "bun run --cwd apps/affiliate dev:agent",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "bun test scripts/*.test.mjs && turbo run test",
     "test:e2e": "turbo run test:e2e",
     "lint": "oxlint --deny-warnings --report-unused-disable-directives . && bun run --cwd apps/docs lint:docs",
     "lint:fix": "oxlint --fix --deny-warnings --report-unused-disable-directives .",

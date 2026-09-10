@@ -114,10 +114,11 @@ migrate to the tenant-aware schema.
 
 Three tiers, from fastest to most realistic:
 
-- `bun run test` runs Vitest. Plain unit tests live in `src/**/*.test.ts`. Convex functions are
-  tested in `convex/**/*.test.ts` with [`convex-test`](https://docs.convex.dev/testing/convex-test),
-  which runs them in-process on the edge runtime; `t.withIdentity({ org_id, role })` fakes the WorkOS
-  token claims, so workspace logic needs no WorkOS at all.
+- `bun run test` runs Vitest. Plain unit tests live in `src/**/*.test.ts`; React component and hook
+  tests live in `src/**/*.test.tsx` and use Testing Library with jsdom. Convex functions are tested
+  in `convex/**/*.test.ts` with [`convex-test`](https://docs.convex.dev/testing/convex-test), which
+  runs them in-process on the edge runtime; `t.withIdentity({ org_id, role })` fakes the WorkOS token
+  claims, so workspace logic needs no WorkOS at all.
 - `bun run test:e2e` runs Playwright against a production build with every dependency on localhost,
   so it needs no secrets and works offline after the first run:
   - the [WorkOS emulator](https://github.com/workos/emulate) on port 4100, seeded from
