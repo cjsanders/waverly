@@ -8,7 +8,6 @@ import { ThemeToggle } from "./ui/theme-toggle";
 import SearchTrigger from "./ui/search/SearchTrigger.astro";
 import DocsAuth from "./DocsAuth.astro";
 import { config } from "virtual:nimbus/config";
-import { getSidebarSections } from "@cloudflare/nimbus-docs/runtime";
 import { isInternalPath } from "@/lib/docs-auth";
 import { docsSections } from "@/lib/docs-nav";
 
@@ -29,15 +28,11 @@ interface Props {
 // `entryId` is part of Props as a forward-compat hook (the version-switcher
 // recipe reads it) but the base Header doesn't use it — leave it off the
 // destructure to avoid an unused-var warning.
-const { collection, showSidebar = true, sections: sectionsProp } = Astro.props;
+const { showSidebar = true, sections: sectionsProp } = Astro.props;
 
 // Normalize trailing slash so isActive matches sidebar hrefs.
 const currentSlug = Astro.url.pathname.replace(/\/$/, "") || "/";
-const sections =
-  sectionsProp ??
-  (await getSidebarSections(currentSlug, { collection }).then((fromTree) =>
-    fromTree.length >= 2 ? fromTree : docsSections(currentSlug),
-  ));
+const sections = sectionsProp ?? docsSections(currentSlug);
 const publicSections = sections.filter(
   (section) => !isInternalPath(section.href),
 );
