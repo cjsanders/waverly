@@ -19,7 +19,11 @@ Waverly is an affiliate network. After you sign in to the affiliate app, you wor
   <Card title="WorkOS setup" icon="ph:gear">
     [Roles, `metadata.kind`, and operator workspaces](/workos) for the environment.
   </Card>
+  <Card title="SSR and prefetching" icon="ph:lightning">
+    [Loaders, sidebar prefetch, and workspace-switch isolation](/ssr-and-prefetching) for new pages.
+  </Card>
 </CardGrid>
 Signed-in users with no workspace go to `/onboarding`. Everyone else opens the home of their active
 workspace (`/creator`, `/brand`, or `/operator`). `/dashboard` still works; it redirects into that
-workspace layout.
+workspace layout. Workspace pages render on the server; Messages includes the inbox in the first
+response.

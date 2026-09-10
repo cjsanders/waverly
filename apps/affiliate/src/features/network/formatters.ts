@@ -41,6 +41,15 @@ export function formatDate(timestamp: number) {
   }).format(timestamp)
 }
 
+export function formatReportDate(timestamp: number) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(timestamp)
+}
+
 export function statusVariant(status: string): 'success' | 'warning' | 'error' | 'accent' {
   if (
     ['active', 'approved', 'locked', 'paid', 'fresh', 'connected', 'reporting'].includes(

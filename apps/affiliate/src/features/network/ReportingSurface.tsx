@@ -45,6 +45,7 @@ import {
   summarizePerformance,
   type SeedDay,
 } from '../../../shared/networkData'
+import { formatReportDate } from './formatters'
 import { ReportingChart, type ReportRankingPoint, type ReportTrendPoint } from './ReportingChart'
 import type { NetworkIdentity } from './types'
 
@@ -160,14 +161,6 @@ function ReportMetricCard({
       </VStack>
     </Card>
   )
-}
-
-function formatReportDate(timestamp: number) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(timestamp)
 }
 
 function scaleSummary(rows: SeedDay[], identity: NetworkIdentity, provider: string): ReportSummary {

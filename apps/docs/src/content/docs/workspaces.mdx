@@ -5,6 +5,8 @@ description: Creator, brand, and operator modes, their URLs, and how to switch.
 
 A workspace is a WorkOS organization. Its `metadata.kind` decides which mode of the affiliate app it opens in. You can belong to several workspaces and switch between them; the active WorkOS organization on your session is the one the app uses.
 
+Workspace pages render on the server. See [SSR and prefetching](/ssr-and-prefetching) if you are adding a page.
+
 ## Modes
 
 | Kind     | Home        | What it is for                                                                                     |
@@ -19,14 +21,16 @@ Organizations without a valid `kind` are ignored at sign-in and cannot open the 
 
 Each mode lives under its own prefix. Visiting a prefix that does not match the active workspace sends you to that workspace's home. `/dashboard` is a leftover entry point: it signs you in if needed, then hops into the workspace layout (first `/creator`, which then redirects if your workspace is a brand or operator).
 
-If you have memberships but the session has no active organization yet — a fresh sign-up, or a membership added elsewhere — the app selects your first workspace and shows “Opening …” while the session updates.
+The URL keeps `page` (the sidebar item) and, on Messages, `thread` (the open conversation). A missing or unknown `page` falls back to Overview.
+
+If you have memberships but the session has no active organization yet — a fresh sign-up, or a membership added elsewhere — the app selects your first workspace and shows “Opening …” while the session updates, then reloads the document so the new organization is the one that renders.
 
 ## Switcher
 
 The sidebar control shows the active workspace name and its kind (for example, “Creator workspace”). Open it to:
 
 - See every workspace you belong to, with kind and role
-- Switch to another workspace (the URL prefix and navigation change)
+- Switch to another workspace — after WorkOS updates the organization, the app starts a **new document request** to that mode's home so cached Messages data cannot cross workspaces
 - Create another workspace via [onboarding](/onboarding)
 
 Workspaces in the list are ordered operator, then brand, then creator, and alphabetically within each kind.
@@ -42,3 +46,20 @@ Only **Overview** is wired up so far. Other sidebar items render as “Coming so
 | Operator | Overview, Brands, Creators, Payouts, Reports  | Invite brand   | Network-wide brands, creators, and payouts appear once data starts flowing.        |
 
 The overview card title is **Nothing to show yet** until those pages have data.
+
+## First paint and prefetch
+
+Creator, brand, and operator homes render on the server. You should not see **Loading workspace…** on the first HTML. Hover or keyboard focus on a sidebar destination starts that page before you click.
+
+**Messages** is included in that first response — the inbox and the requested (or first) accessible conversation. Typing presence stays client-only. Other surfaces can still show the loading fallback later if a lazily loaded chunk is in flight.
+
+<Frame caption="Messages inbox and selected conversation included in the first HTML" aspect="16/9">
+  <img
+    src="/docs/workspaces-ssr-messages.png"
+    alt="Messages page with conversation list and an open thread"
+  />
+</Frame>
+
+## Reporting dates
+
+Reports and Performance format calendar days in **UTC** so the server markup and the browser show the same day. Saved product lists and the last sidebar page are browser preferences; they are applied after hydration so they do not overwrite the server HTML.
