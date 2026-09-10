@@ -1,6 +1,12 @@
 ---
 title: Onboarding
 description: Create a creator or brand workspace after sign-in.
+sidebar:
+  order: 3
+noindex: true
+banner:
+  content: Internal documentation. Production requires a WorkOS sign-in.
+  type: note
 ---
 
 `/onboarding` is where you create a workspace. You land here automatically when you are signed in and have none. The sidebar switcher also links **New workspace** so you can add another later.
@@ -18,7 +24,7 @@ description: Create a creator or brand workspace after sign-in.
     Two to 80 characters. The placeholder is “Your name or channel” for a creator and “Acme Outdoors” for a brand.
   </Step>
   <Step title="Create workspace">
-    Waverly creates a WorkOS organization with that `kind`, makes you the `owner`, syncs your memberships, switches the session to the new organization, and opens its [home](/workspaces).
+    Waverly creates a WorkOS organization with that `kind`, makes you the `owner`, syncs your memberships, switches the session to the new organization, and opens its [home](/internal/workspaces).
   </Step>
 </Steps>
 
@@ -26,5 +32,5 @@ The form title is **Set up your workspace** when you have none, and **Create ano
 
 <Aside type="note" title="Operator workspaces">
   Onboarding cannot create an operator workspace. Those organizations are provisioned by Waverly.
-  See [WorkOS setup](/workos).
+  See [WorkOS setup](/internal/workos).
 </Aside>

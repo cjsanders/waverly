@@ -36,7 +36,7 @@ If existing MDX already describes the change accurately, stop.
 
 ## How to write the docs
 
-- Pages: `apps/docs/src/content/docs/<slug>.mdx`. Required frontmatter: `title`. Optional: `description`.
+- Pages: `apps/docs/src/content/docs/<section>/<slug>.mdx` where `<section>` is `creators`, `sellers`, or `internal`. Required frontmatter: `title`. Optional: `description`. Internal pages also set `noindex: true`.
 - Do not repeat the page H1 in the body; it comes from `title`.
 - Every PascalCase MDX component must be registered in `apps/docs/src/components.ts`.
 - Shared snippets go in `apps/docs/src/content/partials/` and are included with `<Render file="slug" />`.

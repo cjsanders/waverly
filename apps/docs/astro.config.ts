@@ -11,10 +11,33 @@ const nimbusConfig = defineNimbusConfig({
   // CHANGE_ME: your project's name — used for <title>, the home H1, and OG.
   title: 'Waverly Docs',
   // CHANGE_ME: a one-line description of your docs — used for meta + OG.
-  description: 'Documentation for the Waverly affiliate network.',
+  description: 'Guides for Waverly creators, sellers, and the internal team.',
   locale: 'en',
   github: null,
+  homeLabel: 'Docs',
   socialImageAlt: 'Waverly documentation preview',
+  sidebar: {
+    scope: 'section',
+    indexDisplay: 'overview-leaf',
+    overviewLabel: true,
+    items: [
+      {
+        label: 'Creators',
+        icon: 'ph:user-circle',
+        autogenerate: { directory: 'creators' },
+      },
+      {
+        label: 'Sellers',
+        icon: 'ph:storefront',
+        autogenerate: { directory: 'sellers' },
+      },
+      {
+        label: 'Internal',
+        icon: 'ph:lock-simple',
+        autogenerate: { directory: 'internal' },
+      },
+    ],
+  },
 })
 
 export default defineConfig({
@@ -51,4 +74,12 @@ export default defineConfig({
       },
     }),
   ],
+  redirects: {
+    '/getting-started': '/internal',
+    '/workspaces': '/internal/workspaces',
+    '/onboarding': '/internal/onboarding',
+    '/workos': '/internal/workos',
+    '/ssr-and-prefetching': '/internal/ssr-and-prefetching',
+    '/agent-login': '/internal/agent-login',
+  },
 })

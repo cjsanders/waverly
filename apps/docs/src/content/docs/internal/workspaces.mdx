@@ -1,19 +1,25 @@
 ---
 title: Workspaces
 description: Creator, brand, and operator modes, their URLs, and how to switch.
+sidebar:
+  order: 2
+noindex: true
+banner:
+  content: Internal documentation. Production requires a WorkOS sign-in.
+  type: note
 ---
 
 A workspace is a WorkOS organization. Its `metadata.kind` decides which mode of the affiliate app it opens in. You can belong to several workspaces and switch between them; the active WorkOS organization on your session is the one the app uses.
 
-Workspace pages render on the server. See [SSR and prefetching](/ssr-and-prefetching) if you are adding a page.
+Workspace pages render on the server. See [SSR and prefetching](/internal/ssr-and-prefetching) if you are adding a page.
 
 ## Modes
 
-| Kind     | Home        | What it is for                                                                                     |
-| -------- | ----------- | -------------------------------------------------------------------------------------------------- |
-| Creator  | `/creator`  | Share links, track sales, and get paid for what you promote.                                       |
-| Brand    | `/brand`    | Run campaigns, recruit creators, and pay commissions.                                              |
-| Operator | `/operator` | Network-wide brands, creators, and payouts. Provisioned by Waverly, not [onboarding](/onboarding). |
+| Kind     | Home        | What it is for                                                                                              |
+| -------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| Creator  | `/creator`  | Share links, track sales, and get paid for what you promote. Public docs: [Creators](/creators).            |
+| Brand    | `/brand`    | Run campaigns, recruit creators, and pay commissions. Public docs: [Sellers](/sellers).                     |
+| Operator | `/operator` | Network-wide brands, creators, and payouts. Provisioned by Waverly, not [onboarding](/internal/onboarding). |
 
 Organizations without a valid `kind` are ignored at sign-in and cannot open the app.
 
@@ -31,34 +37,25 @@ The sidebar control shows the active workspace name and its kind (for example, �
 
 - See every workspace you belong to, with kind and role
 - Switch to another workspace — after WorkOS updates the organization, the app starts a **new document request** to that mode's home so cached Messages data cannot cross workspaces
-- Create another workspace via [onboarding](/onboarding)
+- Create another workspace via [onboarding](/internal/onboarding)
 
 Workspaces in the list are ordered operator, then brand, then creator, and alphabetically within each kind.
 
 ## Navigation
 
-Only **Overview** is wired up so far. Other sidebar items render as “Coming soon.” Each mode also has its own primary action in the top bar.
+Creator and seller sidebars follow the public docs. Operator navigation is network-wide.
 
-| Mode     | Sidebar                                       | Primary action | Empty overview                                                                     |
-| -------- | --------------------------------------------- | -------------- | ---------------------------------------------------------------------------------- |
-| Creator  | Overview, Campaigns, Links, Payouts, Reports  | New link       | Sales, commissions, and campaign performance appear once data starts flowing.      |
-| Brand    | Overview, Campaigns, Creators, Links, Reports | New campaign   | Creator activity, conversions, and campaign spend appear once data starts flowing. |
-| Operator | Overview, Brands, Creators, Payouts, Reports  | Invite brand   | Network-wide brands, creators, and payouts appear once data starts flowing.        |
-
-The overview card title is **Nothing to show yet** until those pages have data.
+| Mode     | Sidebar groups                                         | Primary action |
+| -------- | ------------------------------------------------------ | -------------- |
+| Creator  | Home, Discovery, Work, Insights, Organization          | New link       |
+| Brand    | Program, Creators, Reporting, Finance, Workspace       | New campaign   |
+| Operator | Network, Marketplace, Performance, Finance, Operations | Invite brand   |
 
 ## First paint and prefetch
 
 Creator, brand, and operator homes render on the server. You should not see **Loading workspace…** on the first HTML. Hover or keyboard focus on a sidebar destination starts that page before you click.
 
 **Messages** is included in that first response — the inbox and the requested (or first) accessible conversation. Typing presence stays client-only. Other surfaces can still show the loading fallback later if a lazily loaded chunk is in flight.
-
-<Frame caption="Messages inbox and selected conversation included in the first HTML" aspect="16/9">
-  <img
-    src="/docs/workspaces-ssr-messages.png"
-    alt="Messages page with conversation list and an open thread"
-  />
-</Frame>
 
 ## Reporting dates
 

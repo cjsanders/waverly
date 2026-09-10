@@ -23,15 +23,26 @@ export const prerender = true;
       <p class="text-muted-foreground mt-2 text-[1.0625rem] leading-relaxed">
         {config.description}
       </p>
-      <a
-        href="/getting-started"
-        class="border-border hover:border-border-strong bg-card mt-8 block rounded-xl border p-6 no-underline transition-colors"
-      >
-        <div class="text-foreground font-medium">Getting started</div>
-        <div class="text-muted-foreground mt-0.5 text-sm">
-          Read the project documentation
-        </div>
-      </a>
+      <div class="mt-8 grid gap-4 sm:grid-cols-2">
+        <a
+          href="/creators"
+          class="border-border hover:border-border-strong bg-card block rounded-xl border p-6 no-underline transition-colors"
+        >
+          <div class="text-foreground font-medium">Creators</div>
+          <div class="text-muted-foreground mt-0.5 text-sm">
+            Share links, run collaborations, and get paid.
+          </div>
+        </a>
+        <a
+          href="/sellers"
+          class="border-border hover:border-border-strong bg-card block rounded-xl border p-6 no-underline transition-colors"
+        >
+          <div class="text-foreground font-medium">Sellers</div>
+          <div class="text-muted-foreground mt-0.5 text-sm">
+            Run a brand program, recruit creators, and pay commissions.
+          </div>
+        </a>
+      </div>
     </main>
   </div>
 </BaseLayout>
