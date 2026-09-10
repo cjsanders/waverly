@@ -51,7 +51,19 @@ The overview card title is **Nothing to show yet** until those pages have data.
 
 Creator, brand, and operator homes render on the server. You should not see **Loading workspace…** on the first HTML. Hover or keyboard focus on a sidebar destination starts that page before you click.
 
+<Frame
+  caption="Creator Overview after the server render — no Loading workspace splash"
+  aspect="16/9"
+>
+  <img
+    src="/docs/workspaces-ssr-overview.png"
+    alt="Creator workspace overview with sidebar, metrics, and earnings trend"
+  />
+</Frame>
+
 **Messages** is included in that first response — the inbox and the requested (or first) accessible conversation. Typing presence stays client-only. Other surfaces can still show the loading fallback later if a lazily loaded chunk is in flight.
+
+Sidebar clicks reuse the hydrated public session — they do not wait on a fresh auth RPC. If the account, session, organization, or authorization claims change, the app hides the current workspace and reloads so the previous identity never stays on screen.
 
 <Frame caption="Messages inbox and selected conversation included in the first HTML" aspect="16/9">
   <img
