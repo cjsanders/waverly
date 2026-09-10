@@ -17,9 +17,20 @@ import { kindLabels, useWorkspace, type OrganizationKind } from '#/lib/workspace
 import { useHydrated } from '#/lib/use-hydrated'
 import { useRouteContext } from '@tanstack/react-router'
 import { Orbit } from 'lucide-react'
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import {
+  CreatorPortalSurface,
+  CreatorWorkspaceSurface,
+  DiscoverySurface,
+  ReportingSurface,
+  SellerPortalSurface,
+  MessagesSurface,
+  SettingsSurface,
+  creatorPortalPages,
+} from './surfaces'
 import { NetworkBootstrap } from './NetworkBootstrap'
 import { availablePages } from './navigation'
+import { workspaceIdentity } from './queries'
 
 import type { CreatorPage } from './CreatorPortalSurface'
 import type { SellerPage } from './SellerPortalSurface'
@@ -39,27 +50,18 @@ type NetworkWorkspaceProps = {
   onSearchChange: (search: WorkspaceSearch, replace?: boolean) => void
 }
 
-const creatorPortalPages = new Set([
-  'Opportunities',
-  'Projects',
-  'Portfolio',
-  'Publishers',
-  'Performance',
-  'Earnings',
-  'Payouts',
-])
-
 export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorkspaceProps) {
   const workspace = useWorkspace()
   const tenantId = workspace.organization.workosOrganizationId
   const { viewer } = useRouteContext({ from: '/_app' })
   const mounted = useHydrated()
   const [restored] = useState(() => readWorkspaceSession(mode, tenantId))
-  const identity: NetworkIdentity =
-    mode === 'operator' ? 'operator' : mode === 'brand' ? 'puroair' : 'northstar'
-  const requestedPage = search.page ?? restored?.currentPage ?? 'Overview'
+  const identity = workspaceIdentity(mode)
+  // Browser preferences are applied only after the server markup has hydrated.
+  const requestedPage = search.page ?? (mounted ? restored?.currentPage : undefined) ?? 'Overview'
   const currentPage = availablePages(mode).has(requestedPage) ? requestedPage : 'Overview'
-  const [activeStep, setActiveStep] = useState(restored?.activeStep ?? 0)
+  const [savedStep, setActiveStep] = useState(restored?.activeStep ?? 0)
+  const activeStep = mounted ? savedStep : 0
   const initialMessageThreadId = search.thread ?? null
   const contentRef = useRef<HTMLDivElement>(null)
   const isCompactHeader = useMediaQuery('(max-width: 700px)')
@@ -67,6 +69,7 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
   const setCurrentPage = (page: string) => onSearchChange({ page })
 
   useEffect(() => {
+    if (!mounted) return
     if (search.page !== currentPage) {
       onSearchChange({ page: currentPage, thread: search.thread }, true)
     }
@@ -79,7 +82,7 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
       /* Storage may be unavailable; URL navigation still works. */
     }
     contentRef.current?.scrollTo({ top: 0 })
-  }, [activeStep, currentPage, mode, onSearchChange, search.thread, search.page, tenantId])
+  }, [activeStep, currentPage, mode, mounted, onSearchChange, search.thread, search.page, tenantId])
 
   const nav = <NetworkNav currentPage={currentPage} onPageChange={setCurrentPage} />
   const handleStepChange = (step: number) => {
@@ -100,14 +103,6 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
   )
   const isPendingReview = currentPage === 'Getting started'
   const pagePadding: 4 | 6 = isCompactHeader ? 4 : 6
-
-  if (!mounted) {
-    return (
-      <output className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Loading workspace…
-      </output>
-    )
-  }
 
   return (
     <AppShell sideNav={nav} height="fill" variant="section" contentPadding={0}>
@@ -176,7 +171,7 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
                 />
               ) : currentPage === 'Messages' ? (
                 <MessagesSurface
-                  key={identity}
+                  key={`${identity}:${initialMessageThreadId ?? ''}`}
                   identity={identity}
                   initialThreadId={initialMessageThreadId}
                 />
@@ -210,33 +205,3 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
     </AppShell>
   )
 }
-
-const CreatorPortalSurface = lazy(() =>
-  import('./CreatorPortalSurface').then((module) => ({ default: module.CreatorPortalSurface })),
-)
-
-const CreatorWorkspaceSurface = lazy(() =>
-  import('./CreatorWorkspaceSurface').then((module) => ({
-    default: module.CreatorWorkspaceSurface,
-  })),
-)
-
-const DiscoverySurface = lazy(() =>
-  import('./DiscoverySurface').then((module) => ({ default: module.DiscoverySurface })),
-)
-
-const ReportingSurface = lazy(() =>
-  import('./ReportingSurface').then((module) => ({ default: module.ReportingSurface })),
-)
-
-const SellerPortalSurface = lazy(() =>
-  import('./SellerPortalSurface').then((module) => ({ default: module.SellerPortalSurface })),
-)
-
-const MessagesSurface = lazy(() =>
-  import('./MessagesSurface').then((module) => ({ default: module.MessagesSurface })),
-)
-
-const SettingsSurface = lazy(() =>
-  import('./SettingsSurface').then((module) => ({ default: module.SettingsSurface })),
-)

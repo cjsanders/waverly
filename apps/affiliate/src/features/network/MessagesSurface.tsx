@@ -33,7 +33,10 @@ import {
   useMediaQuery,
 } from '#/features/network/ui/primitives'
 import usePresence from '@convex-dev/presence/react'
-import { useConvexAuth, useMutation, useQuery } from 'convex/react'
+import { useConvexAuth, useMutation, useQuery as useConvexQuery } from 'convex/react'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useHydrated } from '#/lib/use-hydrated'
+import { messageThreadsQuery, threadMessagesQuery } from './queries'
 import { ArrowLeft, Download, FileText, MessageSquareText, Search, SmilePlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
@@ -46,8 +49,17 @@ import type {
   MessageAttachment,
   ReactionEmoji,
 } from './types'
-export function formatMessageTime(timestamp: number) {
+export function formatMessageTime(timestamp: number, local = true) {
   const date = new Date(timestamp)
+  if (!local) {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: 'UTC',
+    }).format(date)
+  }
   const now = new Date()
   const isToday =
     date.getFullYear() === now.getFullYear() &&
@@ -214,10 +226,8 @@ export function MessagesSurface({
 }) {
   const isNarrow = useMediaQuery('(max-width: 900px)')
   const { isAuthenticated } = useConvexAuth()
-  const persistedThreads = useQuery(
-    api.messages.listThreads,
-    isAuthenticated ? { identityKey: identity } : 'skip',
-  )
+  const mounted = useHydrated()
+  const { data: persistedThreads } = useSuspenseQuery(messageThreadsQuery(identity))
   const sendPersistedMessage = useMutation(api.messages.send)
   const generateAttachmentUploadUrl = useMutation(api.messages.generateAttachmentUploadUrl)
   const registerAttachmentUpload = useMutation(api.messages.registerAttachmentUpload)
@@ -234,7 +244,7 @@ export function MessagesSurface({
   const hasPersistedThreads = (persistedThreads?.length ?? 0) > 0
   const threads: ConversationThread[] = (persistedThreads ?? []).map((thread) => ({
     ...thread,
-    time: formatMessageTime(thread.lastMessageAt),
+    time: formatMessageTime(thread.lastMessageAt, mounted),
     messages: [],
   }))
   const selectedThread = threads.find((thread) => thread.id === selectedThreadId) ??
@@ -260,15 +270,10 @@ export function MessagesSurface({
     if (!composerKey) return
     setAttachmentsByThread((current) => ({ ...current, [composerKey]: files }))
   }
-  const persistedMessages = useQuery(
-    api.messages.listMessages,
-    hasPersistedThreads && selectedThread
-      ? { threadKey: selectedThread.id, identityKey: identity }
-      : 'skip',
-  )
-  const typingUsers = useQuery(
+  const { data: persistedMessages } = useQuery(threadMessagesQuery(identity, selectedThread.id))
+  const typingUsers = useConvexQuery(
     api.presence.listTyping,
-    hasPersistedThreads && selectedThread
+    isAuthenticated && hasPersistedThreads
       ? { threadKey: selectedThread.id, identityKey: identity }
       : 'skip',
   )
@@ -279,7 +284,7 @@ export function MessagesSurface({
         sender: message.senderIdentityKey === identity ? 'user' : 'assistant',
         author: message.author,
         text: message.text,
-        time: formatMessageTime(message.sentAt),
+        time: formatMessageTime(message.sentAt, mounted),
         attachments: message.attachments,
         reactions: message.reactions,
       }))
@@ -294,10 +299,17 @@ export function MessagesSurface({
   )
 
   useEffect(() => {
-    if (hasPersistedThreads && selectedThread.unread) {
+    if (isAuthenticated && hasPersistedThreads && selectedThread.unread) {
       void markThreadRead({ threadKey: selectedThread.id, identityKey: identity })
     }
-  }, [hasPersistedThreads, identity, markThreadRead, selectedThread.id, selectedThread.unread])
+  }, [
+    hasPersistedThreads,
+    identity,
+    isAuthenticated,
+    markThreadRead,
+    selectedThread.id,
+    selectedThread.unread,
+  ])
 
   const selectThread = (threadId: string) => {
     setIsComposerFocused(false)

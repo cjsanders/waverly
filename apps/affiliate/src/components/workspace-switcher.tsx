@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouter } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { useAuth } from '@workos/authkit-tanstack-react-start/client'
 import { Badge } from '@waverly/design-system/ui/badge'
 import { Check, ChevronsUpDown, Plus } from 'lucide-react'
@@ -41,8 +41,6 @@ export function WorkspaceSwitcher({
   className?: string
 }) {
   const { switchToOrganization } = useAuth()
-  const router = useRouter()
-  const navigate = useNavigate()
   const [pending, setPending] = useState(false)
 
   async function select(membership: Membership) {
@@ -53,8 +51,9 @@ export function WorkspaceSwitcher({
       const result = await switchToOrganization(membership.organization.workosOrganizationId)
       if (result && 'error' in result) throw new Error(result.error)
 
-      await router.invalidate()
-      await navigate({ to: homePaths[membership.organization.kind] })
+      // Auth-scoped Convex keys do not include the organization. Start a fresh SSR request
+      // with the new session so neither prefetched data nor subscriptions cross workspaces.
+      window.location.assign(homePaths[membership.organization.kind])
     } catch (error) {
       console.error('Failed to switch workspace', error)
     } finally {

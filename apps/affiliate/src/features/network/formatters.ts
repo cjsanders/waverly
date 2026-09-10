@@ -36,6 +36,8 @@ export function formatDate(timestamp: number) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
+    // Reporting dates use the same calendar day in Workers SSR and the browser.
+    timeZone: 'UTC',
   }).format(timestamp)
 }
 

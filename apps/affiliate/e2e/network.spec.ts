@@ -109,7 +109,7 @@ for (const workspace of workspaces) {
 
 test('navigation survives refresh and browser back', async ({ page }) => {
   await signIn(page, 'operator', 'Publishers')
-  await page.getByRole('navigation').getByRole('button', { name: 'Offers', exact: true }).click()
+  await page.getByRole('navigation').getByRole('link', { name: 'Offers', exact: true }).click()
   await page.reload()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Offers')
   await page.goBack()
@@ -174,13 +174,13 @@ test('publisher can save a product, revisit it, and export a report', async ({ p
   const save = page.getByRole('button', { name: 'Save product', exact: true })
   if (await save.count()) await save.click()
   await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible()
-  await page.getByRole('navigation').getByRole('button', { name: 'Reports', exact: true }).click()
+  await page.getByRole('navigation').getByRole('link', { name: 'Reports', exact: true }).click()
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Export CSV', exact: true }).click()
   expect((await downloadPromise).suggestedFilename()).toMatch(/^waverly-.*\.csv$/)
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Product catalog', exact: true })
+    .getByRole('link', { name: 'Product catalog', exact: true })
     .click()
   await page.getByRole('button', { name: 'View product', exact: true }).first().click()
   await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText(productHeading!)
@@ -199,7 +199,103 @@ test('creator can accept a brief and find the new project', async ({ page }) => 
   await signIn(page, 'creator', 'Opportunities')
   await page.getByRole('button', { name: 'Accept brief', exact: true }).first().click()
   await expect(page.getByRole('button', { name: 'Accepted', exact: true }).first()).toBeVisible()
-  await page.getByRole('navigation').getByRole('button', { name: 'Projects', exact: true }).click()
+  await page.getByRole('navigation').getByRole('link', { name: 'Projects', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Projects')
   await expect(page.getByRole('button', { name: 'Open brief', exact: true }).first()).toBeVisible()
+})
+
+test.describe('server rendering', () => {
+  test.use({ javaScriptEnabled: false })
+
+  for (const kind of ['operator', 'brand', 'creator'] as const) {
+    test(`${kind}: workspace and persisted messages render without JavaScript`, async ({
+      page,
+    }) => {
+      await signIn(page, kind)
+      await expect(page.getByRole('navigation', { name: 'Workspace navigation' })).toBeVisible()
+      await page.getByRole('link', { name: 'Messages', exact: true }).click()
+      await expect(page.getByPlaceholder('Search conversations…')).toBeVisible()
+      await expect(page.locator('[data-slot=message]').first()).toBeVisible()
+      await expect(page.getByText('Loading workspace…', { exact: true })).toHaveCount(0)
+    })
+  }
+})
+
+test('hovering Messages prefetches the inbox and selected conversation before navigation', async ({
+  page,
+}) => {
+  const queries: string[] = []
+  page.on('websocket', (socket) => {
+    socket.on('framesent', ({ payload }) => queries.push(payload.toString()))
+  })
+  await signIn(page, 'operator')
+  queries.length = 0
+  const messages = page.getByRole('link', { name: 'Messages', exact: true })
+  await messages.hover()
+  await expect
+    .poll(() => queries.some((query) => query.includes('messages:listThreads')))
+    .toBe(true)
+  await expect
+    .poll(() => queries.some((query) => query.includes('messages:listMessages')))
+    .toBe(true)
+  await expect(page).toHaveURL(/page=Overview/)
+  await messages.click()
+  await expect(page.locator('[data-slot=message]').first()).toBeVisible()
+})
+
+test('cached workspace navigation does not make auth server requests', async ({ page }) => {
+  await signIn(page, 'operator', 'Publishers')
+  await expect(page.getByRole('button', { name: /Alice Example/ })).toBeVisible()
+  const requests: string[] = []
+  await page.route('**/_serverFn/**', async (route) => {
+    requests.push(route.request().url())
+    await route.abort()
+  })
+  for (const name of ['Advertisers', 'Programs', 'Publishers']) {
+    await page.getByRole('link', { name, exact: true }).click()
+    await expect(page.getByRole('heading', { name, level: 1, exact: true })).toBeVisible()
+  }
+  expect(requests).toEqual([])
+})
+
+for (const [destination, moduleName] of [
+  ['Messages', 'MessagesSurface'],
+  ['Reports', 'ReportingSurface'],
+] as const) {
+  test(`${destination}: intent preloads page JavaScript before navigation`, async ({ page }) => {
+    await signIn(page, 'operator')
+    const loaded = page.waitForResponse(
+      (response) => response.url().includes(`/assets/${moduleName}-`) && response.ok(),
+    )
+    const link = page.getByRole('link', { name: destination, exact: true })
+    await link.hover()
+    await (await loaded).finished()
+    await expect(page).toHaveURL(/page=Overview/)
+    const lateScripts: string[] = []
+    page.on('request', (request) => {
+      if (request.resourceType() === 'script') lateScripts.push(request.url())
+    })
+    await link.click()
+    await expect(
+      page.getByRole('heading', { name: destination, level: 1, exact: true }),
+    ).toBeVisible()
+    if (destination === 'Messages')
+      await expect(page.getByPlaceholder('Search conversations…')).toBeVisible()
+    else await expect(page.getByRole('button', { name: 'Export CSV', exact: true })).toBeVisible()
+    expect(lateScripts).toEqual([])
+  })
+}
+
+test('background session revalidation removes an expired workspace session', async ({
+  page,
+  context,
+}) => {
+  await signIn(page, 'operator')
+  await expect(page.getByRole('button', { name: /Alice Example/ })).toBeVisible()
+  const redirect = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/operator' && response.status() === 307,
+  )
+  await context.clearCookies()
+  await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')))
+  expect((await redirect).headers().location).toContain('/api/auth/sign-in')
 })
