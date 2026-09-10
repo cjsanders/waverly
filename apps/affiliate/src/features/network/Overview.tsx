@@ -12,8 +12,6 @@ import {
   ListItem,
   ProgressBar,
   StatusDot,
-  Step,
-  Stepper,
   Table,
   Text,
   Token,
@@ -24,8 +22,19 @@ import {
   useMediaQuery,
   type TableColumn,
 } from '#/features/network/ui/primitives'
-import { Activity, ArrowRight, Building2, RefreshCw, Store, Users } from 'lucide-react'
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  Building2,
+  Minus,
+  Store,
+  Users,
+} from 'lucide-react'
+import { useId, useState, type ComponentProps } from 'react'
 import { useHydrated } from '#/lib/use-hydrated'
+import { cn } from '#/lib/utils'
 import {
   advertisers,
   conversions,
@@ -36,9 +45,10 @@ import {
   providers,
   publishers,
   summarizePerformance,
+  type SeedDay,
 } from '../../../shared/networkData'
 
-import { PerformanceChart } from './PerformanceChart'
+import { PerformanceChart, type PerformanceSeries } from './PerformanceChart'
 
 import {
   displayStatus,
@@ -49,7 +59,6 @@ import {
   scopedConversions,
   statusVariant,
 } from './formatters'
-import { workflowSteps, stepMessages } from './navigation'
 import type {
   AlertRow,
   BalanceRow,
@@ -79,12 +88,11 @@ export function MetricSummary({
         const metric = (
           <Card
             padding={isEditorial && index === 0 ? 5 : 4}
-            variant={index === 0 ? 'blue' : 'default'}
-            elevation={index === 0 ? 'low' : 'none'}
+            variant={isEditorial && index === 0 ? 'deep' : 'default'}
             height="100%"
           >
             <VStack gap={1}>
-              <Text type="supporting" color="secondary" weight="semibold">
+              <Text type="supporting" color="secondary" className="waverly-metric-label">
                 {item.label}
               </Text>
               <Text
@@ -95,7 +103,7 @@ export function MetricSummary({
                 {item.value}
               </Text>
               {item.context ? (
-                <Text type="supporting" color="secondary">
+                <Text type="supporting" color="secondary" className="waverly-metric-context">
                   {item.context}
                 </Text>
               ) : null}
@@ -113,6 +121,121 @@ export function MetricSummary({
         )
       })}
     </Grid>
+  )
+}
+
+type StripMetric = {
+  id: string
+  label: string
+  value: string
+  subtitle: string
+  /** Percent change against the prior period; omitted when there is no comparison. */
+  trend?: number
+  /** Daily values for the period, drawn as a sparkline; omitted for point-in-time figures. */
+  series?: number[]
+}
+
+export function percentChange(current: number, previous: number) {
+  if (previous === 0) return 0
+  return ((current - previous) / previous) * 100
+}
+
+/** Overview headline metrics: one card, one column per metric, hairline dividers between.
+    With `onSelect`, metrics that carry a series become toggles that drive the chart below. */
+export function MetricStrip({
+  items,
+  selectedId,
+  onSelect,
+}: {
+  items: StripMetric[]
+  selectedId?: string
+  onSelect?: (id: string) => void
+}) {
+  return (
+    <Card padding={0} className="waverly-metric-strip">
+      <div className="waverly-metric-strip-grid">
+        {items.map((item) => {
+          const selectable = Boolean(onSelect && item.series && item.series.length > 1)
+          const body = (
+            <>
+              <h3 className="waverly-metric-title">{item.label}</h3>
+              <p className="waverly-metric-subtitle">{item.subtitle}</p>
+              <div className="waverly-metric-body">
+                <div className="waverly-metric-figure">
+                  <strong className="waverly-metric-value tabular-nums">{item.value}</strong>
+                  {item.trend !== undefined ? <TrendPill value={item.trend} /> : null}
+                </div>
+                {item.series && item.series.length > 1 ? <Sparkline values={item.series} /> : null}
+              </div>
+            </>
+          )
+          return selectable ? (
+            <button
+              key={item.id}
+              type="button"
+              className={cn('waverly-metric', 'waverly-metric-selectable')}
+              aria-pressed={item.id === selectedId}
+              onClick={() => onSelect?.(item.id)}
+            >
+              {body}
+            </button>
+          ) : (
+            <article key={item.id} className="waverly-metric">
+              {body}
+            </article>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
+function TrendPill({ value }: { value: number }) {
+  const direction = value > 0.05 ? 'up' : value < -0.05 ? 'down' : 'flat'
+  const TrendIcon =
+    direction === 'up' ? ArrowUpRight : direction === 'down' ? ArrowDownRight : Minus
+  return (
+    <span className={`waverly-trend waverly-trend-${direction}`}>
+      <TrendIcon aria-hidden />
+      <span className="sr-only">
+        {direction === 'up' ? 'Up' : direction === 'down' ? 'Down' : 'Unchanged'}
+      </span>
+      {Math.abs(value).toFixed(1)}%
+    </span>
+  )
+}
+
+/** A static SVG drawn from the period's daily values; no measurement, so it is SSR-stable.
+    The fill fades toward the baseline and the final day is marked, so the eye lands on "now". */
+function Sparkline({ values }: { values: number[] }) {
+  // React ids carry punctuation that is unsafe inside `url(#…)`; keep only word characters.
+  const gradientId = `sparkline-${useId().replace(/[^\w-]/g, '')}`
+  const width = 120
+  const height = 40
+  const inset = 3
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const span = max - min || 1
+  const coordinates = values.map((value, index) => ({
+    x: inset + (index / (values.length - 1)) * (width - inset * 2),
+    y: inset + (1 - (value - min) / span) * (height - inset * 2),
+  }))
+  const points = coordinates.map(({ x, y }) => `${x.toFixed(1)},${y.toFixed(1)}`)
+  const line = `M${points.join(' L')}`
+  const area = `${line} L${(width - inset).toFixed(1)},${height} L${inset},${height} Z`
+  const last = coordinates[coordinates.length - 1]!
+  return (
+    <svg className="waverly-sparkline" viewBox={`0 0 ${width} ${height}`} aria-hidden>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--sunset)" stopOpacity="0.3" />
+          <stop offset="1" stopColor="var(--sunset)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gradientId})`} />
+      <path className="waverly-sparkline-line" d={line} />
+      <circle className="waverly-sparkline-end" cx={last.x} cy={last.y} r="2.4" />
+    </svg>
   )
 }
 
@@ -279,6 +402,14 @@ export function makeBalanceRows(identity: NetworkIdentity): BalanceRow[] {
   })
 }
 
+/** Ledger states form a sequence toward payout; their markers deepen with the wave. */
+const ledgerDepth: Record<BalanceRow['status'], string> = {
+  pending: 'depth-1',
+  approved: 'depth-2',
+  payable: 'depth-3',
+  paid: 'depth-4',
+}
+
 export const balanceColumns: TableColumn<BalanceRow>[] = [
   {
     key: 'label',
@@ -287,7 +418,7 @@ export const balanceColumns: TableColumn<BalanceRow>[] = [
     renderCell: (row) => (
       <HStack gap={2} align="center">
         <StatusDot
-          variant={statusVariant(row.status)}
+          variant={ledgerDepth[row.status]}
           label={`Status indicator for ${row.label} balance`}
         />
         <Text weight="semibold">{row.label}</Text>
@@ -609,145 +740,146 @@ export function PendingPublisherOverview({
 
 export function Overview({
   identity,
-  activeStep,
-  onStepChange,
   onNavigate,
 }: {
   identity: NetworkIdentity
-  activeStep: number
-  onStepChange: (step: number) => void
   onNavigate: (page: string) => void
 }) {
   const hasWideSignalLayout = useMediaQuery('(min-width: 1200px)')
   const factor = scopeFactor(identity)
-  const last30 = summarizePerformance(dailyPerformance.slice(-30))
+  const last30Days = dailyPerformance.slice(-30)
+  const last30 = summarizePerformance(last30Days)
+  const prior30 = summarizePerformance(dailyPerformance.slice(-60, -30))
   const scoped = (value: number) => Math.round(value * factor)
   const conversionRate = last30.conversions / last30.clicks
-  const [messageTitle, messageDescription] = stepMessages[activeStep]
   const balances = makeBalanceRows(identity)
   const payableBalance = balances.find((row) => row.status === 'payable')?.amount ?? 0
+  const prior30Days = dailyPerformance.slice(-60, -30)
+  const [selectedMetric, setSelectedMetric] = useState('orderValue')
+  const chartMetrics: Record<
+    string,
+    { label: string; format: 'money' | 'count'; pick: (day: SeedDay) => number }
+  > = {
+    orderValue: {
+      label: 'Order value',
+      format: 'money',
+      pick: (day) => scoped(day.orderValueCents) / 100,
+    },
+    conversions: {
+      label: 'Conversions',
+      format: 'count',
+      pick: (day) => scoped(day.conversions),
+    },
+    earnings: {
+      label: identity === 'operator' ? 'Publisher earnings' : 'Earnings',
+      format: 'money',
+      pick: (day) => scoped(day.publisherEarningsCents) / 100,
+    },
+    revenue: {
+      label: 'Waverly revenue',
+      format: 'money',
+      pick: (day) => day.waverlyRevenueCents / 100,
+    },
+  }
+  const chartMetric = chartMetrics[selectedMetric] ?? chartMetrics.orderValue!
+  const currentSeries: PerformanceSeries = {
+    name: 'Last 30 days',
+    values: last30Days.map(chartMetric.pick),
+  }
+  const previousSeries: PerformanceSeries = {
+    name: 'Previous 30 days',
+    values: prior30Days.map(chartMetric.pick),
+  }
+
+  const chartCard = (
+    <Card padding={0} height="100%">
+      <VStack gap={0}>
+        <Toolbar
+          label={`${chartMetric.label} trend`}
+          size="sm"
+          variant="muted"
+          dividers={['bottom']}
+          startContent={
+            <VStack gap={0.5}>
+              <Text weight="semibold">{chartMetric.label} by day</Text>
+              <Text type="supporting" color="secondary">
+                Pick a metric above to change the chart.
+              </Text>
+            </VStack>
+          }
+          endContent={<TrendLegend />}
+        />
+        <VStack padding={3}>
+          <TrendChart
+            current={currentSeries}
+            previous={previousSeries}
+            dates={last30Days.map((day) => day.occurredAt)}
+            format={chartMetric.format}
+            ariaLabel={`${chartMetric.label} per day for the last 30 days and the previous 30 days`}
+          />
+        </VStack>
+      </VStack>
+    </Card>
+  )
 
   return (
     <VStack gap={8}>
-      <Banner
-        status={activeStep === 5 ? 'warning' : activeStep === 6 ? 'success' : 'info'}
-        title={messageTitle}
-        description={messageDescription}
-        endContent={
-          <Button
-            label={activeStep === workflowSteps.length - 1 ? 'Restart route' : 'Next step'}
-            icon={<Icon icon={activeStep === workflowSteps.length - 1 ? RefreshCw : ArrowRight} />}
-            variant="secondary"
-            onClick={() =>
-              onStepChange(activeStep === workflowSteps.length - 1 ? 0 : activeStep + 1)
-            }
-          />
-        }
-      >
-        <Stepper
-          activeStep={activeStep}
-          onStepClick={onStepChange}
-          label="Waverly network workflow"
-          density="compact"
-          indicatorPosition="on-track"
-        >
-          {workflowSteps.map((label, index) => (
-            <Step key={label} step={index} label={label} indicator="auto" />
-          ))}
-        </Stepper>
-      </Banner>
-
-      <MetricSummary
-        isEditorial
+      <MetricStrip
+        selectedId={selectedMetric}
+        onSelect={setSelectedMetric}
         items={[
           {
+            id: 'orderValue',
             label: 'Order value',
             value: formatMoney(scoped(last30.orderValueCents)),
-            context: '+12.4% from prior period',
+            subtitle: 'Over last 30 days',
+            trend: percentChange(last30.orderValueCents, prior30.orderValueCents),
+            series: last30Days.map((day) => day.orderValueCents),
           },
           {
+            id: 'conversions',
             label: 'Conversions',
             value: integer.format(scoped(last30.conversions)),
-            context: `${(conversionRate * 100).toFixed(2)}% from ${integer.format(scoped(last30.clicks))} clicks`,
+            subtitle: `${(conversionRate * 100).toFixed(2)}% of ${integer.format(scoped(last30.clicks))} clicks`,
+            trend: percentChange(last30.conversions, prior30.conversions),
+            series: last30Days.map((day) => day.conversions),
           },
           {
+            id: 'earnings',
             label: identity === 'operator' ? 'Publisher earnings' : 'Earnings',
             value: formatMoney(scoped(last30.publisherEarningsCents)),
-            context: 'Original economics retained',
+            subtitle: 'Over last 30 days',
+            trend: percentChange(last30.publisherEarningsCents, prior30.publisherEarningsCents),
+            series: last30Days.map((day) => day.publisherEarningsCents),
           },
-          {
-            label: identity === 'operator' ? 'Waverly revenue' : 'Payable now',
-            value:
-              identity === 'operator'
-                ? formatMoney(last30.waverlyRevenueCents)
-                : formatMoney(payableBalance),
-            context: identity === 'operator' ? '22.8% effective margin' : 'Next payout Sep 1',
-          },
+          identity === 'operator'
+            ? {
+                id: 'revenue',
+                label: 'Waverly revenue',
+                value: formatMoney(last30.waverlyRevenueCents),
+                subtitle: 'Over last 30 days',
+                trend: percentChange(last30.waverlyRevenueCents, prior30.waverlyRevenueCents),
+                series: last30Days.map((day) => day.waverlyRevenueCents),
+              }
+            : {
+                id: 'payable',
+                label: 'Payable now',
+                value: formatMoney(payableBalance),
+                subtitle: 'Next payout Sep 1',
+              },
         ]}
       />
 
-      <Grid columns={hasWideSignalLayout ? 3 : { minWidth: 380, max: 2, repeat: 'fit' }} gap={5}>
-        <GridSpan columns={hasWideSignalLayout ? 2 : 1}>
-          <Card padding={0} height="100%">
-            <VStack gap={0}>
-              <Toolbar
-                label={
-                  identity === 'operator' ? 'Economic flow controls' : 'Earnings trend controls'
-                }
-                size="sm"
-                variant="muted"
-                dividers={['bottom']}
-                startContent={
-                  <VStack gap={0.5}>
-                    <Text weight="semibold">
-                      {identity === 'operator' ? 'Economic flow' : 'Earnings trend'}
-                    </Text>
-                    <Text type="supporting" color="secondary">
-                      {identity === 'operator'
-                        ? 'Publisher earnings and Waverly revenue'
-                        : 'Approved and pending earnings'}
-                    </Text>
-                  </VStack>
-                }
-                endContent={<Token label="USD · daily" size="sm" />}
-              />
-              <VStack padding={3}>
-                <HydrationSafePerformanceChart
-                  factor={factor}
-                  isOperator={identity === 'operator'}
-                />
-              </VStack>
-            </VStack>
-          </Card>
-        </GridSpan>
-        {identity === 'operator' ? (
+      {identity === 'operator' ? (
+        <Grid columns={hasWideSignalLayout ? 3 : { minWidth: 380, max: 2, repeat: 'fit' }} gap={5}>
+          <GridSpan columns={hasWideSignalLayout ? 2 : 1}>{chartCard}</GridSpan>
           <GridSpan columns={1}>
             <OperationsRail />
           </GridSpan>
-        ) : (
-          <GridSpan columns={1}>
-            <Card padding={0} height="100%">
-              <VStack gap={0}>
-                <VStack gap={0.5} padding={4}>
-                  <Heading level={2}>Money route</Heading>
-                  <Text type="supporting" color="secondary">
-                    Conversion earnings by ledger state
-                  </Text>
-                </VStack>
-                <Divider />
-                <Table
-                  data={balances}
-                  columns={balanceColumns}
-                  idKey="id"
-                  density="compact"
-                  dividers="rows"
-                  textOverflow="truncate"
-                />
-              </VStack>
-            </Card>
-          </GridSpan>
-        )}
-      </Grid>
+        </Grid>
+      ) : (
+        chartCard
+      )}
 
       <Card padding={0}>
         <VStack gap={0}>
@@ -855,16 +987,26 @@ export function Overview({
   )
 }
 
+/** Legend for the trend chart: the live line and the comparison line. */
+export function TrendLegend() {
+  return (
+    <span className="waverly-chart-legend">
+      <span>
+        <i aria-hidden />
+        Last 30 days
+      </span>
+      <span>
+        <i aria-hidden className="waverly-chart-legend-compare" />
+        Previous 30 days
+      </span>
+    </span>
+  )
+}
+
 /** The responsive SVG measures its container, so render it after hydration to keep SSR stable. */
-function HydrationSafePerformanceChart({
-  factor,
-  isOperator,
-}: {
-  factor: number
-  isOperator: boolean
-}) {
+export function TrendChart(props: ComponentProps<typeof PerformanceChart>) {
   const mounted = useHydrated()
 
   if (!mounted) return <div className="h-[280px]" aria-hidden />
-  return <PerformanceChart factor={factor} isOperator={isOperator} />
+  return <PerformanceChart {...props} />
 }

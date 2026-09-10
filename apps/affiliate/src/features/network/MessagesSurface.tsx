@@ -34,7 +34,7 @@ import {
 } from '#/features/network/ui/primitives'
 import usePresence from '@convex-dev/presence/react'
 import { useConvexAuth, useMutation, useQuery as useConvexQuery } from 'convex/react'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useHydrated } from '#/lib/use-hydrated'
 import { messageThreadsQuery, threadMessagesQuery } from './queries'
 import { ArrowLeft, Download, FileText, MessageSquareText, Search, SmilePlus } from 'lucide-react'
@@ -227,6 +227,7 @@ export function MessagesSurface({
   const isNarrow = useMediaQuery('(max-width: 900px)')
   const { isAuthenticated } = useConvexAuth()
   const mounted = useHydrated()
+  const queryClient = useQueryClient()
   const { data: persistedThreads } = useSuspenseQuery(messageThreadsQuery(identity))
   const sendPersistedMessage = useMutation(api.messages.send)
   const generateAttachmentUploadUrl = useMutation(api.messages.generateAttachmentUploadUrl)
@@ -388,7 +389,7 @@ export function MessagesSurface({
   }
 
   const threadList = (
-    <VStack gap={4} padding={3}>
+    <VStack gap={4} className="waverly-side-panel">
       <VStack gap={0.5}>
         <HStack justify="between" align="center">
           <Heading level={2}>Conversations</Heading>
@@ -427,6 +428,9 @@ export function MessagesSurface({
               }
               isSelected={!isNarrow && selectedThread?.id === thread.id}
               onClick={() => selectThread(thread.id)}
+              onIntent={() =>
+                void queryClient.ensureQueryData(threadMessagesQuery(identity, thread.id))
+              }
               startContent={
                 <Avatar
                   name={thread.team}

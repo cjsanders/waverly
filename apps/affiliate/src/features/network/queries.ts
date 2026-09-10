@@ -29,6 +29,8 @@ export async function loadWorkspaceData({
 
   const identity = workspaceIdentity(context.workspace.organization.kind)
   const threads = await context.queryClient.ensureQueryData(messageThreadsQuery(identity))
+  // Only the conversation that renders on arrival is fetched here. The inbox warms the others
+  // as they are hovered or focused, so large inboxes do not slow the first render.
   const thread = threads.find((item) => item.id === deps.thread) ?? threads[0]
   if (thread) {
     await context.queryClient.ensureQueryData(threadMessagesQuery(identity, thread.id))

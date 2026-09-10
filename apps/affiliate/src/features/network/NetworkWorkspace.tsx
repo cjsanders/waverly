@@ -1,22 +1,16 @@
 import { UserMenu } from '#/components/user-menu'
 import {
   AppShell,
-  HStack,
   Heading,
-  Icon,
   Layout,
   LayoutContent,
   LayoutHeader,
-  StatusDot,
-  Text,
-  VStack,
   useMediaQuery,
 } from '#/features/network/ui/primitives'
 import { WorkspaceSwitcher } from '#/components/workspace-switcher'
-import { kindLabels, useWorkspace, type OrganizationKind } from '#/lib/workspace'
+import { useWorkspace, type OrganizationKind } from '#/lib/workspace'
 import { useHydrated } from '#/lib/use-hydrated'
 import { useRouteContext } from '@tanstack/react-router'
-import { Orbit } from 'lucide-react'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import {
   CreatorPortalSurface,
@@ -101,7 +95,6 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
     currentPage === 'Getting started' ? 'Overview' : currentPage,
     workspace.organization.name,
   )
-  const isPendingReview = currentPage === 'Getting started'
   const pagePadding: 4 | 6 = isCompactHeader ? 4 : 6
 
   return (
@@ -112,31 +105,17 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
         defaultHasDividers
         header={
           <LayoutHeader padding={pagePadding}>
-            <VStack gap={2}>
-              <HStack gap={2} align="center">
-                <Icon icon={Orbit} color="accent" />
-                <Text type="supporting" color="accent" weight="semibold">
-                  {pageHeader.eyebrow}
-                </Text>
-              </HStack>
-              <div className="flex flex-wrap items-center gap-2 min-[901px]:hidden">
-                <WorkspaceSwitcher viewer={viewer} workspace={workspace} />
-                <UserMenu />
+            <div className="waverly-page-header">
+              <div className="waverly-page-header-copy">
+                <p className="waverly-page-header-eyebrow">{pageHeader.eyebrow}</p>
+                <div className="flex flex-wrap items-center gap-2 min-[901px]:hidden">
+                  <WorkspaceSwitcher viewer={viewer} workspace={workspace} />
+                  <UserMenu />
+                </div>
+                <Heading level={1}>{pageHeader.title}</Heading>
+                <p className="waverly-page-header-description">{pageHeader.description}</p>
               </div>
-              <Heading level={1} type="display-3">
-                {pageHeader.title}
-              </Heading>
-              <Text color="secondary">{pageHeader.description}</Text>
-              <HStack gap={2} align="center">
-                <StatusDot
-                  variant={isPendingReview ? 'warning' : 'success'}
-                  label="Workspace state"
-                />
-                <Text type="supporting" color="secondary">
-                  {kindLabels[mode]} workspace · USD
-                </Text>
-              </HStack>
-            </VStack>
+            </div>
           </LayoutHeader>
         }
         content={
@@ -163,12 +142,7 @@ export function NetworkWorkspace({ mode, search, onSearchChange }: NetworkWorksp
                   onNavigate={setCurrentPage}
                 />
               ) : currentPage === 'Overview' ? (
-                <Overview
-                  identity={identity}
-                  activeStep={activeStep}
-                  onStepChange={handleStepChange}
-                  onNavigate={setCurrentPage}
-                />
+                <Overview identity={identity} onNavigate={setCurrentPage} />
               ) : currentPage === 'Messages' ? (
                 <MessagesSurface
                   key={`${identity}:${initialMessageThreadId ?? ''}`}
