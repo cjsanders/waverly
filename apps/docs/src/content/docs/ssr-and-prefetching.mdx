@@ -9,7 +9,11 @@ This is the recipe for new workspace pages. [Workspaces](/workspaces) describes 
 
 ## Loaders
 
-The operator, brand, and creator routes use `loaderDeps` for the `page` and `thread` search parameters. Their shared `loadWorkspaceData` loader fetches the Messages inbox and the requested accessible conversation (or the first conversation). `ensureQueryData` makes that data available before rendering.
+The operator, brand, and creator routes use `loaderDeps` for the `page` and `thread` search parameters. Their shared `loadWorkspace` loader preloads the destination component and starts `loadWorkspaceData` in parallel — including during sidebar hover or focus.
+
+`apps/affiliate/src/features/network/surfaces.ts` registers each lazy surface with TanStack's `lazyRouteComponent` so the loader's `.preload()` resolves the same module instance the view renders. Add new lazy surfaces there; otherwise the click still waits on a code download.
+
+`loadWorkspaceData` fetches the Messages inbox and the requested accessible conversation (or the first conversation). `ensureQueryData` makes that data available before rendering.
 
 The message view consumes the same query factories through TanStack Query. Typing presence stays client-only. Other workspace surfaces currently render local fixture data and do not need Convex fetches.
 
@@ -20,11 +24,21 @@ Add future protected page queries to `apps/affiliate/src/features/network/querie
 
 Do not run mutations from prefetch loaders.
 
+## Session cache
+
+The root route caches only **public session claims** under `['auth', 'session']`. `AuthKitProvider` starts from that hydrated state, so sidebar navigation and preloads do not wait on an auth RPC.
+
+A mounted query revalidates in the background every minute and when the tab becomes visible. If the account, session, organization, or authorization claims change, the session boundary hides the old workspace and reloads the document.
+
+Convex functions and server functions still authorize their own requests. This cache is only for routing and rendering. Access tokens are never put in the dehydrated auth query.
+
+If sign-in has not mirrored the viewer yet, the signed-in layout syncs and re-reads past the SSR snapshot so a newly created account is visible in the same request.
+
 ## Caching and isolation
 
 Query caching uses TanStack Query defaults: five minutes in the browser and no garbage collection during SSR.
 
-Workspace selection and switching start a new document request after WorkOS updates the organization. That creates fresh query clients for the new auth scope — existing Convex query keys do not include the organization.
+Workspace creation, selection, and switching start a new document request after WorkOS updates the organization. That creates fresh query clients for the new auth scope — existing Convex query keys do not include the organization.
 
 Browser preferences (saved products, last sidebar page) are applied after hydration. Reporting dates use UTC so the initial markup is stable across server and browser time zones.
 
@@ -37,4 +51,4 @@ bun run --cwd apps/affiliate test
 bun run --cwd apps/affiliate test:e2e
 ```
 
-The unit tests cover the loader and cache. The browser suite covers workspace pages, Messages with JavaScript disabled, link-intent prefetching, message persistence, and organization switching.
+The unit tests cover the loader, session cache, and query factories. The browser suite covers workspace pages, Messages with JavaScript disabled, link-intent prefetching, message persistence, organization switching, navigation with auth RPCs blocked, page modules loaded before clicking, and background session expiry.
