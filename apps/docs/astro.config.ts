@@ -67,6 +67,12 @@ export default defineConfig({
         'nimbus/frontmatter-shape': 'error',
         'nimbus/internal-link': 'error',
       },
+      sitemap: {
+        serialize(item) {
+          if (new URL(item.url).pathname.startsWith('/internal')) return undefined
+          return item
+        },
+      },
       // Wrap wide tables so they scroll instead of overflowing the page
       // (styled by `.nb-table-scroll` in src/styles/prose.css).
       markdown: {

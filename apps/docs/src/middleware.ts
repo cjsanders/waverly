@@ -13,6 +13,10 @@ function envFromProcess(): DocsAuthEnv {
 }
 
 export const onRequest = defineMiddleware((context, next) => {
+  // Static HTML must be emitted during `astro build`. Production gating is
+  // the Cloudflare worker (`src/worker.ts`), not this middleware.
+  if (context.isPrerendered) return next()
+
   const env = envFromProcess()
   const bypassAuth = import.meta.env.DEV && !env.WORKOS_CLIENT_ID
   return handleDocsRequest(context.request, env, next, { bypassAuth })
