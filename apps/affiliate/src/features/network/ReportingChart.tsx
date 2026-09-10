@@ -24,6 +24,8 @@ interface ReportingChartProps {
   ranking?: ReportRankingPoint[]
   metricLabel: string
   ariaLabel: string
+  /** Axis formatting for the trend view; ranking is always money. */
+  format?: 'money' | 'count'
 }
 
 const emptyTrend: ReportTrendPoint[] = []
@@ -35,11 +37,17 @@ export function ReportingChart({
   ranking = emptyRanking,
   metricLabel,
   ariaLabel,
+  format = 'money',
 }: ReportingChartProps) {
   return mode === 'ranking' ? (
     <ReportRankingChart rows={ranking} metricLabel={metricLabel} ariaLabel={ariaLabel} />
   ) : (
-    <ReportTrendChart rows={trend} metricLabel={metricLabel} ariaLabel={ariaLabel} />
+    <ReportTrendChart
+      rows={trend}
+      metricLabel={metricLabel}
+      ariaLabel={ariaLabel}
+      format={format}
+    />
   )
 }
 
@@ -102,10 +110,12 @@ function ReportTrendChart({
   rows,
   metricLabel,
   ariaLabel,
+  format,
 }: {
   rows: ReportTrendPoint[]
   metricLabel: string
   ariaLabel: string
+  format: 'money' | 'count'
 }) {
   const definition = useMemo(() => {
     const chartRows = rows.flatMap((point, index) => {
@@ -137,7 +147,12 @@ function ReportTrendChart({
           grid: true,
           axis: {
             label: metricLabel,
-            ticks: { format: (value) => `$${Math.round(Number(value)).toLocaleString()}` },
+            ticks: {
+              format: (value) =>
+                format === 'money'
+                  ? `$${Math.round(Number(value)).toLocaleString()}`
+                  : Math.round(Number(value)).toLocaleString(),
+            },
           },
         },
       },
@@ -152,7 +167,7 @@ function ReportTrendChart({
       tooltip,
       svgAnimation: true,
     })
-  }, [metricLabel, rows])
+  }, [metricLabel, rows, format])
 
   return <Chart definition={definition} height={300} ariaLabel={ariaLabel} />
 }

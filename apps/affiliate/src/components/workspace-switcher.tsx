@@ -22,12 +22,9 @@ import {
 } from '#/lib/workspace'
 
 const kindBadgeClasses = {
-  operator:
-    'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300',
-  brand:
-    'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-300',
-  creator:
-    'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300',
+  operator: 'border-brand-200 bg-brand-50 text-brand-700',
+  brand: 'border-brand-300 bg-accent text-primary',
+  creator: 'border-teal-200 bg-teal-100 text-teal-600',
 } satisfies Record<OrganizationKind, string>
 
 /** Sidebar control showing the active workspace and letting the user switch between theirs. */

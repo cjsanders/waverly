@@ -58,7 +58,14 @@ import {
   WalletCards,
 } from 'lucide-react'
 import { useMemo, useState, type CSSProperties } from 'react'
-import { dailyPerformance, programOffers, type SeedProgramOffer } from '../../../shared/networkData'
+import { MetricStrip, TrendChart, TrendLegend, percentChange } from './Overview'
+import {
+  dailyPerformance,
+  programOffers,
+  summarizePerformance,
+  type SeedDay,
+  type SeedProgramOffer,
+} from '../../../shared/networkData'
 import {
   sellerApplications,
   sellerCampaigns,
@@ -238,45 +245,107 @@ function PageContext({
   )
 }
 
-function MetricStrip() {
-  const metrics = [
-    { label: 'Attributed sales', value: '$184,620', detail: '+18.4% vs prior period' },
-    { label: 'Creator conversions', value: '1,684', detail: '3.92% conversion rate' },
-    { label: 'Creator commissions', value: '$18,940', detail: '10.3% blended rate' },
-    { label: 'Program ROAS', value: '8.4×', detail: 'Including paid placements' },
-  ]
+/** PuroAir's share of the network's daily performance, so its headline figures move with the
+    same fixture the sales chart draws from instead of hardcoded strings. */
+const sellerShare = 0.85
+/** Paid placement spend per 30-day period, in cents, for the ROAS denominator. */
+const placementSpendCents = 310_000
+const share = (value: number) => Math.round(value * sellerShare)
+const roas = (salesCents: number, commissionCents: number, spendShare: number) =>
+  salesCents / (commissionCents + placementSpendCents * spendShare)
+
+/** Per-day readings for each headline metric, shared by the strip's sparklines and the chart. */
+const sellerChartMetrics: Record<
+  string,
+  { label: string; description: string; format: 'money' | 'count'; pick: (day: SeedDay) => number }
+> = {
+  sales: {
+    label: 'Attributed sales',
+    description: 'Attributed order value across Amazon and Shopify',
+    format: 'money',
+    pick: (day) => share(day.orderValueCents) / 100,
+  },
+  conversions: {
+    label: 'Creator conversions',
+    description: 'Orders attributed to creator links and codes',
+    format: 'count',
+    pick: (day) => share(day.conversions),
+  },
+  commissions: {
+    label: 'Creator commissions',
+    description: 'Commission owed on attributed orders',
+    format: 'money',
+    pick: (day) => share(day.grossCommissionCents) / 100,
+  },
+  roas: {
+    label: 'Program ROAS',
+    description: 'Attributed sales per dollar of commissions and placements',
+    format: 'count',
+    pick: (day) => roas(share(day.orderValueCents), share(day.grossCommissionCents), 1 / 30),
+  },
+}
+
+function SellerMetricStrip({
+  selectedId,
+  onSelect,
+}: {
+  selectedId?: string
+  onSelect?: (id: string) => void
+}) {
+  const last30Days = dailyPerformance.slice(-30)
+  const last30 = summarizePerformance(last30Days)
+  const prior30 = summarizePerformance(dailyPerformance.slice(-60, -30))
+  const currentRoas = roas(share(last30.orderValueCents), share(last30.grossCommissionCents), 1)
+  const priorRoas = roas(share(prior30.orderValueCents), share(prior30.grossCommissionCents), 1)
+  const blendedRate = last30.grossCommissionCents / last30.orderValueCents
+
   return (
-    <Grid columns={{ minWidth: 170, max: 4, repeat: 'fit' }} gap={3}>
-      {metrics.map((metric, index) => (
-        <Card
-          key={metric.label}
-          padding={4}
-          variant={index === 0 ? 'blue' : 'default'}
-          height="100%"
-        >
-          <VStack gap={1}>
-            <Text type="supporting" color="secondary" weight="semibold">
-              {metric.label.toUpperCase()}
-            </Text>
-            <Text type="display-3" weight="semibold" hasTabularNumbers>
-              {metric.value}
-            </Text>
-            <Text type="supporting" color="secondary">
-              {metric.detail}
-            </Text>
-          </VStack>
-        </Card>
-      ))}
-    </Grid>
+    <MetricStrip
+      selectedId={selectedId}
+      onSelect={onSelect}
+      items={[
+        {
+          id: 'sales',
+          label: sellerChartMetrics.sales!.label,
+          value: formatMoney(share(last30.orderValueCents)),
+          subtitle: 'Amazon and Shopify, last 30 days',
+          trend: percentChange(last30.orderValueCents, prior30.orderValueCents),
+          series: last30Days.map(sellerChartMetrics.sales!.pick),
+        },
+        {
+          id: 'conversions',
+          label: sellerChartMetrics.conversions!.label,
+          value: integer.format(share(last30.conversions)),
+          subtitle: `${((last30.conversions / last30.clicks) * 100).toFixed(2)}% of ${integer.format(share(last30.clicks))} clicks`,
+          trend: percentChange(last30.conversions, prior30.conversions),
+          series: last30Days.map(sellerChartMetrics.conversions!.pick),
+        },
+        {
+          id: 'commissions',
+          label: sellerChartMetrics.commissions!.label,
+          value: formatMoney(share(last30.grossCommissionCents)),
+          subtitle: `${(blendedRate * 100).toFixed(1)}% blended rate`,
+          trend: percentChange(last30.grossCommissionCents, prior30.grossCommissionCents),
+          series: last30Days.map(sellerChartMetrics.commissions!.pick),
+        },
+        {
+          id: 'roas',
+          label: sellerChartMetrics.roas!.label,
+          value: `${currentRoas.toFixed(1)}×`,
+          subtitle: 'Including paid placements',
+          trend: percentChange(currentRoas, priorRoas),
+          series: last30Days.map(sellerChartMetrics.roas!.pick),
+        },
+      ]}
+    />
   )
 }
 
 function SellerOverview({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const trend: ReportTrendPoint[] = dailyPerformance.slice(-30).map((day) => ({
-    id: day.date,
-    label: day.date,
-    value: (day.orderValueCents * 0.118) / 100,
-  }))
+  const [selectedMetric, setSelectedMetric] = useState('sales')
+  const chartMetric = sellerChartMetrics[selectedMetric] ?? sellerChartMetrics.sales!
+  const last30Days = dailyPerformance.slice(-30)
+  const prior30Days = dailyPerformance.slice(-60, -30)
   const leaders = sellerCreators
     .filter((creator) => creator.status === 'Partnered')
     .slice()
@@ -298,22 +367,23 @@ function SellerOverview({ onNavigate }: { onNavigate: (page: string) => void }) 
           />
         }
       />
-      <MetricStrip />
+      <SellerMetricStrip selectedId={selectedMetric} onSelect={setSelectedMetric} />
       <Grid columns={{ minWidth: 360, max: 2, repeat: 'fit' }} gap={5}>
         <Card padding={5} height="100%">
           <VStack gap={4}>
-            <HStack justify="between" align="end" gap={3}>
+            <HStack justify="between" align="end" gap={3} wrap="wrap">
               <VStack gap={0.5}>
-                <Heading level={2}>Program sales</Heading>
-                <Text color="secondary">Attributed order value across Amazon and Shopify</Text>
+                <Heading level={2}>{chartMetric.label} by day</Heading>
+                <Text color="secondary">{chartMetric.description}</Text>
               </VStack>
-              <Token label="30 days" size="sm" />
+              <TrendLegend />
             </HStack>
-            <ReportingChart
-              mode="trend"
-              trend={trend}
-              metricLabel="Attributed sales"
-              ariaLabel="PuroAir attributed sales over the last 30 days"
+            <TrendChart
+              current={{ name: 'Last 30 days', values: last30Days.map(chartMetric.pick) }}
+              previous={{ name: 'Previous 30 days', values: prior30Days.map(chartMetric.pick) }}
+              dates={last30Days.map((day) => day.occurredAt)}
+              format={chartMetric.format}
+              ariaLabel={`PuroAir ${chartMetric.label.toLowerCase()} per day for the last 30 days and the previous 30 days`}
             />
           </VStack>
         </Card>
@@ -1513,7 +1583,7 @@ function PerformanceSurface() {
           />
         </HStack>
       </Section>
-      <MetricStrip />
+      <SellerMetricStrip />
       <Card padding={5}>
         <VStack gap={4}>
           <HStack justify="between" align="end">

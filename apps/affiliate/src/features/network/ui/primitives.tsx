@@ -23,7 +23,7 @@ import {
 } from '#/features/network/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '#/features/network/ui/tabs'
 import { cn } from '#/lib/utils'
-import { Paperclip, X, type LucideProps } from 'lucide-react'
+import { ChevronLeft, Paperclip, X, type LucideProps } from 'lucide-react'
 import {
   Children,
   createElement,
@@ -528,6 +528,7 @@ export function ListItem({
   startContent,
   endContent,
   onClick,
+  onIntent,
   isSelected,
   className,
 }: {
@@ -536,6 +537,8 @@ export function ListItem({
   startContent?: ReactNode
   endContent?: ReactNode
   onClick?: () => void
+  /** Fires on hover or keyboard focus, before a click, for prefetching what the click needs. */
+  onIntent?: () => void
   isSelected?: boolean
   className?: string
 }) {
@@ -550,6 +553,8 @@ export function ListItem({
         className,
       )}
       onClick={onClick}
+      onMouseEnter={onIntent}
+      onFocus={onIntent}
     >
       {startContent ? <div className="waverly-list-item-start">{startContent}</div> : null}
       <div className="waverly-list-item-copy">
@@ -1076,6 +1081,7 @@ export function SideNav({
   return (
     <nav
       aria-label="Workspace navigation"
+      data-mode="dark"
       className={cn('waverly-side-nav', collapsed && 'waverly-side-nav-collapsed')}
     >
       <div className="waverly-side-nav-header">
@@ -1084,10 +1090,11 @@ export function SideNav({
           <button
             type="button"
             aria-label={collapsible.buttonLabel}
+            aria-expanded={!collapsed}
             className="waverly-side-nav-toggle"
             onClick={() => collapsible.onCollapsedChange(!collapsed)}
           >
-            ‹
+            <ChevronLeft aria-hidden />
           </button>
         ) : null}
       </div>

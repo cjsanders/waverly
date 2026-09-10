@@ -1,6 +1,7 @@
 import {
   Banner,
   Button,
+  Card,
   Divider,
   Grid,
   HStack,
@@ -16,13 +17,12 @@ import {
   Text,
   TextInput,
   Token,
-  Toolbar,
   VStack,
   useMediaQuery,
   type IconType,
 } from '#/features/network/ui/primitives'
 import { ArrowLeft, Bell, Building2, HandCoins, Link2, PlugZap } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import type { NetworkIdentity, SettingsCategory } from './types'
 export const settingsCategoryIcons: Record<SettingsCategory['id'], IconType> = {
@@ -117,7 +117,7 @@ export function SettingsSurface({ identity }: { identity: NetworkIdentity }) {
   }
 
   const categoryList = (
-    <VStack gap={4} padding={3}>
+    <VStack gap={4} className="waverly-side-panel">
       <VStack gap={0.5}>
         <Heading level={2}>Workspace settings</Heading>
         <Text color="secondary">Configure this organization without leaving Waverly.</Text>
@@ -153,36 +153,31 @@ export function SettingsSurface({ identity }: { identity: NetworkIdentity }) {
   )
 
   const detail = (
-    <VStack gap={6} maxWidth={780}>
-      <Toolbar
-        label={`${active.label} settings`}
-        startContent={
-          <HStack gap={2} align="center">
-            {isNarrow ? (
-              <Button
-                label="Back to settings"
-                icon={<Icon icon={ArrowLeft} />}
-                variant="ghost"
-                size="sm"
-                onClick={() => setMobileView('nav')}
-              />
-            ) : null}
-            <VStack gap={0.5}>
-              <Heading level={2}>{active.label}</Heading>
-              <Text color="secondary">{active.description}</Text>
-            </VStack>
-          </HStack>
-        }
-        endContent={<Token label="Saved locally" size="sm" color="green" />}
-      />
+    <VStack gap={5} maxWidth={760} className="waverly-settings">
+      <div className="waverly-settings-intro">
+        <HStack gap={2} align="center">
+          {isNarrow ? (
+            <Button
+              label="Back to settings"
+              icon={<Icon icon={ArrowLeft} />}
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileView('nav')}
+            />
+          ) : null}
+          <VStack gap={0.5}>
+            <Heading level={2}>{active.label}</Heading>
+            <Text color="secondary">{active.description}</Text>
+          </VStack>
+        </HStack>
+        <Token label="Saved locally" size="sm" color="green" />
+      </div>
 
       {activeCategory === 'workspace' ? (
-        <VStack gap={6}>
-          <VStack gap={1}>
-            <Heading level={3}>Workspace identity</Heading>
-            <Text color="secondary">Used in reporting, messages, and payout records.</Text>
-          </VStack>
-          <Divider />
+        <SettingsSection
+          title="Workspace identity"
+          description="Used in reporting, messages, and payout records."
+        >
           <Grid columns={{ minWidth: 280, max: 2, repeat: 'fit' }} gap={4}>
             <TextInput
               label="Workspace name"
@@ -212,18 +207,14 @@ export function SettingsSurface({ identity }: { identity: NetworkIdentity }) {
               width="100%"
             />
           </Grid>
-        </VStack>
+        </SettingsSection>
       ) : null}
 
       {activeCategory === 'notifications' ? (
-        <VStack gap={5}>
-          <VStack gap={1}>
-            <Heading level={3}>Delivery rules</Heading>
-            <Text color="secondary">
-              These switches take effect immediately for the current workspace.
-            </Text>
-          </VStack>
-          <Divider />
+        <SettingsSection
+          title="Delivery rules"
+          description="These switches take effect immediately for the current workspace."
+        >
           <Switch
             label="Operational alerts"
             description="Provider delays, review queues, and matching exceptions"
@@ -253,118 +244,116 @@ export function SettingsSurface({ identity }: { identity: NetworkIdentity }) {
             labelSpacing="spread"
             width="100%"
           />
-        </VStack>
+        </SettingsSection>
       ) : null}
 
       {activeCategory === 'integrations' ? (
-        <VStack gap={5}>
-          <Banner
-            status={identity === 'operator' || identity === 'puroair' ? 'success' : 'info'}
-            title={
-              identity === 'operator'
-                ? 'Three provider accounts connected'
-                : identity === 'avery'
-                  ? 'Creator accounts are ready to connect'
-                  : identity === 'puroair'
-                    ? 'Three commerce channels connected'
-                    : 'Reporting connections are managed by Waverly'
-            }
-            description={
-              identity === 'operator'
-                ? 'Amazon Attribution, Creator Connections, and Shopify are supplying development records.'
-                : identity === 'avery'
-                  ? 'Connect portfolio and social accounts when this POC moves beyond simulated creator data.'
-                  : identity === 'puroair'
-                    ? 'Amazon US, Amazon CA, and Shopify provide catalog, fulfillment, and attribution context for PuroAir.'
-                    : 'Provider-specific credentials stay hidden from publisher workspaces.'
-            }
-          />
-          {identity === 'avery' ? (
-            <List density="spacious" hasDividers>
-              {[
-                ['Instagram', 'Audience and portfolio highlights', 'Connect'],
-                ['TikTok', 'Video reach and engagement', 'Connect'],
-                ['YouTube', 'Long-form work and audience signals', 'Connect'],
-              ].map(([account, description, action]) => (
-                <ListItem
-                  key={account}
-                  label={account}
-                  description={description}
-                  startContent={<Icon icon={Link2} color="secondary" />}
-                  endContent={<Button label={action} variant="secondary" size="sm" />}
+        <Card padding={5}>
+          <VStack gap={5}>
+            <Banner
+              status={identity === 'operator' || identity === 'puroair' ? 'success' : 'info'}
+              title={
+                identity === 'operator'
+                  ? 'Three provider accounts connected'
+                  : identity === 'avery'
+                    ? 'Creator accounts are ready to connect'
+                    : identity === 'puroair'
+                      ? 'Three commerce channels connected'
+                      : 'Reporting connections are managed by Waverly'
+              }
+              description={
+                identity === 'operator'
+                  ? 'Amazon Attribution, Creator Connections, and Shopify are supplying development records.'
+                  : identity === 'avery'
+                    ? 'Connect portfolio and social accounts when this POC moves beyond simulated creator data.'
+                    : identity === 'puroair'
+                      ? 'Amazon US, Amazon CA, and Shopify provide catalog, fulfillment, and attribution context for PuroAir.'
+                      : 'Provider-specific credentials stay hidden from publisher workspaces.'
+              }
+            />
+            {identity === 'avery' ? (
+              <List density="spacious" hasDividers>
+                {[
+                  ['Instagram', 'Audience and portfolio highlights', 'Connect'],
+                  ['TikTok', 'Video reach and engagement', 'Connect'],
+                  ['YouTube', 'Long-form work and audience signals', 'Connect'],
+                ].map(([account, description, action]) => (
+                  <ListItem
+                    key={account}
+                    label={account}
+                    description={description}
+                    startContent={<Icon icon={Link2} color="secondary" />}
+                    endContent={<Button label={action} variant="secondary" size="sm" />}
+                  />
+                ))}
+              </List>
+            ) : identity === 'puroair' ? (
+              <List density="spacious" hasDividers>
+                {[
+                  ['Amazon US', 'Catalog, attribution, and multi-channel fulfillment', 'Connected'],
+                  ['Amazon CA', 'Canada catalog and attribution', 'Connected'],
+                  ['Shopify', 'Direct catalog, fulfillment, and conversion reporting', 'Connected'],
+                ].map(([account, description, state]) => (
+                  <ListItem
+                    key={account}
+                    label={account}
+                    description={description}
+                    startContent={<Icon icon={PlugZap} color="accent" />}
+                    endContent={<Token label={state} color="green" size="sm" />}
+                  />
+                ))}
+              </List>
+            ) : (
+              <>
+                <Switch
+                  label="Automatic provider imports"
+                  description="Normalize new provider records as each sync completes"
+                  value={autoImport}
+                  onChange={setAutoImport}
+                  labelPosition="start"
+                  labelSpacing="spread"
+                  width="100%"
+                  isDisabled={identity !== 'operator'}
+                  disabledMessage="Only Waverly operators can change provider imports."
                 />
-              ))}
-            </List>
-          ) : identity === 'puroair' ? (
-            <List density="spacious" hasDividers>
-              {[
-                ['Amazon US', 'Catalog, attribution, and multi-channel fulfillment', 'Connected'],
-                ['Amazon CA', 'Canada catalog and attribution', 'Connected'],
-                ['Shopify', 'Direct catalog, fulfillment, and conversion reporting', 'Connected'],
-              ].map(([account, description, state]) => (
-                <ListItem
-                  key={account}
-                  label={account}
-                  description={description}
-                  startContent={<Icon icon={PlugZap} color="accent" />}
-                  endContent={<Token label={state} color="green" size="sm" />}
+                <Divider />
+                <Switch
+                  label="Review uncertain matches"
+                  description="Route records without a confident link match to Messages"
+                  value={reviewMatches}
+                  onChange={setReviewMatches}
+                  labelPosition="start"
+                  labelSpacing="spread"
+                  width="100%"
+                  isDisabled={identity !== 'operator'}
+                  disabledMessage="Only Waverly operators can change matching policy."
                 />
-              ))}
-            </List>
-          ) : (
-            <>
-              <Switch
-                label="Automatic provider imports"
-                description="Normalize new provider records as each sync completes"
-                value={autoImport}
-                onChange={setAutoImport}
-                labelPosition="start"
-                labelSpacing="spread"
-                width="100%"
-                isDisabled={identity !== 'operator'}
-                disabledMessage="Only Waverly operators can change provider imports."
-              />
-              <Divider />
-              <Switch
-                label="Review uncertain matches"
-                description="Route records without a confident link match to Messages"
-                value={reviewMatches}
-                onChange={setReviewMatches}
-                labelPosition="start"
-                labelSpacing="spread"
-                width="100%"
-                isDisabled={identity !== 'operator'}
-                disabledMessage="Only Waverly operators can change matching policy."
-              />
-              <Divider />
-              <Selector
-                label="Freshness warning"
-                description="Create an alert when a provider exceeds this delay"
-                options={['30 minutes', '60 minutes', '90 minutes', '2 hours']}
-                value="60 minutes"
-                onChange={() => {}}
-                width="100%"
-                isDisabled={identity !== 'operator'}
-                disabledMessage="Only Waverly operators can change provider thresholds."
-              />
-            </>
-          )}
-        </VStack>
+                <Divider />
+                <Selector
+                  label="Freshness warning"
+                  description="Create an alert when a provider exceeds this delay"
+                  options={['30 minutes', '60 minutes', '90 minutes', '2 hours']}
+                  value="60 minutes"
+                  onChange={() => {}}
+                  width="100%"
+                  isDisabled={identity !== 'operator'}
+                  disabledMessage="Only Waverly operators can change provider thresholds."
+                />
+              </>
+            )}
+          </VStack>
+        </Card>
       ) : null}
 
       {activeCategory === 'payouts' ? (
-        <VStack gap={6}>
-          <VStack gap={1}>
-            <Heading level={3}>
-              {identity === 'puroair' ? 'Invoice policy' : 'Settlement policy'}
-            </Heading>
-            <Text color="secondary">
-              {identity === 'puroair'
-                ? 'Creator commissions and paid placements roll into one monthly Waverly invoice.'
-                : 'The ledger remains the source of truth; these preferences only control payout scheduling.'}
-            </Text>
-          </VStack>
-          <Divider />
+        <SettingsSection
+          title={identity === 'puroair' ? 'Invoice policy' : 'Settlement policy'}
+          description={
+            identity === 'puroair'
+              ? 'Creator commissions and paid placements roll into one monthly Waverly invoice.'
+              : 'The ledger remains the source of truth; these preferences only control payout scheduling.'
+          }
+        >
           {identity === 'puroair' ? (
             <>
               <Grid columns={{ minWidth: 280, max: 2, repeat: 'fit' }} gap={4}>
@@ -414,13 +403,13 @@ export function SettingsSurface({ identity }: { identity: NetworkIdentity }) {
               />
             </>
           )}
-        </VStack>
+        </SettingsSection>
       ) : null}
     </VStack>
   )
 
   if (isNarrow) {
-    return mobileView === 'nav' ? categoryList : detail
+    return mobileView === 'nav' ? categoryList : <div className="waverly-side-detail">{detail}</div>
   }
 
   return (
@@ -431,7 +420,34 @@ export function SettingsSurface({ identity }: { identity: NetworkIdentity }) {
           {categoryList}
         </LayoutPanel>
       }
-      content={<LayoutContent padding={5}>{detail}</LayoutContent>}
+      content={
+        <LayoutContent>
+          <div className="waverly-side-detail">{detail}</div>
+        </LayoutContent>
+      }
     />
+  )
+}
+
+/** A settings group: white card with a titled header and a padded body. */
+function SettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  return (
+    <Card padding={0}>
+      <div className="waverly-settings-section-header">
+        <Heading level={3}>{title}</Heading>
+        <Text color="secondary">{description}</Text>
+      </div>
+      <VStack gap={5} padding={5}>
+        {children}
+      </VStack>
+    </Card>
   )
 }
