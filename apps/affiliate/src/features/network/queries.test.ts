@@ -41,6 +41,10 @@ describe('workspace route data', () => {
     expect(
       context.queryClient.getQueryData(threadMessagesQuery(identity, 'second').queryKey),
     ).toEqual([{ text: 'Persisted message' }])
+    // Other conversations wait for hover intent in the inbox, so first render stays small.
+    expect(
+      context.queryClient.getQueryData(threadMessagesQuery(identity, 'first').queryKey),
+    ).toBeUndefined()
     // Navigating after intent prefetch consumes the cache instead of requesting the data again.
     await loadWorkspaceData({ context, deps: { page: 'Messages', thread: 'second' } })
     expect(queryFn).toHaveBeenCalledTimes(2)

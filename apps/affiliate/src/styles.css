@@ -2,10 +2,156 @@
 @import '@waverly/design-system/styles.css';
 @plugin '@tailwindcss/typography';
 
+/* Affiliate workspace palette.
+   The shared design system ships a soft sand-and-slate reading of the Waverly wave. The
+   workspace is a working dashboard, so it uses the same wave — seafoam, surf, ocean, deep —
+   at full saturation on a cool white ground. Every value below shadows a token from
+   `@waverly/design-system/tokens.css`; utilities and components pick them up unchanged. */
+:root {
+  --background: #f2f6fa;
+  --foreground: #0e1f2e;
+  --card: #ffffff;
+  --card-foreground: #0e1f2e;
+  --popover: #ffffff;
+  --popover-foreground: #0e1f2e;
+  --primary: #1f74c2;
+  --primary-foreground: #ffffff;
+  --secondary: #e8eff6;
+  --secondary-foreground: #0e1f2e;
+  --muted: #eef3f8;
+  --muted-foreground: #56687a;
+  --accent: #e3effb;
+  --accent-foreground: #185c9c;
+  --destructive: #d63d3d;
+  --destructive-foreground: #ffffff;
+  --border: #dce5ee;
+  --input: #c3d2e1;
+  --ring: #1f74c2;
+  --radius: 0.75rem;
+
+  /* The wave, light to deep. Charts and the ledger sequence read in this order. */
+  --wave-1: #5ec6cb;
+  --wave-2: #17a2a6;
+  --wave-3: #1289a1;
+  --wave-4: #1f74c2;
+  --wave-5: #1a5a9a;
+  --wave-6: #164470;
+  --wave-7: #0f2233;
+
+  --chart-1: var(--wave-1);
+  --chart-2: var(--wave-2);
+  --chart-3: var(--wave-4);
+  --chart-4: var(--wave-5);
+  --chart-5: var(--wave-7);
+
+  --brand-teal: #17a2a6;
+  --brand-teal-foreground: #ffffff;
+  /* Sunset: the one warm color. Chrome stays ocean and teal; data highlights, selection, and the
+     live line in charts are sunset, so the eye finds the numbers before the furniture. */
+  --sunset: #f26b4f;
+  --sunset-foreground: #ffffff;
+  --sunset-soft: #fdeae4;
+  --chart-compare: #9fb0c0;
+  --success: #12965f;
+  --success-foreground: #d9f5e7;
+  --warning: #d97d06;
+  --warning-foreground: #fff0d3;
+  --info: #1f74c2;
+  --info-foreground: #e3effb;
+
+  --brand-50: #eaf3fc;
+  --brand-100: #d5e7f8;
+  --brand-200: #b0d0f0;
+  --brand-300: #7fb2e3;
+  --brand-400: #4c93d4;
+  --brand-500: #1f74c2;
+  --brand-600: #1a63a8;
+  --brand-700: #16528b;
+  --brand-800: #124170;
+  --brand-900: #0e2c4c;
+  --brand-950: #0f2233;
+
+  --teal-100: #d5f4f4;
+  --teal-200: #a9e5e6;
+  --teal-300: #5ec6cb;
+  --teal-400: #17a2a6;
+  --teal-500: #128c90;
+  --teal-600: #0e7276;
+
+  --elevation-xs: 0 1px 2px rgb(15 34 51 / 0.05), 0 1px 1px rgb(15 34 51 / 0.03);
+  --elevation-sm: 0 1px 2px rgb(15 34 51 / 0.05), 0 4px 12px rgb(15 34 51 / 0.05);
+  --elevation-md: 0 4px 12px rgb(15 34 51 / 0.07), 0 14px 32px rgb(15 34 51 / 0.09);
+  --elevation-lg: 0 8px 24px rgb(15 34 51 / 0.12), 0 24px 64px rgb(15 34 51 / 0.14);
+}
+
+/* Deep-water tokens. The sidebar opts in with `data-mode="dark"`; the same values serve a full
+   dark theme if a toggle is added. */
+.dark,
+[data-mode='dark'] {
+  --background: #0f2233;
+  --foreground: #f4f8fb;
+  --card: #15304a;
+  --card-foreground: #f4f8fb;
+  --popover: #15304a;
+  --popover-foreground: #f4f8fb;
+  --primary: #3d94e0;
+  --primary-foreground: #ffffff;
+  --secondary: #1b3a55;
+  --secondary-foreground: #f4f8fb;
+  --muted: rgba(255, 255, 255, 0.07);
+  --muted-foreground: #a9bdd0;
+  --accent: rgba(94, 198, 203, 0.16);
+  --accent-foreground: #8fe0e3;
+  --destructive: #f07070;
+  --destructive-foreground: #0f2233;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.18);
+  --ring: #5ec6cb;
+
+  --sidebar: #0f2233;
+  --sidebar-foreground: #b7c8d8;
+  --sidebar-primary: #17a2a6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.07);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.09);
+  --sidebar-ring: #5ec6cb;
+
+  --sunset: #ff8a6e;
+  --sunset-foreground: #0f2233;
+  --sunset-soft: rgba(242, 107, 79, 0.18);
+  --chart-compare: #6f849a;
+  --success: #4fd39b;
+  --success-foreground: rgba(18, 150, 95, 0.22);
+  --warning: #f2a93b;
+  --warning-foreground: rgba(217, 125, 6, 0.22);
+  --info: #7fb2e3;
+  --info-foreground: rgba(31, 116, 194, 0.22);
+}
+
+@theme inline {
+  --color-sunset: var(--sunset);
+  --color-sunset-foreground: var(--sunset-foreground);
+  --color-sunset-soft: var(--sunset-soft);
+}
+
 html,
 body,
 #app {
   min-height: 100%;
+}
+
+/* Tailwind's preflight leaves links and buttons on the default arrow; this app wants the hand. */
+@layer base {
+  a[href],
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='menuitem'],
+  [role='option'],
+  [role='tab'],
+  summary {
+    cursor: pointer;
+  }
 }
 
 .page-wrap {

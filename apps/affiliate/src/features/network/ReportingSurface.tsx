@@ -142,20 +142,15 @@ function ReportMetricCard({
   isFeatured?: boolean
 }) {
   return (
-    <Card
-      padding={4}
-      variant={isFeatured ? 'blue' : 'default'}
-      elevation={isFeatured ? 'low' : 'none'}
-      height="100%"
-    >
+    <Card padding={4} variant={isFeatured ? 'deep' : 'default'} height="100%">
       <VStack gap={1}>
-        <Text type="supporting" color="secondary" weight="semibold">
+        <Text type="supporting" color="secondary" className="waverly-metric-label">
           {label}
         </Text>
         <Text type="display-3" weight="semibold" hasTabularNumbers>
           {value}
         </Text>
-        <Text type="supporting" color="secondary">
+        <Text type="supporting" color="secondary" className="waverly-metric-context">
           {detail}
         </Text>
       </VStack>

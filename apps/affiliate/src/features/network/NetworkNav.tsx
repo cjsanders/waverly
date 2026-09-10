@@ -4,7 +4,6 @@ import { UserMenu } from '#/components/user-menu'
 import { WorkspaceSwitcher } from '#/components/workspace-switcher'
 import {
   SideNav,
-  SideNavHeading,
   SideNavSection,
   VStack,
   useSideNavRenderMode,
@@ -12,7 +11,7 @@ import {
 import { Logo, LogoIcon } from '@waverly/design-system/brand'
 import { Link, useRouteContext } from '@tanstack/react-router'
 import { useState } from 'react'
-import { homePaths, kindLabels, useWorkspace } from '#/lib/workspace'
+import { homePaths, useWorkspace } from '#/lib/workspace'
 
 import { navForKind, navIcons } from './navigation'
 export function NetworkNav({
@@ -35,17 +34,9 @@ export function NetworkNav({
       collapsible={{
         isCollapsed: isNavCollapsed,
         onCollapsedChange: setIsNavCollapsed,
-        buttonLabel: 'Collapse navigation',
+        buttonLabel: isNavCollapsed ? 'Expand navigation' : 'Collapse navigation',
       }}
-      header={
-        <VStack gap={3}>
-          {isNavCollapsed && !isMobileTopBar ? <LogoIcon size={24} /> : <Logo height={24} />}
-          <SideNavHeading
-            heading={workspace.organization.name}
-            subheading={isMobileTopBar ? undefined : `${kindLabels[kind]} workspace`}
-          />
-        </VStack>
-      }
+      header={isNavCollapsed && !isMobileTopBar ? <LogoIcon size={24} /> : <Logo height={24} />}
       footer={
         !isNavCollapsed ? (
           <VStack gap={3} padding={3}>
