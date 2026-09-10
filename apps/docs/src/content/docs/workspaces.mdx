@@ -45,18 +45,18 @@ Only **Overview** is wired up so far. Other sidebar items render as “Coming so
 | Brand    | Overview, Campaigns, Creators, Links, Reports | New campaign   | Creator activity, conversions, and campaign spend appear once data starts flowing. |
 | Operator | Overview, Brands, Creators, Payouts, Reports  | Invite brand   | Network-wide brands, creators, and payouts appear once data starts flowing.        |
 
-The overview card title is **Nothing to show yet** until those pages have data.
+The home page is not that empty card. See [Overview metrics](/overview) for the metric strip, selectable tiles, and trend chart.
 
 ## First paint and prefetch
 
 Creator, brand, and operator homes render on the server. You should not see **Loading workspace…** on the first HTML. Hover or keyboard focus on a sidebar destination starts that page before you click.
 
-**Messages** is included in that first response — the inbox and the requested (or first) accessible conversation. Typing presence stays client-only. Other surfaces can still show the loading fallback later if a lazily loaded chunk is in flight.
+**Messages** is included in that first response — the inbox and the conversation that renders on arrival. Other conversations warm when their inbox row is hovered or focused. Typing presence stays client-only. Other surfaces can still show the loading fallback later if a lazily loaded chunk is in flight.
 
 <Frame caption="Messages inbox and selected conversation included in the first HTML" aspect="16/9">
   <img
-    src="/docs/workspaces-ssr-messages.png"
-    alt="Messages page with conversation list and an open thread"
+    src="/docs/overview-messages.png"
+    alt="Messages page with a conversation list and an open thread in the polished workspace chrome"
   />
 </Frame>
 
