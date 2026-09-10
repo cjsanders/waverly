@@ -429,7 +429,11 @@ export function MessagesSurface({
               isSelected={!isNarrow && selectedThread?.id === thread.id}
               onClick={() => selectThread(thread.id)}
               onIntent={() =>
-                void queryClient.ensureQueryData(threadMessagesQuery(identity, thread.id))
+                void queryClient
+                  .ensureQueryData(threadMessagesQuery(identity, thread.id))
+                  .catch(() => {
+                    // Prefetch is optional; the selected conversation's query can retry.
+                  })
               }
               startContent={
                 <Avatar
