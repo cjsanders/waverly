@@ -10,6 +10,7 @@ import DocsAuth from "./DocsAuth.astro";
 import { config } from "virtual:nimbus/config";
 import { getSidebarSections } from "@cloudflare/nimbus-docs/runtime";
 import { isInternalPath } from "@/lib/docs-auth";
+import { docsSections } from "@/lib/docs-nav";
 
 interface Props {
   /** Astro collection id for the current page, forwarded from DocsLayout. */
@@ -33,7 +34,10 @@ const { collection, showSidebar = true, sections: sectionsProp } = Astro.props;
 // Normalize trailing slash so isActive matches sidebar hrefs.
 const currentSlug = Astro.url.pathname.replace(/\/$/, "") || "/";
 const sections =
-  sectionsProp ?? (await getSidebarSections(currentSlug, { collection }));
+  sectionsProp ??
+  (await getSidebarSections(currentSlug, { collection }).then((fromTree) =>
+    fromTree.length >= 2 ? fromTree : docsSections(currentSlug),
+  ));
 const publicSections = sections.filter(
   (section) => !isInternalPath(section.href),
 );
