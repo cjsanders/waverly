@@ -1,18 +1,69 @@
 ---
+import { getCollection } from "astro:content";
+import Icon from "@cloudflare/nimbus-docs/components/Icon.astro";
 import { config } from "virtual:nimbus/config";
 import Header from "../components/Header.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { LinkButton } from "../components/ui/link-button";
 
 export const prerender = true;
+
+const description = "Guides for Waverly creators and sellers.";
+
+/** Curated first-stop pages. Slugs must exist under content/docs/<section>/. */
+const PATHS = [
+  {
+    id: "creators",
+    icon: "ph:user-circle",
+    pages: ["workspace", "discover", "work", "earnings"],
+  },
+  {
+    id: "sellers",
+    icon: "ph:storefront",
+    pages: ["workspace", "program", "creators", "reporting"],
+  },
+] as const;
+
+const docs = await getCollection("docs");
+const byId = new Map(docs.map((entry) => [entry.id, entry]));
+
+function requirePage(id: string) {
+  const entry = byId.get(id);
+  if (!entry) {
+    throw new Error(`Homepage is missing docs page: ${id}`);
+  }
+  return entry;
+}
+
+const paths = PATHS.map((path) => {
+  const index = requirePage(path.id);
+  return {
+    id: path.id,
+    href: `/${path.id}`,
+    icon: path.icon,
+    title: index.data.title,
+    summary: index.data.description ?? "",
+    startHref: `/${path.id}/get-started`,
+    pages: path.pages.map((slug) => {
+      const id = `${path.id}/${slug}`;
+      const entry = requirePage(id);
+      return {
+        href: `/${id}`,
+        title: entry.data.title,
+        description: entry.data.description ?? "",
+      };
+    }),
+  };
+});
 ---
 
-<BaseLayout title={config.title} description={config.description}>
+<BaseLayout title={config.title} description={description}>
   <div class="flex min-h-screen flex-col">
-    <Header />
+    <Header showSidebar={false} />
     <main
       id="main-content"
       tabindex="-1"
-      class="mx-auto w-full max-w-2xl flex-1 px-6 py-24"
+      class="mx-auto w-full max-w-4xl flex-1 px-6 py-12 sm:py-16"
     >
       <h1
         class="text-foreground leading-tight"
@@ -20,29 +71,82 @@ export const prerender = true;
       >
         {config.title}
       </h1>
-      <p class="text-muted-foreground mt-2 text-[1.0625rem] leading-relaxed">
-        {config.description}
+      <p
+        class="text-muted-foreground mt-3 max-w-2xl text-[1.0625rem] leading-relaxed"
+      >
+        Waverly is where creators and brands work together. Creators promote
+        products, run collaborations, and get paid. Sellers run a brand program,
+        recruit creators, and pay commissions.
       </p>
-      <div class="mt-8 grid gap-4 sm:grid-cols-2">
-        <a
-          href="/creators"
-          class="border-border hover:border-border-strong bg-card block rounded-xl border p-6 no-underline transition-colors"
-        >
-          <div class="text-foreground font-medium">Creators</div>
-          <div class="text-muted-foreground mt-0.5 text-sm">
-            Share links, run collaborations, and get paid.
-          </div>
-        </a>
-        <a
-          href="/sellers"
-          class="border-border hover:border-border-strong bg-card block rounded-xl border p-6 no-underline transition-colors"
-        >
-          <div class="text-foreground font-medium">Sellers</div>
-          <div class="text-muted-foreground mt-0.5 text-sm">
-            Run a brand program, recruit creators, and pay commissions.
-          </div>
-        </a>
+
+      <div class="mt-10 grid gap-4 lg:grid-cols-2">
+        {
+          paths.map((path) => (
+            <section
+              class="border-border bg-card flex flex-col rounded-xl border p-6"
+              aria-labelledby={`home-${path.id}-heading`}
+            >
+              <div class="flex items-start gap-3">
+                <Icon
+                  name={path.icon}
+                  class="text-foreground mt-0.5 h-6 w-6 shrink-0"
+                />
+                <div class="min-w-0">
+                  <h2
+                    id={`home-${path.id}-heading`}
+                    class="text-foreground m-0 text-lg font-semibold leading-snug"
+                  >
+                    <a
+                      href={path.href}
+                      class="text-foreground hover:text-foreground/80 no-underline"
+                    >
+                      {path.title}
+                    </a>
+                  </h2>
+                  <p class="text-muted-foreground mt-1 mb-0 text-sm leading-relaxed">
+                    {path.summary}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <LinkButton
+                  href={path.startHref}
+                  size="sm"
+                  icon
+                  aria-label={`Get started with ${path.title}`}
+                >
+                  Get started
+                </LinkButton>
+              </div>
+
+              <nav
+                aria-label={`${path.title} guides`}
+                class="border-border mt-5 flex flex-col border-t pt-3"
+              >
+                {path.pages.map((page) => (
+                  <a
+                    href={page.href}
+                    class="hover:bg-accent -mx-2 rounded-lg px-2 py-2 no-underline transition-colors"
+                  >
+                    <div class="text-foreground text-sm font-medium">
+                      {page.title}
+                    </div>
+                    <div class="text-muted-foreground mt-0.5 text-sm leading-snug">
+                      {page.description}
+                    </div>
+                  </a>
+                ))}
+              </nav>
+            </section>
+          ))
+        }
       </div>
+
+      <p class="text-muted-foreground mt-8 text-sm leading-relaxed">
+        Not sure? Start with Creators if you promote products or publish
+        content. Start with Sellers if you run a brand.
+      </p>
     </main>
   </div>
 </BaseLayout>
