@@ -1,0 +1,3 @@
+# Marketplaces are global reference data managed by Waverly
+
+The `marketplaces` table has no `tenantId` and is the first network table exempt from the rule that every network record carries the verified WorkOS organization as its tenant. Amazon US is the same site for every brand, creator, and operator, so duplicating it per tenant (as the seed does for publishers and advertisers today) would fragment reporting by marketplace and make the catalog unmaintainable. The catalog is seeded from a static list in `shared/` and maintained by Waverly operators; brands and creators only read it. Everything a brand adds on top of a marketplace (its storefront, products, listings) stays tenant-scoped, so the exemption does not widen any tenant's read or write surface.

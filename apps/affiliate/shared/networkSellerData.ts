@@ -1,5 +1,5 @@
 /** Commerce records used by the brand workspace during local development. */
-export type SellerMarketplace = 'Amazon US' | 'Amazon CA' | 'Shopify'
+import type { MarketplaceKey } from './marketplaces'
 
 export interface SellerCreatorProfile {
   id: string
@@ -59,30 +59,40 @@ export interface SellerCampaign {
   discount?: string
 }
 
-export const sellerChannels = [
+/** PuroAir's storefronts, one per marketplace; seeds `brandStorefronts` (ADR 0004). */
+export interface SellerChannel {
+  marketplaceKey: MarketplaceKey
+  name: string
+  storefront: string
+  products: number
+  autoAccept: boolean
+  status: 'Live' | 'Pending' | 'Disconnected'
+}
+
+export const sellerChannels: SellerChannel[] = [
   {
-    id: 'amazon-us',
-    marketplace: 'Amazon US' as const,
+    marketplaceKey: 'amazon-us',
+    name: 'PuroAir',
     storefront: 'amazon.com/stores/PuroAir',
     products: 18,
     autoAccept: true,
-    status: 'Live' as const,
+    status: 'Live',
   },
   {
-    id: 'amazon-ca',
-    marketplace: 'Amazon CA' as const,
+    marketplaceKey: 'amazon-ca',
+    name: 'PuroAir',
     storefront: 'amazon.ca/stores/PuroAir',
     products: 7,
     autoAccept: false,
-    status: 'Live' as const,
+    status: 'Live',
   },
   {
-    id: 'shopify',
-    marketplace: 'Shopify' as const,
+    marketplaceKey: 'shopify',
+    name: 'PuroAir',
     storefront: 'puroair.com',
     products: 12,
     autoAccept: false,
-    status: 'Live' as const,
+    status: 'Live',
   },
 ]
 

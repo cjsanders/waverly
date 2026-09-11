@@ -11,6 +11,9 @@ export const organizationKind = v.union(
   v.literal('operator'),
 )
 
+/** Retail sites carry a country; brand-owned store platforms (Shopify) do not (ADR 0004). */
+export const marketplaceKind = v.union(v.literal('retailer'), v.literal('dtc'))
+
 const statusChange = v.object({
   status: v.string(),
   reason: v.optional(v.string()),
@@ -20,8 +23,6 @@ const statusChange = v.object({
 
 export default defineSchema(
   {
-    products: defineTable({ title: v.string(), imageId: v.string(), price: v.number() }),
-
     /** One row per WorkOS user, mirrored on sign-in. */
     users: defineTable({
       workosUserId: v.string(),
@@ -120,6 +121,95 @@ export default defineSchema(
       .index('by_slug', ['slug'])
       .index('by_status', ['status']),
 
+    /**
+     * Global marketplace catalog, one row per country site (ADR 0001). The only network table
+     * without a `tenantId` (ADR 0002): Amazon US is the same site for every workspace.
+     */
+    marketplaces: defineTable({
+      key: v.string(),
+      platform: v.string(),
+      kind: marketplaceKind,
+      name: v.string(),
+      countryCode: v.optional(v.string()),
+      domain: v.optional(v.string()),
+      currency: v.optional(v.string()),
+      status: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      metadata: v.optional(v.any()),
+    })
+      .index('by_key', ['key'])
+      .index('by_platform', ['platform'])
+      .index('by_status', ['status']),
+
+    /** A brand's presence on one marketplace (ADR 0004). Unique per tenant on `marketplaceId`. */
+    brandStorefronts: defineTable({
+      tenantId: v.string(),
+      marketplaceId: v.id('marketplaces'),
+      name: v.string(),
+      url: v.string(),
+      externalSellerRef: v.optional(v.string()),
+      status: v.string(),
+      autoAcceptApplications: v.optional(v.boolean()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      metadata: v.optional(v.any()),
+    })
+      .index('by_tenantId', ['tenantId'])
+      .index('by_tenantId_marketplaceId', ['tenantId', 'marketplaceId']),
+
+    /**
+     * Brand-owned catalog (ADR 0003). Tenant-scoped; no advertiser reference (ADR 0006). Named
+     * `brandProducts` because previews seeded before this table existed still hold rows in a legacy
+     * `products` placeholder table, and a schema push validates every declared table's rows;
+     * leaving that table undeclared lets those previews deploy without a migration.
+     */
+    brandProducts: defineTable({
+      tenantId: v.string(),
+      name: v.string(),
+      sku: v.optional(v.string()),
+      description: v.optional(v.string()),
+      imageUrls: v.array(v.string()),
+      status: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      statusHistory: v.optional(v.array(statusChange)),
+      metadata: v.optional(v.any()),
+    })
+      .index('by_tenantId', ['tenantId'])
+      .index('by_tenantId_sku', ['tenantId', 'sku'])
+      .index('by_tenantId_status', ['tenantId', 'status']),
+
+    /**
+     * One buyable item on one marketplace (ADR 0003): unique per tenant on `marketplaceId` +
+     * `externalId`. `source`, `lastSyncedAt`, and `snapshot` are shaped for provider imports.
+     */
+    listings: defineTable({
+      tenantId: v.string(),
+      productId: v.id('brandProducts'),
+      marketplaceId: v.id('marketplaces'),
+      storefrontId: v.optional(v.id('brandStorefronts')),
+      externalId: v.string(),
+      parentExternalId: v.optional(v.string()),
+      url: v.string(),
+      title: v.optional(v.string()),
+      priceCents: v.optional(v.number()),
+      currency: v.optional(v.string()),
+      status: v.string(),
+      source: v.string(),
+      lastSyncedAt: v.optional(v.number()),
+      snapshot: v.optional(v.any()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      statusHistory: v.optional(v.array(statusChange)),
+      metadata: v.optional(v.any()),
+    })
+      .index('by_tenantId', ['tenantId'])
+      .index('by_productId', ['productId'])
+      .index('by_tenantId_marketplaceId_externalId', ['tenantId', 'marketplaceId', 'externalId'])
+      .index('by_tenantId_marketplaceId', ['tenantId', 'marketplaceId'])
+      .index('by_storefrontId', ['storefrontId']),
+
     programs: defineTable({
       tenantId: v.optional(v.string()),
       providerId: v.id('providers'),
@@ -142,6 +232,8 @@ export default defineSchema(
       advertiserId: v.id('advertisers'),
       programId: v.id('programs'),
       providerId: v.id('providers'),
+      /** The listing this offer promotes (ADR 0005). Optional only for legacy seeded rows. */
+      listingId: v.optional(v.id('listings')),
       slug: v.string(),
       name: v.string(),
       summary: v.string(),
@@ -161,6 +253,7 @@ export default defineSchema(
       .index('by_slug', ['slug'])
       .index('by_programId', ['programId'])
       .index('by_advertiserId', ['advertiserId'])
+      .index('by_listingId', ['listingId'])
       .index('by_status_featured', ['status', 'featured']),
 
     links: defineTable({

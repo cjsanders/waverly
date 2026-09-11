@@ -1,0 +1,3 @@
+# A brand's own store is a Marketplace, and Brand Storefronts record presence
+
+Any sales channel, including a brand's Shopify or custom site, is a Marketplace so that listings, offers, and reporting use one model for "where the product is sold"; the marketplace `kind` (`retailer` or `dtc`) distinguishes third-party retailers from direct-to-consumer platforms. Because a global marketplace row cannot hold a brand's storefront URL or seller account, a tenant-scoped `brandStorefronts` table records each brand's presence on a marketplace (storefront URL, external seller reference, status), unique per tenant on `marketplaceId`. This is the persisted form of the seller "channels" fixture and is what a listing's optional `storefrontId` points at.

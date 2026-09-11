@@ -17,6 +17,10 @@ import {
   seedCounts,
 } from '../shared/networkData'
 import { networkMessageThreads } from '../shared/networkMessages'
+import { sellerChannels } from '../shared/networkSellerData'
+import { listingUrl, marketplaceForKey } from '../shared/marketplaces'
+import { upsertMarketplaces } from './lib/marketplaces'
+import type { SeedProgramOffer } from '../shared/networkData'
 
 export const summary = queryGeneric({
   args: {},
@@ -72,6 +76,9 @@ const networkTables = [
   'links',
   'commissionRules',
   'offers',
+  'listings',
+  'brandProducts',
+  'brandStorefronts',
   'programs',
   'properties',
   'publishers',
@@ -185,6 +192,149 @@ export const seed = internalMutationGeneric({
       }
     }
 
+    // The marketplace catalog is global (ADR 0002): refreshed once, shared by every tenant.
+    const { ids: marketplaceIds } = await upsertMarketplaces(ctx.db, NETWORK_ANCHOR_MS)
+
+    // PuroAir's storefronts (ADR 0004), one per marketplace, refreshed on every seed.
+    const storefronts = new Map<string, { id: any; url: string }>()
+    for (const channel of sellerChannels) {
+      const marketplaceId = marketplaceIds.get(channel.marketplaceKey)
+      const url = `https://${channel.storefront}`
+      const fields = {
+        name: channel.name,
+        url,
+        status: channel.status.toLowerCase(),
+        autoAcceptApplications: channel.autoAccept,
+        updatedAt: NETWORK_ANCHOR_MS,
+        metadata: { seeded: true, productsCount: channel.products },
+      }
+      const row = await ctx.db
+        .query('brandStorefronts')
+        .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
+        .filter((q) => q.eq(q.field('marketplaceId'), marketplaceId))
+        .unique()
+      if (row) {
+        await ctx.db.patch(row._id, fields)
+        storefronts.set(channel.marketplaceKey, { id: row._id, url })
+        continue
+      }
+      const id = await ctx.db.insert('brandStorefronts', {
+        tenantId,
+        marketplaceId,
+        createdAt: NETWORK_ANCHOR_MS - 140 * 86_400_000,
+        ...fields,
+      })
+      storefronts.set(channel.marketplaceKey, { id, url })
+    }
+
+    // Products and listings (ADR 0003). Each offer promotes one listing (ADR 0005); listings
+    // for the seeded brand's own marketplaces hang off its storefronts.
+    const productIds = new Map<string, any>()
+    const listingUrls = new Map<string, string>()
+    const ensureListing = async (item: SeedProgramOffer, existingListingId?: any) => {
+      const marketplace = marketplaceForKey(item.marketplaceKey)
+      const storefront =
+        item.advertiserKey === 'paper-crane' ? storefronts.get(item.marketplaceKey) : undefined
+      const url = listingUrl(
+        marketplace,
+        item.externalId,
+        storefront?.url ?? `https://${item.advertiserKey}.example`,
+      )
+      listingUrls.set(item.key, url)
+      const productFields = {
+        name: item.offerName,
+        imageUrls: [item.productImageUrl],
+        updatedAt: NETWORK_ANCHOR_MS,
+      }
+      const listingFields = {
+        storefrontId: storefront?.id,
+        url,
+        priceCents: item.priceCents,
+        currency: marketplace.currency ?? 'USD',
+        updatedAt: NETWORK_ANCHOR_MS,
+      }
+      const existingListing = existingListingId ? await ctx.db.get(existingListingId) : null
+      if (existingListing) {
+        await ctx.db.patch(existingListing._id, listingFields)
+        await ctx.db.patch(existingListing.productId, productFields)
+        productIds.set(item.productKey, existingListing.productId)
+        return existingListing._id
+      }
+      let productId = productIds.get(item.productKey)
+      if (!productId) {
+        productId = await ctx.db.insert('brandProducts', {
+          tenantId,
+          ...productFields,
+          status: 'active',
+          createdAt: NETWORK_ANCHOR_MS - 100 * 86_400_000,
+          statusHistory: [
+            {
+              status: 'active',
+              changedAt: NETWORK_ANCHOR_MS - 100 * 86_400_000,
+              changedBy: 'network.seed',
+            },
+          ],
+          metadata: { seeded: true, seedKey: item.productKey, advertiserKey: item.advertiserKey },
+        })
+        productIds.set(item.productKey, productId)
+      }
+      return ctx.db.insert('listings', {
+        tenantId,
+        productId,
+        marketplaceId: marketplaceIds.get(item.marketplaceKey),
+        externalId: item.externalId,
+        ...listingFields,
+        status: 'active',
+        source: 'manual',
+        createdAt: NETWORK_ANCHOR_MS - 95 * 86_400_000,
+        statusHistory: [
+          {
+            status: 'active',
+            changedAt: NETWORK_ANCHOR_MS - 95 * 86_400_000,
+            changedBy: 'network.seed',
+          },
+        ],
+        metadata: { seeded: true },
+      })
+    }
+    const programMetadata = (item: SeedProgramOffer) => {
+      const marketplace = marketplaceForKey(item.marketplaceKey)
+      return {
+        simulated: true,
+        marketplaceKey: item.marketplaceKey,
+        marketplace: marketplace.platform,
+        countryCode: marketplace.countryCode,
+      }
+    }
+    const offerMetadata = (item: SeedProgramOffer, previous?: unknown) => {
+      const carried =
+        typeof previous === 'object' && previous !== null
+          ? { ...(previous as Record<string, unknown>) }
+          : {}
+      // Product fields now live on products and listings (ADR 0005).
+      for (const key of [
+        'productImageUrl',
+        'productSku',
+        'priceCents',
+        'marketplace',
+        'countryCode',
+      ]) {
+        delete carried[key]
+      }
+      return {
+        ...carried,
+        commissionRateBps: item.commissionRateBps,
+        rating: item.rating,
+        reviewCount: item.reviewCount,
+        access: item.access,
+        isDeal: item.isDeal,
+        samplesAvailable: item.samplesAvailable,
+        cpcCents: item.cpcCents,
+        loyaltyBonusCents: item.loyaltyBonusCents,
+        seeded: true,
+      }
+    }
+
     const existing = await ctx.db
       .query('providers')
       .withIndex('by_key', (q) => q.eq('key', 'amazon'))
@@ -234,18 +384,17 @@ export const seed = internalMutationGeneric({
           .filter((q) => q.eq(q.field('tenantId'), tenantId))
           .unique()
         if (row) {
+          // Tenants seeded before listings existed get their product and listing backfilled here.
+          const listingId = await ensureListing(offer, row.listingId)
           await ctx.db.patch(row.programId, {
             name: offer.programName,
             status: 'active',
             attributionWindowDays: offer.attributionWindowDays,
             updatedAt: NETWORK_ANCHOR_MS,
-            metadata: {
-              simulated: true,
-              marketplace: offer.marketplace,
-              countryCode: offer.countryCode,
-            },
+            metadata: programMetadata(offer),
           })
           await ctx.db.patch(row._id, {
+            listingId,
             name: offer.offerName,
             summary: `${offer.offerName} with normalized Waverly terms and catalog economics.`,
             status: 'active',
@@ -255,23 +404,7 @@ export const seed = internalMutationGeneric({
             attributionWindowDays: offer.attributionWindowDays,
             endsAt: offer.dealEndsAt,
             updatedAt: NETWORK_ANCHOR_MS,
-            metadata: {
-              ...(typeof row.metadata === 'object' && row.metadata !== null ? row.metadata : {}),
-              productImageUrl: offer.productImageUrl,
-              productSku: offer.productSku,
-              priceCents: offer.priceCents,
-              commissionRateBps: offer.commissionRateBps,
-              marketplace: offer.marketplace,
-              countryCode: offer.countryCode,
-              rating: offer.rating,
-              reviewCount: offer.reviewCount,
-              access: offer.access,
-              isDeal: offer.isDeal,
-              samplesAvailable: offer.samplesAvailable,
-              cpcCents: offer.cpcCents,
-              loyaltyBonusCents: offer.loyaltyBonusCents,
-              seeded: true,
-            },
+            metadata: offerMetadata(offer, row.metadata),
           })
         }
       }
@@ -420,14 +553,16 @@ export const seed = internalMutationGeneric({
         attributionWindowDays: item.attributionWindowDays,
         createdAt: NETWORK_ANCHOR_MS - 110 * 86_400_000,
         updatedAt: NETWORK_ANCHOR_MS,
-        metadata: { simulated: true, marketplace: item.marketplace, countryCode: item.countryCode },
+        metadata: programMetadata(item),
       })
       programIds.set(item.key, programId)
+      const listingId = await ensureListing(item)
       const offerId = await ctx.db.insert('offers', {
         tenantId,
         advertiserId,
         programId,
         providerId,
+        listingId,
         slug: item.key,
         name: item.offerName,
         summary: `A publisher-ready ${item.offerName.toLowerCase()} package with normalized Waverly terms.`,
@@ -444,22 +579,7 @@ export const seed = internalMutationGeneric({
           allowedCountries: ['US', 'CA'],
           restrictions: ['No paid search on brand terms'],
         },
-        metadata: {
-          productImageUrl: item.productImageUrl,
-          productSku: item.productSku,
-          priceCents: item.priceCents,
-          commissionRateBps: item.commissionRateBps,
-          marketplace: item.marketplace,
-          countryCode: item.countryCode,
-          rating: item.rating,
-          reviewCount: item.reviewCount,
-          access: item.access,
-          isDeal: item.isDeal,
-          samplesAvailable: item.samplesAvailable,
-          cpcCents: item.cpcCents,
-          loyaltyBonusCents: item.loyaltyBonusCents,
-          seeded: true,
-        },
+        metadata: offerMetadata(item),
       })
       offerIds.set(item.key, offerId)
     }
@@ -511,7 +631,8 @@ export const seed = internalMutationGeneric({
         },
       })
       linkIds.set(item.key, linkId)
-      const destination = `https://${offer.advertiserKey}.example/products/${item.slug}`
+      const destination =
+        listingUrls.get(offer.key) ?? `https://${offer.advertiserKey}.example/products/${item.slug}`
       const versionId = await ctx.db.insert('linkVersions', {
         tenantId,
         linkId,
