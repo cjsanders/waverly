@@ -49,8 +49,13 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  // Hover-prefetch link targets so full-page navigations feel instant without
-  // a client-side router.
+  // Astro-native hover prefetch for in-site docs links (section tabs, sidebar,
+  // homepage cards, pagination). `<ClientRouter />` already defaults to
+  // `prefetchAll`; this keeps that explicit and uses hover (not viewport/load)
+  // so hidden Internal/auth links are not fetched until they can be hovered.
+  // `@cloudflare/nimbus-docs` does not add a second prefetch layer. Opt out
+  // per link with `data-astro-prefetch="false"` (auth routes, downloads).
+  // External URLs are skipped by Astro.
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'hover',

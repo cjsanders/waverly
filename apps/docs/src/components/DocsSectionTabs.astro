@@ -41,6 +41,10 @@ const linkClass = (active: boolean) => [
     ))
   }
   {
+    /* Hidden until signed-in. Hover prefetch only fires on visible links, so
+       anonymous users do not prefetch /internal (404s or sign-in redirects).
+       Do not set data-astro-prefetch="false" here: Astro binds hover listeners
+       at load, and signed-in users need those once the tab is un-hidden. */
     internalSection && (
       <a
         href={internalSection.href}

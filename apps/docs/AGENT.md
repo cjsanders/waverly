@@ -106,7 +106,7 @@ Then walk the categories below for what `check` doesn't cover yet — route-file
 
 End with `Summary: N errors, N warnings.`
 
-- **Config** — `astro.config.ts` calls `nimbus(defineNimbusConfig({ ... }))`; `site` is set; `editPattern` (if set) contains `{path}`; `output:` matches the deploy target.
+- **Config** — `astro.config.ts` calls `nimbus(defineNimbusConfig({ ... }))`; `site` is set; `editPattern` (if set) contains `{path}`; `output:` matches the deploy target. In-site links hover-prefetch via Astro (`prefetchAll` + `defaultStrategy: 'hover'`); nimbus does not add a second layer. Auth routes opt out with `data-astro-prefetch="false"`.
 - **Content** — `content.config.ts` registers `docsCollection()` (and `partialsCollection()` if used); every `.mdx` is inside a registered collection; frontmatter validates.
 - **Sidebar** — every sidebar ref resolves to a content entry; no orphans; no slug collisions.
 - **MDX** — every PascalCase component in `*.mdx` is registered; every `<Render file=...>` resolves; code-fence languages are valid.
