@@ -85,7 +85,7 @@ Configure these **preview-only default environment variables** in the Convex pro
 - `WORKOS_API_URL`: `https://api.workos.com` for the current shared WorkOS environment.
 - `WAVERLY_PREVIEW_SEED_ENABLED`: `true`. Do not enable this in production.
 
-`apps/affiliate/convex/previewSeed.ts` seeds the global marketplace catalog (Amazon US, Amazon CA, Walmart US, Target US, Shopify) from `apps/affiliate/shared/marketplaces.ts` when the marketplaces table is empty. It is an internal mutation, refuses to run without the preview opt-in, and does not replace or append to an existing catalog. Tenant demo data (products, listings, offers) still seeds lazily on each workspace's first sign-in through `network.initialize`.
+`apps/affiliate/convex/previewSeed.ts` seeds the global marketplace catalog (Amazon US, Amazon CA, Walmart US, Target US, Shopify) from `apps/affiliate/shared/marketplaces.ts` when the marketplaces table is empty. It is an internal mutation, refuses to run without the preview opt-in, and does not replace or append to an existing catalog. Tenant demo data (products, listings, offers) still seeds lazily on each workspace's first sign-in through `network.initialize`. Previews created before this change may still hold a legacy `products` table; it is undeclared in the schema, so it does not block deploys and expires with the preview.
 
 Convex's `--preview-run previewSeed` seeds new deployments. The helper also reruns the idempotent mutation after deployment to recover from an earlier failed seed attempt; existing marketplace IDs and edits are preserved. If the entire marketplaces table is emptied, the next successful build seeds it again.
 

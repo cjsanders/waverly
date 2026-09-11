@@ -416,7 +416,7 @@ describe('catalog maintenance', () => {
       tenantId: 'org-a',
       confirmation: 'DELETE_AND_RESEED_NETWORK',
     })
-    const count = (table: 'products' | 'listings' | 'brandStorefronts', tenantId: string) =>
+    const count = (table: 'brandProducts' | 'listings' | 'brandStorefronts', tenantId: string) =>
       t.run(
         async (ctx) =>
           (
@@ -426,7 +426,7 @@ describe('catalog maintenance', () => {
               .collect()
           ).length,
       )
-    expect(await count('products', 'org-a')).toBe(0)
+    expect(await count('brandProducts', 'org-a')).toBe(0)
     expect(await count('listings', 'org-a')).toBe(0)
     expect(await count('brandStorefronts', 'org-a')).toBe(0)
     expect(await count('listings', 'org-b')).toBeGreaterThan(0)

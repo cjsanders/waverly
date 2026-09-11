@@ -5,7 +5,7 @@ Design for the brand catalog in the affiliate app. Terms are defined in the root
 ## Model
 
 ```
-marketplaces (global)         products (brand tenant)
+marketplaces (global)         brandProducts (brand tenant)
   key, platform, kind           name, sku, description, images
   countryCode?, domain?              │
   currency?, status                  │ 1..n
@@ -43,9 +43,9 @@ Indexes: `by_key`, `by_platform`, `by_status`.
 
 Initial rows: Amazon US, Amazon CA, Walmart US, Target US, Shopify (dtc). The fixture's `'Amazon' | 'Shopify' | 'Walmart'` plus `countryCode` collapses into `marketplaceKey`.
 
-### `products`
+### `brandProducts`
 
-Brand-owned catalog, tenant-scoped (ADR 0003). No `advertiserId` (ADR 0003, 0006).
+Brand-owned catalog, tenant-scoped (ADR 0003). No `advertiserId` (ADR 0003, 0006). Named `brandProducts` because the legacy preview seed left a `products` placeholder table in reused previews; an undeclared table is not validated on schema push, so no migration is needed. The Convex module is still `products`.
 
 | Field                    | Type                     | Notes                                                         |
 | ------------------------ | ------------------------ | ------------------------------------------------------------- |
@@ -130,7 +130,7 @@ Indexes: `by_tenantId`, `by_tenantId_marketplaceId`.
 - Programs keep `metadata.marketplace` and `metadata.countryCode` until programs get their own marketplace reference, which is out of scope here.
 - The seed writes PuroAir's storefronts for every tenant, matching how the rest of the demo copy (publishers, advertisers, seller data) is seeded per tenant regardless of workspace kind.
 - Tenants seeded before listings existed are backfilled on the next `network.seed` refresh: each offer gets a product and listing, `listingId` is set, and the product fields leave `offers.metadata`.
-- `previewSeed` (preview deployments) now seeds the global marketplace catalog instead of the legacy placeholder `products` table, which the brand catalog replaces.
+- `previewSeed` (preview deployments) now seeds the global marketplace catalog instead of the legacy placeholder `products` table. That table is no longer declared in the schema; rows left in older previews are ignored and expire with the preview.
 
 ## Tests
 

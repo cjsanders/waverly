@@ -14,7 +14,7 @@ import type { Id } from './_generated/dataModel'
  */
 export const list = query({
   args: {
-    productId: v.optional(v.id('products')),
+    productId: v.optional(v.id('brandProducts')),
     marketplaceId: v.optional(v.id('marketplaces')),
     status: v.optional(v.string()),
   },
@@ -63,7 +63,7 @@ export const get = query({
 
 export const create = mutation({
   args: {
-    productId: v.id('products'),
+    productId: v.id('brandProducts'),
     marketplaceId: v.id('marketplaces'),
     storefrontId: v.optional(v.id('brandStorefronts')),
     externalId: v.string(),

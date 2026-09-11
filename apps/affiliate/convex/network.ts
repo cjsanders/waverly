@@ -77,7 +77,7 @@ const networkTables = [
   'commissionRules',
   'offers',
   'listings',
-  'products',
+  'brandProducts',
   'brandStorefronts',
   'programs',
   'properties',
@@ -262,7 +262,7 @@ export const seed = internalMutationGeneric({
       }
       let productId = productIds.get(item.productKey)
       if (!productId) {
-        productId = await ctx.db.insert('products', {
+        productId = await ctx.db.insert('brandProducts', {
           tenantId,
           ...productFields,
           status: 'active',

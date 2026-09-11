@@ -158,8 +158,13 @@ export default defineSchema(
       .index('by_tenantId', ['tenantId'])
       .index('by_tenantId_marketplaceId', ['tenantId', 'marketplaceId']),
 
-    /** Brand-owned catalog (ADR 0003). Tenant-scoped; no advertiser reference (ADR 0006). */
-    products: defineTable({
+    /**
+     * Brand-owned catalog (ADR 0003). Tenant-scoped; no advertiser reference (ADR 0006). Named
+     * `brandProducts` because previews seeded before this table existed still hold rows in a legacy
+     * `products` placeholder table, and a schema push validates every declared table's rows;
+     * leaving that table undeclared lets those previews deploy without a migration.
+     */
+    brandProducts: defineTable({
       tenantId: v.string(),
       name: v.string(),
       sku: v.optional(v.string()),
@@ -181,7 +186,7 @@ export default defineSchema(
      */
     listings: defineTable({
       tenantId: v.string(),
-      productId: v.id('products'),
+      productId: v.id('brandProducts'),
       marketplaceId: v.id('marketplaces'),
       storefrontId: v.optional(v.id('brandStorefronts')),
       externalId: v.string(),

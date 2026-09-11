@@ -2,7 +2,7 @@ import { requireNetworkSession, requireTenantDocument } from './networkAccess'
 import { mutation, query, type MutationCtx } from './_generated/server'
 import { v } from 'convex/values'
 
-/** Brand-owned catalog, tenant-scoped (ADR 0003). Listings hang off these rows. */
+/** Brand-owned catalog in `brandProducts`, tenant-scoped (ADR 0003). Listings hang off these rows. */
 export const list = query({
   args: { status: v.optional(v.string()) },
   handler: async (ctx, args) => {
@@ -10,11 +10,11 @@ export const list = query({
     const rows =
       args.status === undefined
         ? await ctx.db
-            .query('products')
+            .query('brandProducts')
             .withIndex('by_tenantId', (q) => q.eq('tenantId', tenantId))
             .collect()
         : await ctx.db
-            .query('products')
+            .query('brandProducts')
             .withIndex('by_tenantId_status', (q) =>
               q.eq('tenantId', tenantId).eq('status', args.status!),
             )
@@ -24,7 +24,7 @@ export const list = query({
 })
 
 export const get = query({
-  args: { productId: v.id('products') },
+  args: { productId: v.id('brandProducts') },
   handler: async (ctx, { productId }) => {
     const { tenantId } = await requireNetworkSession(ctx)
     const product = requireTenantDocument(
@@ -47,13 +47,13 @@ export const create = mutation({
     description: v.optional(v.string()),
     imageUrls: v.optional(v.array(v.string())),
   },
-  returns: v.id('products'),
+  returns: v.id('brandProducts'),
   handler: async (ctx, args) => {
     const session = await requireNetworkSession(ctx)
     const { tenantId } = session
     if (args.sku !== undefined) await requireUnusedSku(ctx, tenantId, args.sku)
     const now = Date.now()
-    return ctx.db.insert('products', {
+    return ctx.db.insert('brandProducts', {
       tenantId,
       name: args.name,
       sku: args.sku,
@@ -69,7 +69,7 @@ export const create = mutation({
 
 export const update = mutation({
   args: {
-    productId: v.id('products'),
+    productId: v.id('brandProducts'),
     name: v.optional(v.string()),
     sku: v.optional(v.string()),
     description: v.optional(v.string()),
@@ -77,7 +77,7 @@ export const update = mutation({
     status: v.optional(v.string()),
     reason: v.optional(v.string()),
   },
-  returns: v.id('products'),
+  returns: v.id('brandProducts'),
   handler: async (ctx, args) => {
     const session = await requireNetworkSession(ctx)
     const { tenantId } = session
@@ -105,7 +105,7 @@ export const update = mutation({
 
 async function requireUnusedSku(ctx: Pick<MutationCtx, 'db'>, tenantId: string, sku: string) {
   const clash = await ctx.db
-    .query('products')
+    .query('brandProducts')
     .withIndex('by_tenantId_sku', (q) => q.eq('tenantId', tenantId).eq('sku', sku))
     .first()
   if (clash) throw new Error(`SKU ${sku} is already used by ${clash.name}`)

@@ -27,7 +27,7 @@ Every network record carries a `tenantId` derived only from the verified WorkOS 
 
 The deterministic fixture contains 3 providers, 20 advertisers, 24 offers/programs, 15 publishers, 30 properties, 100 links, 180 conversions and 90 daily performance records. Seller and creator fixtures add commercial programs, applications, samples, placements and reporting. Product photography and brand assets are local under `public/network`; no asset-generation service is required.
 
-`network.initialize` requires an authenticated organization and seeds only that tenant on first workspace access. It does not reset existing changes. `network.seed` is an internal, repeatable per-tenant catalog refresh; `network.reset` remains an internal per-tenant development utility with an explicit destructive confirmation. Schema validation is enabled and the original Waverly `products` table is preserved.
+`network.initialize` requires an authenticated organization and seeds only that tenant on first workspace access. It does not reset existing changes. `network.seed` is an internal, repeatable per-tenant catalog refresh; `network.reset` remains an internal per-tenant development utility with an explicit destructive confirmation. Schema validation is enabled; the original placeholder `products` table is no longer declared (the brand catalog lives in `brandProducts`).
 
 ## Architecture
 
