@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 import { getAuth } from '@workos/authkit-tanstack-react-start'
 
-import { listWorkOSMemberships } from './workos'
+import { listWorkOSMemberships, type WorkOSMembership } from './workos'
 
 const TICKET_MAX_AGE_MS = 60 * 60 * 24 * 7
 const WORKERS_DEV = 'waverly-d46.workers.dev'
@@ -83,11 +83,13 @@ export function verifyDocsAccessTicket(
   }
 }
 
+type DocsAccessUser = { id: string; email: string }
+
 export async function handleDocsAccessGet(
   request: Request,
   deps: {
-    getAuth?: typeof getAuth
-    listMemberships?: typeof listWorkOSMemberships
+    getAuth?: () => Promise<{ user: DocsAccessUser | null }>
+    listMemberships?: (userId: string) => Promise<WorkOSMembership[]>
     password?: string
     now?: () => number
   } = {},
@@ -101,7 +103,7 @@ export async function handleDocsAccessGet(
     )
   }
 
-  const auth = await (deps.getAuth ?? getAuth)()
+  const auth = await (deps.getAuth ?? (async () => getAuth()))()
   if (!auth.user) {
     const signIn = new URL('/api/auth/sign-in', request.url)
     signIn.searchParams.set(

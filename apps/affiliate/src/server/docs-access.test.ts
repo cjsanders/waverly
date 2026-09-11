@@ -47,7 +47,7 @@ describe('handleDocsAccessGet', () => {
       new Request(
         `https://preview-affiliate.example/api/docs-access?return=${encodeURIComponent(docsReturn)}`,
       ),
-      { getAuth: async () => ({ user: null }) as never },
+      { getAuth: async () => ({ user: null }) },
     )
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toContain('/api/auth/sign-in?returnPathname=')
@@ -59,7 +59,7 @@ describe('handleDocsAccessGet', () => {
         `https://branch-cursor-docs-use-case-nav-9b0c-b55dcb4e-waverly-affiliate.waverly-d46.workers.dev/api/docs-access?return=${encodeURIComponent(docsReturn)}`,
       ),
       {
-        getAuth: async () => ({ user: { id: 'user_1', email: 'ops@waverly.com' } }) as never,
+        getAuth: async () => ({ user: { id: 'user_1', email: 'ops@waverly.com' } }),
         listMemberships: async () => [
           {
             role: 'owner',
@@ -90,7 +90,7 @@ describe('handleDocsAccessGet', () => {
         `https://preview-affiliate.example/api/docs-access?return=${encodeURIComponent(docsReturn)}`,
       ),
       {
-        getAuth: async () => ({ user: { id: 'user_2', email: 'creator@waverly.com' } }) as never,
+        getAuth: async () => ({ user: { id: 'user_2', email: 'creator@waverly.com' } }),
         listMemberships: async () => [
           {
             role: 'owner',
