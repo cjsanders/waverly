@@ -1,11 +1,19 @@
 ---
 title: Agent login
 description: Dev-only sign-in for Cloud Agents and local screenshot capture.
+sidebar:
+  order: 6
+noindex: true
+banner:
+  content: Internal documentation. Production requires a WorkOS sign-in.
+  type: note
 ---
 
 The affiliate app exposes `/api/auth/test-login` so Cloud Agents and other local tools can sign in without driving the hosted AuthKit UI.
 
 This route is **dev-only**. Production builds return 404.
+
+Local `astro dev` for this docs site skips the Internal WorkOS gate when WorkOS is not configured, so agents can read these pages without a docs session.
 
 ## Cloud Agents
 

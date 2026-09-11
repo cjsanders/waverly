@@ -1,11 +1,17 @@
 ---
 title: SSR and prefetching
 description: How affiliate workspace routes load Convex data on the server and prefetch on link intent.
+sidebar:
+  order: 5
+noindex: true
+banner:
+  content: Internal documentation. Production requires a WorkOS sign-in.
+  type: note
 ---
 
 The affiliate app uses [Convex's TanStack Start integration](https://docs.convex.dev/client/tanstack/tanstack-start/). Each router creates its own Convex and TanStack Query clients. The root route supplies the WorkOS access token to the server HTTP client before protected routes load, and the SSR query integration transfers fetched data to the browser. Convex then resumes live queries through the same cache. The browser client waits for authentication before sending queries.
 
-This is the recipe for new workspace pages. [Workspaces](/workspaces) describes the user-visible first paint, sidebar prefetch, and the full-document workspace switch.
+This is the recipe for new workspace pages. [Workspaces](/internal/workspaces) describes the user-visible first paint, sidebar prefetch, and the full-document workspace switch.
 
 ## Loaders
 

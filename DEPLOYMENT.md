@@ -34,7 +34,17 @@ Each app has a `doppler.yaml` pointing at its development config. Run `doppler l
 
 Existing `.env.local` files may still supply optional local-only values, but matching values supplied by Doppler take precedence. Do not use `.dev.vars` files for Doppler-backed affiliate development, because that Cloudflare loading path bypasses process-environment secrets. Restart local dev processes after updating Doppler values. See the root README for the complete local setup.
 
-The website and docs currently have no application secrets, so their Doppler projects are ready for future configuration and need no CI token yet. For affiliate, create read-only service tokens for configs `prd` and `preview`, and save them as encrypted **Cloudflare Build secrets**, not Worker runtime secrets:
+The website currently has no application secrets, so its Doppler project is ready for future configuration and needs no CI token yet. Docs Internal pages are gated by WorkOS in production. Set these as **Worker runtime secrets** on `waverly-docs` (and in `waverly-docs` Doppler when you wire a CI token):
+
+| Name                     | Purpose                                           |
+| ------------------------ | ------------------------------------------------- |
+| `WORKOS_CLIENT_ID`       | Same WorkOS environment as the affiliate app      |
+| `WORKOS_API_KEY`         | Server-only WorkOS API key                        |
+| `WORKOS_COOKIE_PASSWORD` | Session encryption secret, at least 32 characters |
+
+Optional: `WORKOS_API_HOSTNAME` (defaults to `api.workos.com`) and `DOCS_AUTH_BYPASS=true` only for local Wrangler. Register `https://docs.waverly.com/api/auth/callback` and preview callbacks `https://*-waverly-docs.waverly-d46.workers.dev/api/auth/callback` in WorkOS. Local `astro dev` skips the gate when those values are unset.
+
+For affiliate, create read-only service tokens for configs `prd` and `preview`, and save them as encrypted **Cloudflare Build secrets**, not Worker runtime secrets:
 
 - Production build trigger: `DOPPLER_TOKEN_PRODUCTION` reads `waverly-affiliate/prd`.
 - Preview build trigger: `DOPPLER_TOKEN_PREVIEW` reads `waverly-affiliate/preview`.

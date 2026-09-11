@@ -37,7 +37,7 @@ Exit immediately with no comment and no PR when:
 ## What to do
 
 1. Identify the trigger (PR opened vs PR merged vs push to `main`).
-2. Diff the relevant commits. Map user-facing / operator-facing changes to pages under `apps/docs/src/content/docs/`.
+2. Diff the relevant commits. Map user-facing creator or seller changes to `apps/docs/src/content/docs/creators/` or `sellers/`, and operator/dev changes to `internal/`.
 3. Look up memories and open PRs for an existing follow-up (`docs: … follow-up for #<n>`).
 
 ### Pull request opened

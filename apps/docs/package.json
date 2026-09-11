@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "doppler run -- portless docs.waverly astro dev",
+    "prebuild": "node ./scripts/write-affiliate-origin.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
     "lint:docs": "nimbus-docs lint",
     "lint:docs:fix": "nimbus-docs lint --fix",
+    "test": "bun test src/lib",
     "prepreview:cf": "astro build",
     "preview:cf": "wrangler dev",
     "predeploy": "astro check && astro build",

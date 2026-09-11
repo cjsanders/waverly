@@ -7,6 +7,10 @@ export function GET() {
   const body = [
     'User-agent: *',
     'Allow: /',
+    'Disallow: /internal',
+    'Disallow: /internal/',
+    'Disallow: /api/auth',
+    'Disallow: /api/auth/',
     '',
     `Sitemap: ${new URL(withBase('/sitemap-index.xml', import.meta.env.BASE_URL), config.site).href}`,
     '',

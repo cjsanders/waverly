@@ -1,0 +1,39 @@
+---
+title: Team docs
+description: Operator and developer documentation for the Waverly affiliate network.
+sidebar:
+  order: 1
+noindex: true
+banner:
+  content: Internal documentation. Production requires a WorkOS sign-in.
+  type: note
+---
+
+Start here for product internals, WorkOS, and the local agent stack.
+
+Cloud Agents run the credential-free local stack with `bun run setup:agent` and `bun run dev:agent`, then sign in through the [agent login](/internal/agent-login) route. That path is dev-only and never ships in production.
+
+Waverly is an affiliate network. After you sign in to the affiliate app, you work inside a **workspace**. Each workspace is a WorkOS organization whose kind — creator, brand, or operator — picks the mode of the app and the URL you land on.
+
+<CardGrid>
+  <Card title="Workspaces" icon="ph:squares-four">
+    [Modes, URLs, and the sidebar switcher](/internal/workspaces).
+  </Card>
+  <Card title="Onboarding" icon="ph:plus-circle">
+    [Create a creator or brand workspace](/internal/onboarding) the first time you sign in.
+  </Card>
+  <Card title="WorkOS setup" icon="ph:gear">
+    [Roles, `metadata.kind`, and operator workspaces](/internal/workos) for the environment.
+  </Card>
+  <Card title="SSR and prefetching" icon="ph:lightning">
+    [Loaders, sidebar prefetch, and workspace-switch isolation](/internal/ssr-and-prefetching) for
+    new pages.
+  </Card>
+</CardGrid>
+
+Signed-in users with no workspace go to `/onboarding`. Everyone else opens the home of their active
+workspace (`/creator`, `/brand`, or `/operator`). `/dashboard` still works; it redirects into that
+workspace layout. Workspace pages render on the server; Messages includes the inbox in the first
+response.
+
+Public docs for those modes live under [Creators](/creators) and [Sellers](/sellers). This Internal section stays off search, sitemaps, and `llms.txt`.

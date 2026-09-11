@@ -1,0 +1,17 @@
+<div class="flex items-center gap-1">
+  {/* Prefetching this would clear the session. */}
+  <a
+    href="/api/auth/sign-out"
+    data-docs-when="signed-in"
+    data-docs-opt-out-sso
+    data-astro-prefetch="false"
+    hidden
+    class="px-2 py-1 rounded-md text-[0.8125rem] font-medium no-underline text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+  >
+    Sign out
+  </a>
+</div>
+
+<script>
+  import "./docs-auth.client";
+</script>

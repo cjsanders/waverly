@@ -11,11 +11,18 @@ src/
 ├── components.ts            # MDX globals registry — every component used in .mdx must be listed
 ├── components/              # AgentDirective, Header, Render + ui/<slug>/
 ├── content/
-│   ├── docs/*.mdx
+│   ├── docs/
+│   │   ├── creators/*.mdx   # public creator guides
+│   │   ├── sellers/*.mdx    # public seller / brand guides
+│   │   └── internal/*.mdx   # team docs; WorkOS-gated in production
 │   └── partials/*.mdx       # referenced via <Render file="..." />
 ├── content.config.ts        # registers docsCollection() + partialsCollection()
 ├── layouts/                 # BaseLayout (NimbusHead), DocsLayout (sidebar/TOC/breadcrumbs)
-├── lib/cn.ts                # Tailwind className merger
+├── lib/
+│   ├── cn.ts
+│   └── docs-auth.ts         # WorkOS gate for /internal (shared by middleware + worker)
+├── middleware.ts            # astro dev: same gate; bypass when WorkOS is unset
+├── worker.ts                # production: intercepts /internal and /api/auth
 ├── pages/
 │   ├── [...slug].astro
 │   ├── [...slug]/index.md.ts   # per-page markdown alternate
@@ -67,7 +74,8 @@ Rules:
 
 | Goal                         | Action                                                                                                                                                              |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| New doc page                 | Create `src/content/docs/<slug>.mdx`. Sidebar picks it up.                                                                                                          |
+| New doc page                 | Create `src/content/docs/<section>/<slug>.mdx` (`creators`, `sellers`, or `internal`). Sidebar picks it up from `astro.config.ts`.                                  |
+| Internal page                | Same as a new doc page, plus `noindex: true`. Production `/internal` requires WorkOS (`src/lib/docs-auth.ts`). Local `astro dev` skips the gate without WorkOS.     |
 | New partial                  | Create `src/content/partials/<slug>.mdx`. Use via `<Render file="<slug>" />`.                                                                                       |
 | UI from registry             | `bunx --bun @cloudflare/nimbus-docs add <slug>`. Register in `src/components.ts` if used in MDX.                                                                    |
 | Feature recipe               | `bunx --bun @cloudflare/nimbus-docs add <feature-slug>`. Pipe the printed brief to your agent.                                                                      |
@@ -98,7 +106,7 @@ Then walk the categories below for what `check` doesn't cover yet — route-file
 
 End with `Summary: N errors, N warnings.`
 
-- **Config** — `astro.config.ts` calls `nimbus(defineNimbusConfig({ ... }))`; `site` is set; `editPattern` (if set) contains `{path}`; `output:` matches the deploy target.
+- **Config** — `astro.config.ts` calls `nimbus(defineNimbusConfig({ ... }))`; `site` is set; `editPattern` (if set) contains `{path}`; `output:` matches the deploy target. In-site links hover-prefetch via Astro (`prefetchAll` + `defaultStrategy: 'hover'`); nimbus does not add a second layer. Auth routes opt out with `data-astro-prefetch="false"`.
 - **Content** — `content.config.ts` registers `docsCollection()` (and `partialsCollection()` if used); every `.mdx` is inside a registered collection; frontmatter validates.
 - **Sidebar** — every sidebar ref resolves to a content entry; no orphans; no slug collisions.
 - **MDX** — every PascalCase component in `*.mdx` is registered; every `<Render file=...>` resolves; code-fence languages are valid.
@@ -106,7 +114,7 @@ End with `Summary: N errors, N warnings.`
 - **Registry hygiene** — every `src/components/ui/<slug>/` is either MDX-registered or imported in `src/`; transitive deps (`lib/cn.ts`, etc.) exist.
 - **AI surface** — `<AgentDirective />` renders in `BaseLayout.astro`; doc `<head>` has `<link rel="alternate" type="text/markdown" ...>`.
 - **Search** — `data-pagefind-body` is on the docs main wrapper; after `bun run build`, `dist/pagefind/` exists with ≥1 indexed page.
-- **Cloudflare** (if applicable) — `wrangler.jsonc` has `name`, `compatibility_date`, `assets.directory = "./dist"`, `not_found_handling`.
+- **Cloudflare** (if applicable) — `wrangler.jsonc` has `name`, `compatibility_date`, `assets.directory = "./dist"`, `not_found_handling`. Docs also set `main` and `run_worker_first` so `/internal` is WorkOS-gated.
 
 ## Don't
 
