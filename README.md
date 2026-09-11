@@ -50,11 +50,13 @@ The `.waverly` segment keeps these names from colliding with other projects on t
 
 The affiliate callback URL in the development Doppler config is `https://affiliate.waverly.localhost/api/auth/callback`. Register that URL, and the matching `/api/auth/sign-in` URL, in the WorkOS development environment.
 
-Astro backgrounds `astro dev` when it detects a coding agent, which makes portless drop the route as soon as the wrapper exits. Agents should set `ASTRO_DEV_BACKGROUND=1` when starting the website or docs servers so Astro stays in the foreground:
+Astro backgrounds `astro dev` when it detects a coding agent, which makes portless drop the route as soon as the wrapper exits. On a laptop, set `ASTRO_DEV_BACKGROUND=1` when starting the website or docs servers so Astro stays in the foreground:
 
 ```sh
 ASTRO_DEV_BACKGROUND=1 bun run dev
 ```
+
+Cloud Agent environments do not use that laptop command. `.cursor/environment.json` binds website and docs to fixed ports (`http://localhost:4321` and `http://localhost:4322`) and wraps those servers with Doppler when the matching service token is present. Laptop `bun run dev` still uses portless hostnames and is the wrong start path inside a Cloud Agent.
 
 ### Agent login (screenshots and screencasts)
 
@@ -66,6 +68,14 @@ bun run dev:agent
 ```
 
 `setup:agent` creates the ignored local state and performs a one-shot Convex sync. `dev:agent` supervises WorkOS Emulate, Convex, and the affiliate app at `http://localhost:5173` (or `$PORT`). It is suitable for Cursor Cloud Agents and other Linux cloud-agent environments. It refuses to start when dotenv or Wrangler variable files would select a shared backend or override the isolated emulator settings.
+
+The Cloud Agent install script also installs the Doppler CLI and, when these secrets are set, scopes each app to its development config:
+
+- `DOPPLER_TOKEN_WEBSITE` reads `waverly-website/dev`
+- `DOPPLER_TOKEN_DOCS` reads `waverly-docs/dev`
+- `DOPPLER_TOKEN_AFFILIATE` reads `waverly-affiliate/dev` (optional; not used by the default affiliate terminal)
+
+Do not set a generic `DOPPLER_TOKEN` in the Cloud Agent environment: a single token can only belong to one project, and it would override the per-app scopes. The default affiliate terminal stays on `dev:agent` so agents keep using isolated local backends instead of the shared Doppler `dev` Convex and WorkOS values. Website and docs have no application secrets yet, so those terminals still start without tokens; add the read-only service tokens when Doppler begins supplying values those apps need.
 
 Other local tools can instead sign in against a real WorkOS Email + Password user without driving the hosted AuthKit UI. Set these secrets (never commit the values):
 

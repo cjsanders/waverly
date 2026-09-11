@@ -78,7 +78,7 @@ Do not add `Frame` to a page without registering it (it is already in `src/compo
 
 ### Capturing media with computer use
 
-1. Start only what you need. Docs: `ASTRO_DEV_BACKGROUND=1 bun run --cwd apps/docs dev`. Affiliate app: Cloud Agent environments run the credential-free local stack with `bun run dev:agent` on `http://localhost:5173` (see `.cursor/environment.json`).
+1. Start only what you need. Docs: Cloud Agent environments already serve docs at `http://localhost:4322` (see `.cursor/environment.json`). If that terminal is down, restart it with `ASTRO_DEV_BACKGROUND=1 bash scripts/cloud-agent-dev.sh docs -- ./node_modules/.bin/astro dev --host --port 4322` from the repo root — not laptop `bun run --cwd apps/docs dev`, which wraps portless. Affiliate app: Cloud Agent environments run the credential-free local stack with `bun run dev:agent` on `http://localhost:5173`.
 2. For **authenticated** screens, open `http://localhost:5173/api/auth/test-login?returnPathname=/dashboard` in computer use. The dev-only route uses the WorkOS Emulate user prepared by `bun run setup:agent`, sets the AuthKit session cookie, and redirects. A real WorkOS environment instead needs `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` in `apps/affiliate/.env.local`; never print the password. To capture the hosted WorkOS sign-in UI itself, use `/api/auth/sign-in` instead.
 3. If the local stack cannot run or the affiliate app cannot sign in, still write accurate prose from the code. Capture whatever UI is reachable (marketing site, docs site, unauthenticated screens). Do **not** block the docs PR on the development environment.
 4. Screenshot the actual product UI, not the code editor or terminal.

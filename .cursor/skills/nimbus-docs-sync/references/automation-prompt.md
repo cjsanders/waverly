@@ -59,7 +59,7 @@ Exit immediately with no comment and no PR when:
 
 Computer use is available. When a page documents a UI flow:
 
-- Run the relevant app if the environment allows (`ASTRO_DEV_BACKGROUND=1` for the docs/website Astro servers; affiliate is `http://localhost:5173` in Cloud Agents).
+- Run the relevant app if the environment allows. Cloud Agents already expose docs at `http://localhost:4322`, website at `http://localhost:4321`, and affiliate at `http://localhost:5173`. Do not use laptop `bun run dev` (portless) inside a Cloud Agent.
 - For signed-in product UI, run `bun run setup:agent` and `bun run dev:agent`, then open `/api/auth/test-login?returnPathname=/dashboard`. The local agent stack needs no credentials.
 - Save screenshots as `apps/docs/public/docs/<name>.png` and short screencasts as `apps/docs/public/docs/<name>.webm`.
 - Embed with the registered `<Frame>` component (see the skill). Public URLs are `/docs/<filename>`.
