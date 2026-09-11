@@ -1,0 +1,67 @@
+---
+title: Marketplaces and listings
+description: Global marketplace catalog, brand products, listings, and storefronts.
+---
+
+A **marketplace** is one sales site: a retailer country site such as Amazon US, or a country-less DTC platform such as Shopify. Waverly manages that catalog. Brands own **products**; each **listing** is one buyable item for a product on one marketplace. A **brand storefront** records the brand’s presence on a marketplace. An **offer** is the commission terms for promoting one listing.
+
+Do not use “marketplace” for the offer catalog. The operator sidebar still groups Advertisers, Programs, and Offers under a **Marketplace** section — that is the offer catalog, not the global sites table.
+
+## Seeded sites
+
+| Key          | Platform | Kind     | Name       |
+| ------------ | -------- | -------- | ---------- |
+| `amazon-us`  | amazon   | retailer | Amazon US  |
+| `amazon-ca`  | amazon   | retailer | Amazon CA  |
+| `walmart-us` | walmart  | retailer | Walmart US |
+| `target-us`  | target   | retailer | Target US  |
+| `shopify`    | shopify  | dtc      | Shopify    |
+
+Retailer rows have a country, domain, and default currency. DTC rows do not; listings on Shopify carry their own currency and resolve against the brand’s storefront URL.
+
+`platform` groups sites of one company (`amazon` covers Amazon US and Amazon CA). It is a field, not a table.
+
+## What you see
+
+Discovery, creator, and brand surfaces read display names from this catalog.
+
+| Surface                 | Where                                      | What it shows                                                                                          |
+| ----------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Product catalog         | Creator **Discovery → Product catalog**    | Each card’s token is the marketplace name (`Amazon US`), and the identifier is the listing external id |
+| Brand catalog           | Creator **Discovery → Brand catalog**      | Offer rows use the same marketplace name                                                               |
+| Marketplace storefronts | Brand **Program → Brand profile**          | One storefront per marketplace (URL, product count, auto-accept)                                       |
+| Products & commissions  | Brand **Program → Products & commissions** | Filter by marketplace key (`amazon-us`, `amazon-ca`, `shopify`)                                        |
+
+The listing **external id** is the marketplace’s own identifier (child ASIN, Walmart item id, Shopify variant). It is not the brand SKU. Saved product lists in the browser are still a preference; they are not the brand `products` table.
+
+<Frame caption="Creator product catalog with marketplace name tokens" aspect="16/9">
+  <img
+    src="/docs/marketplaces-product-catalog.png"
+    alt="Creator product catalog cards showing Amazon US marketplace tokens and listing external ids"
+  />
+</Frame>
+
+<Frame caption="Brand profile marketplace storefronts" aspect="16/9">
+  <img
+    src="/docs/marketplaces-brand-storefronts.png"
+    alt="Brand profile listing Amazon US, Amazon CA, and Shopify storefronts"
+  />
+</Frame>
+
+## Offers and links
+
+New offers must reference a listing in the same tenant. Creating a tracking link for an offer defaults the destination to that listing’s URL. If the offer has no listing, the caller must supply a destination.
+
+Cross-tenant listing visibility is not available yet. Creators browse offers in their own tenant’s fixture; they do not read another brand’s `listings` rows.
+
+## Seed and previews
+
+The first signed-in visit to a workspace calls `network.initialize`. It upserts the global marketplace rows by `key`, then seeds that tenant’s products, listings, storefronts, and offers when the tenant catalog is empty. Tenants seeded before listings existed are backfilled on the next refresh: each offer gets a product and listing, `listingId` is set, and product fields leave `offers.metadata`.
+
+Preview deployments run `previewSeed` when `WAVERLY_PREVIEW_SEED_ENABLED` is `true`. That mutation now seeds the global marketplace catalog if the table is empty. It does not insert brand products. Tenant demo data still seeds lazily through `network.initialize`.
+
+<Aside type="note" title="Global catalog">
+  `marketplaces` is the first network table without a `tenantId`. Any signed-in workspace reads the
+  same rows. Writes stay internal (seed only) until an operator surface exists. Anonymous clients
+  cannot read the catalog.
+</Aside>
