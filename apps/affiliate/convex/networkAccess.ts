@@ -22,3 +22,13 @@ export function requireTenantDocument<T extends TenantScopedDocument>(
   if (!document || document.tenantId !== tenantId) throw new Error(message)
   return document
 }
+
+/**
+ * Global reference data such as `marketplaces` has no tenant (ADR 0002). Callers still need a
+ * network session; this helper only makes the exemption visible at the call site instead of
+ * leaving it implied by an undefined `tenantId`.
+ */
+export function requireGlobalDocument<T>(document: T | null, message = 'Record not found.'): T {
+  if (!document) throw new Error(message)
+  return document
+}

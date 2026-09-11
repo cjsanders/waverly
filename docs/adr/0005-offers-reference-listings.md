@@ -1,0 +1,3 @@
+# An Offer promotes one Listing
+
+`offers` gains an optional `listingId` that new offers must set, so commission terms, price, currency, and destination all resolve from one row instead of duplicated metadata. A link created for an offer defaults its destination to the listing URL. The field is optional only so that seeded offers, which still carry product fields in `metadata`, remain valid until the fixture is rebuilt on products and listings; after that backfill the product fields in `offers.metadata` are removed. Programs, providers, conversions, and the ledger are unchanged by this decision.

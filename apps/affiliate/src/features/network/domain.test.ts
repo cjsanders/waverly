@@ -13,6 +13,7 @@ import {
   publishers,
   seedCounts,
 } from '../../../shared/networkData'
+import { marketplaces } from '../../../shared/marketplaces'
 import { networkMessageThreads } from '../../../shared/networkMessages'
 import {
   sellerApplications,
@@ -124,8 +125,11 @@ describe('Waverly attribution invariants', () => {
 describe('deterministic network data', () => {
   test('matches the approved POC scale', () => {
     expect(seedCounts).toEqual({
+      marketplaces: 5,
       providers: 3,
       advertisers: 20,
+      products: 24,
+      listings: 24,
       programs: 24,
       offers: 24,
       brandImages: 20,
@@ -145,11 +149,11 @@ describe('deterministic network data', () => {
     }
     for (const offer of programOffers) {
       expect(offer.productImageUrl).toBe(`/network/catalog/products/${offer.key}.jpg`)
-      expect(offer.productSku.length).toBeGreaterThan(4)
+      expect(offer.externalId.length).toBeGreaterThan(4)
+      expect(offer.productKey.length).toBeGreaterThan(0)
       expect(offer.priceCents).toBeGreaterThan(0)
       expect(offer.commissionRateBps).toBeGreaterThanOrEqual(0)
-      expect(offer.marketplace).toMatch(/^(Amazon|Shopify|Walmart)$/)
-      expect(offer.countryCode).toMatch(/^(US|CA)$/)
+      expect(marketplaces.map((marketplace) => marketplace.key)).toContain(offer.marketplaceKey)
       expect(offer.rating).toBeGreaterThanOrEqual(3.5)
       expect(offer.reviewCount).toBeGreaterThan(0)
     }

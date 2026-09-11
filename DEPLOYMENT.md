@@ -85,9 +85,9 @@ Configure these **preview-only default environment variables** in the Convex pro
 - `WORKOS_API_URL`: `https://api.workos.com` for the current shared WorkOS environment.
 - `WAVERLY_PREVIEW_SEED_ENABLED`: `true`. Do not enable this in production.
 
-`apps/affiliate/convex/previewSeed.ts` creates six synthetic product fixtures when the products table is empty. It is an internal mutation, refuses to run without the preview opt-in, and does not replace or append to an existing catalog. Fixture `imageId` values are placeholders, not uploaded images. The current dashboard does not render products yet.
+`apps/affiliate/convex/previewSeed.ts` seeds the global marketplace catalog (Amazon US, Amazon CA, Walmart US, Target US, Shopify) from `apps/affiliate/shared/marketplaces.ts` when the marketplaces table is empty. It is an internal mutation, refuses to run without the preview opt-in, and does not replace or append to an existing catalog. Tenant demo data (products, listings, offers) still seeds lazily on each workspace's first sign-in through `network.initialize`.
 
-Convex's `--preview-run previewSeed` seeds new deployments. The helper also reruns the idempotent mutation after deployment to recover from an earlier failed seed attempt; existing product IDs and edits are preserved. If the entire products table is emptied, the next successful build seeds it again.
+Convex's `--preview-run previewSeed` seeds new deployments. The helper also reruns the idempotent mutation after deployment to recover from an earlier failed seed attempt; existing marketplace IDs and edits are preserved. If the entire marketplaces table is emptied, the next successful build seeds it again.
 
 Preview defaults apply when a deployment is created. If an existing preview is missing the opt-in or has outdated WorkOS settings, update that preview's variables explicitly and rebuild; do not reset its data merely to update configuration. Convex automatically expires preview deployments according to the team's plan. Rebuild an expired preview to recreate and seed it; an old Worker preview URL alone does not keep its backend alive. No production data is copied.
 

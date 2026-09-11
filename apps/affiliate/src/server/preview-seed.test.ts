@@ -4,6 +4,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { internal } from '../../convex/_generated/api'
 import schema from '../../convex/schema'
 import previewSeed from '../../convex/previewSeed'
+import { marketplaces } from '../../shared/marketplaces'
 
 const modules = import.meta.glob('../../convex/**/*.{js,ts}')
 afterEach(() => vi.unstubAllEnvs())
@@ -15,21 +16,28 @@ test('seeding is internal and disabled without the preview-only opt-in', async (
   await expect(t.mutation(internal.previewSeed.default, {})).rejects.toThrow(
     'Preview seeding is disabled',
   )
-  expect(await t.run((ctx) => ctx.db.query('products').collect())).toEqual([])
+  expect(await t.run((ctx) => ctx.db.query('marketplaces').collect())).toEqual([])
 })
 
-test('seeds a synthetic catalog that satisfies the products schema', async () => {
+test('seeds the global marketplace catalog that satisfies the schema', async () => {
   vi.stubEnv('WAVERLY_PREVIEW_SEED_ENABLED', 'true')
   const t = convexTest(schema, modules)
-  expect(await t.mutation(internal.previewSeed.default, {})).toEqual({ seeded: true, inserted: 6 })
-  const products = await t.run((ctx) => ctx.db.query('products').collect())
-  expect(products).toHaveLength(6)
-  expect(new Set(products.map((product) => product.imageId)).size).toBe(6)
-  for (const product of products) {
-    expect(product.title).toMatch(/^Preview /)
-    expect(product.imageId).toMatch(/^preview-/)
-    expect(product.price).toBeGreaterThan(0)
-  }
+  expect(await t.mutation(internal.previewSeed.default, {})).toEqual({
+    seeded: true,
+    inserted: marketplaces.length,
+  })
+  const rows = await t.run((ctx) => ctx.db.query('marketplaces').collect())
+  expect(rows.map((row) => row.key).sort()).toEqual(
+    marketplaces.map((marketplace) => marketplace.key).sort(),
+  )
+  expect(rows.every((row) => row.status === 'active')).toBe(true)
+  expect(
+    rows.every((row) =>
+      row.kind === 'retailer'
+        ? /^[A-Z]{2}$/.test(row.countryCode ?? '')
+        : row.countryCode === undefined,
+    ),
+  ).toBe(true)
 })
 
 test('repeated seeding preserves existing IDs and edits without adding duplicates', async () => {
@@ -37,22 +45,30 @@ test('repeated seeding preserves existing IDs and edits without adding duplicate
   const t = convexTest(schema, modules)
   await t.mutation(internal.previewSeed.default, {})
   await t.run(async (ctx) => {
-    const product = await ctx.db.query('products').first()
-    if (!product) throw new Error('Missing seeded product')
-    await ctx.db.patch(product._id, { title: 'Edited in this PR', price: 99 })
+    const marketplace = await ctx.db.query('marketplaces').first()
+    if (!marketplace) throw new Error('Missing seeded marketplace')
+    await ctx.db.patch(marketplace._id, { status: 'inactive' })
   })
-  const before = await t.run((ctx) => ctx.db.query('products').collect())
+  const before = await t.run((ctx) => ctx.db.query('marketplaces').collect())
   expect(await t.mutation(internal.previewSeed.default, {})).toEqual({ seeded: false, inserted: 0 })
-  expect(await t.run((ctx) => ctx.db.query('products').collect())).toEqual(before)
+  expect(await t.run((ctx) => ctx.db.query('marketplaces').collect())).toEqual(before)
 })
 
 test('does not replace or append to a pre-existing catalog', async () => {
   vi.stubEnv('WAVERLY_PREVIEW_SEED_ENABLED', 'true')
   const t = convexTest(schema, modules)
   await t.run((ctx) =>
-    ctx.db.insert('products', { title: 'Existing product', imageId: 'existing', price: 12 }),
+    ctx.db.insert('marketplaces', {
+      key: 'existing-site',
+      platform: 'existing',
+      kind: 'dtc',
+      name: 'Existing site',
+      status: 'active',
+      createdAt: 1,
+      updatedAt: 1,
+    }),
   )
-  const before = await t.run((ctx) => ctx.db.query('products').collect())
+  const before = await t.run((ctx) => ctx.db.query('marketplaces').collect())
   expect(await t.mutation(internal.previewSeed.default, {})).toEqual({ seeded: false, inserted: 0 })
-  expect(await t.run((ctx) => ctx.db.query('products').collect())).toEqual(before)
+  expect(await t.run((ctx) => ctx.db.query('marketplaces').collect())).toEqual(before)
 })

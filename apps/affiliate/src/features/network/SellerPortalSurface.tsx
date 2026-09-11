@@ -66,6 +66,7 @@ import {
   type SeedDay,
   type SeedProgramOffer,
 } from '../../../shared/networkData'
+import { marketplaceForKey } from '../../../shared/marketplaces'
 import {
   sellerApplications,
   sellerCampaigns,
@@ -195,7 +196,7 @@ function ProductIdentity({ offer }: { offer: SeedProgramOffer }) {
       <VStack gap={0.5}>
         <Text weight="semibold">{offer.offerName}</Text>
         <Text type="supporting" color="secondary">
-          {offer.productSku} · {offer.marketplace} {offer.countryCode}
+          {offer.externalId} · {marketplaceForKey(offer.marketplaceKey).name}
         </Text>
       </VStack>
     </HStack>
@@ -491,7 +492,9 @@ function BrandProfileSurface({
   )
   const [contact, setContact] = useState('creators@puroair.example')
   const [autoAccept, setAutoAccept] = useState<Record<string, boolean>>(
-    Object.fromEntries(sellerChannels.map((channel) => [channel.id, channel.autoAccept])),
+    Object.fromEntries(
+      sellerChannels.map((channel) => [channel.marketplaceKey, channel.autoAccept]),
+    ),
   )
   const copySignup = () => {
     void navigator.clipboard?.writeText('https://waverly.example/join/puroair')
@@ -568,32 +571,35 @@ function BrandProfileSurface({
             </VStack>
           }
         >
-          {sellerChannels.map((channel) => (
-            <ListItem
-              key={channel.id}
-              label={channel.marketplace}
-              description={`${channel.storefront} · ${channel.products} products`}
-              startContent={
-                <Icon
-                  icon={channel.marketplace === 'Shopify' ? ShoppingBag : Store}
-                  color="accent"
-                />
-              }
-              endContent={
-                <VStack gap={1} align="end">
-                  <StatusDot variant="success" label={`${channel.marketplace} is live`} />
-                  <Switch
-                    label={`Auto-accept ${channel.marketplace} applications`}
-                    isLabelHidden
-                    value={autoAccept[channel.id] ?? false}
-                    onChange={(value) =>
-                      setAutoAccept((current) => ({ ...current, [channel.id]: value }))
-                    }
-                  />
-                </VStack>
-              }
-            />
-          ))}
+          {sellerChannels.map((channel) => {
+            const marketplace = marketplaceForKey(channel.marketplaceKey)
+            return (
+              <ListItem
+                key={channel.marketplaceKey}
+                label={marketplace.name}
+                description={`${channel.storefront} · ${channel.products} products`}
+                startContent={
+                  <Icon icon={marketplace.kind === 'dtc' ? ShoppingBag : Store} color="accent" />
+                }
+                endContent={
+                  <VStack gap={1} align="end">
+                    <StatusDot variant="success" label={`${marketplace.name} is live`} />
+                    <Switch
+                      label={`Auto-accept ${marketplace.name} applications`}
+                      isLabelHidden
+                      value={autoAccept[channel.marketplaceKey] ?? false}
+                      onChange={(value) =>
+                        setAutoAccept((current) => ({
+                          ...current,
+                          [channel.marketplaceKey]: value,
+                        }))
+                      }
+                    />
+                  </VStack>
+                }
+              />
+            )
+          })}
         </List>
       </Grid>
     </VStack>
@@ -616,19 +622,16 @@ function ProductsSurface({
   const [defaultRate, setDefaultRate] = useState(12)
   const normalized = search.trim().toLowerCase()
   const rows: ProductRow[] = puroAirOffers
+    .filter((offer) => marketplace === 'all' || offer.marketplaceKey === marketplace)
     .filter(
       (offer) =>
-        marketplace === 'all' || `${offer.marketplace}-${offer.countryCode}` === marketplace,
-    )
-    .filter(
-      (offer) =>
-        !normalized || `${offer.offerName} ${offer.productSku}`.toLowerCase().includes(normalized),
+        !normalized || `${offer.offerName} ${offer.externalId}`.toLowerCase().includes(normalized),
     )
     .map((offer) => ({
       id: offer.key,
       offer,
       product: offer.offerName,
-      marketplace: `${offer.marketplace} ${offer.countryCode}`,
+      marketplace: marketplaceForKey(offer.marketplaceKey).name,
       priceCents: offer.priceCents,
       commissionBps: defaultRate * 100,
       privateRate: privateRates[offer.key] ? `${privateRates[offer.key]}% · Avery Lane` : 'None',
@@ -768,9 +771,9 @@ function ProductsSurface({
               isLabelHidden
               options={[
                 { value: 'all', label: 'All channels' },
-                { value: 'Amazon-US', label: 'Amazon US' },
-                { value: 'Amazon-CA', label: 'Amazon CA' },
-                { value: 'Shopify-US', label: 'Shopify' },
+                { value: 'amazon-us', label: 'Amazon US' },
+                { value: 'amazon-ca', label: 'Amazon CA' },
+                { value: 'shopify', label: 'Shopify' },
               ]}
               value={marketplace}
               onChange={setMarketplace}

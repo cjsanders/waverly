@@ -45,6 +45,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState, type CSSProperties } from 'react'
 import { advertisers, conversions, programOffers, providers } from '../../../shared/networkData'
+import { marketplaceForKey } from '../../../shared/marketplaces'
 
 export type DiscoveryView = 'for-you' | 'products' | 'brands' | 'cpc' | 'loyalty' | 'lists'
 
@@ -67,10 +68,9 @@ interface CatalogItem {
   loyaltyBonusCents: number
   imageUrl: string
   brandLogoUrl: string
-  productSku: string
+  externalId: string
   commissionRate: number
   marketplace: string
-  countryCode: string
   rating: number
   reviewCount: number
   isDeal: boolean
@@ -177,10 +177,9 @@ const catalog: CatalogItem[] = programOffers.map((offer, index) => {
     loyaltyBonusCents: offer.loyaltyBonusCents,
     imageUrl: offer.productImageUrl,
     brandLogoUrl: brand?.logoUrl ?? '',
-    productSku: offer.productSku,
+    externalId: offer.externalId,
     commissionRate: offer.commissionRateBps / 100,
-    marketplace: offer.marketplace,
-    countryCode: offer.countryCode,
+    marketplace: marketplaceForKey(offer.marketplaceKey).name,
     rating: offer.rating,
     reviewCount: offer.reviewCount,
     isDeal: offer.isDeal,
@@ -319,7 +318,7 @@ function CatalogCard({
               />
             </HStack>
             <HStack gap={2} wrap="wrap">
-              <Token label={`${item.marketplace} · ${item.countryCode}`} size="sm" />
+              <Token label={item.marketplace} size="sm" />
               <Token
                 label={`${item.commissionRate.toFixed(0)}% commission`}
                 color="green"
@@ -339,7 +338,7 @@ function CatalogCard({
               </HStack>
               <Heading level={3}>{item.name}</Heading>
               <Text type="supporting" color="secondary">
-                {item.productSku} · {item.rating.toFixed(1)} ★ · {integer.format(item.reviewCount)}{' '}
+                {item.externalId} · {item.rating.toFixed(1)} ★ · {integer.format(item.reviewCount)}{' '}
                 reviews
               </Text>
               <Text color="secondary">{item.reason}</Text>
@@ -515,8 +514,8 @@ function ProductDetail({
                 {item.name}
               </Heading>
               <Text color="secondary">
-                {item.productSku} · {item.marketplace} {item.countryCode} · {item.rating.toFixed(1)}{' '}
-                ★ from {integer.format(item.reviewCount)} reviews
+                {item.externalId} · {item.marketplace} · {item.rating.toFixed(1)} ★ from{' '}
+                {integer.format(item.reviewCount)} reviews
               </Text>
             </VStack>
             <HStack gap={2} wrap="wrap">
@@ -563,7 +562,7 @@ function ProductDetail({
           >
             <ListItem
               label="Access"
-              description={`${item.access} · ${item.marketplace} ${item.countryCode}`}
+              description={`${item.access} · ${item.marketplace}`}
               startContent={
                 <StatusDot variant={statusVariant(item.access)} label={`${item.access} access`} />
               }
@@ -829,7 +828,7 @@ function BrandDetail({
                 <ListItem
                   key={item.id}
                   label={item.name}
-                  description={`${item.marketplace} ${item.countryCode} · ${item.commissionRate.toFixed(0)}% gross commission · ${item.share.toFixed(0)}% publisher share · ${item.attributionDays}-day attribution`}
+                  description={`${item.marketplace} · ${item.commissionRate.toFixed(0)}% gross commission · ${item.share.toFixed(0)}% publisher share · ${item.attributionDays}-day attribution`}
                   startContent={<BrandLogo src={item.imageUrl} name={item.name} />}
                   endContent={
                     <Button

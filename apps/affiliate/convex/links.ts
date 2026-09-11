@@ -37,8 +37,11 @@ export const create = mutation({
     actor: v.string(),
     reporting: v.optional(v.any()),
     ...targetArgs,
+    // A link for an offer defaults its destination to the offer's listing URL (ADR 0005).
+    originalDestinationUrl: v.optional(v.string()),
+    normalizedDestinationUrl: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { originalDestinationUrl, normalizedDestinationUrl, ...args }) => {
     const session = await requireNetworkSession(ctx)
     const { tenantId } = session
     requireTenantDocument(await ctx.db.get(args.publisherId), tenantId, 'Publisher not found')
@@ -46,9 +49,24 @@ export const create = mutation({
     requireTenantDocument(await ctx.db.get(args.advertiserId), tenantId, 'Advertiser not found')
     requireTenantDocument(await ctx.db.get(args.providerId), tenantId, 'Provider not found')
     requireTenantDocument(await ctx.db.get(args.programId), tenantId, 'Program not found')
+    let listingUrl: string | undefined
     if (args.offerId) {
-      requireTenantDocument(await ctx.db.get(args.offerId), tenantId, 'Offer not found')
+      const offer = requireTenantDocument(
+        await ctx.db.get(args.offerId),
+        tenantId,
+        'Offer not found',
+      )
+      if (offer.listingId) {
+        listingUrl = requireTenantDocument(
+          await ctx.db.get(offer.listingId),
+          tenantId,
+          'Listing not found',
+        ).url
+      }
     }
+    const destination = originalDestinationUrl ?? listingUrl
+    if (!destination) throw new Error('A destination URL is required when the offer has no listing')
+    const normalizedDestination = normalizedDestinationUrl ?? destination
     const existing = await ctx.db
       .query('links')
       .withIndex('by_slug', (q) => q.eq('slug', args.slug))
@@ -77,8 +95,8 @@ export const create = mutation({
       version: 1,
       providerId: args.providerId,
       programId: args.programId,
-      originalDestinationUrl: args.originalDestinationUrl,
-      normalizedDestinationUrl: args.normalizedDestinationUrl,
+      originalDestinationUrl: destination,
+      normalizedDestinationUrl: normalizedDestination,
       providerTrackingUrl: args.providerTrackingUrl,
       createdAt: now,
       createdBy: session.tokenIdentifier,

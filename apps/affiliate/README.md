@@ -4,7 +4,8 @@ The app has organization-aware creator, brand, and operator workspaces. The netw
 originally prototyped in Orion now lives directly in `/creator`, `/brand`, and `/operator`. Users
 who belong to multiple WorkOS organizations can switch between them from the workspace control in
 the sidebar. See [the network feature map](docs/network-features.md) for the current scope,
-persistence boundaries, architecture, and test coverage.
+persistence boundaries, architecture, and test coverage, and
+[marketplaces and listings](docs/marketplaces-and-listings.md) for the brand catalog design.
 
 # Getting Started
 

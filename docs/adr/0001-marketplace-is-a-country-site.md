@@ -1,0 +1,3 @@
+# A Marketplace is one country site, grouped by Platform
+
+Waverly models a Marketplace as a single country-specific sales site (Amazon US, Amazon CA, Walmart US) rather than as a platform with a list of supported countries, because each site has its own domain, catalog, external identifiers, currency, and attribution program, and a Listing is only ever placed on one of them. Sites that belong to the same company share a `platform` key (`amazon`, `walmart`, `shopify`) so the app can group, filter, and report across Amazon US and Amazon CA with one indexed field instead of a second table. DTC platforms such as Shopify are a marketplace row with kind `dtc` and no country, since the brand's own store is not bound to one country site.

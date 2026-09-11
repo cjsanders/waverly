@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { useMemo, useState, type CSSProperties } from 'react'
 import { advertisers, links, programOffers } from '../../../shared/networkData'
+import { marketplaceForKey } from '../../../shared/marketplaces'
 
 type WorkspacePage = 'Partnerships' | 'Placements' | 'Tracking' | 'Storefront'
 type Notice = { status: 'success' | 'info'; title: string; description: string } | null
@@ -169,7 +170,7 @@ function PartnershipsSurface() {
             <ListItem
               key={offer.key}
               label={offer.offerName}
-              description={`${brand?.name ?? 'Brand'} · ${offer.marketplace} ${offer.countryCode} · ${(offer.commissionRateBps / 100).toFixed(0)}% commission · ${offer.attributionWindowDays}-day attribution`}
+              description={`${brand?.name ?? 'Brand'} · ${marketplaceForKey(offer.marketplaceKey).name} · ${(offer.commissionRateBps / 100).toFixed(0)}% commission · ${offer.attributionWindowDays}-day attribution`}
               startContent={<ProductThumb src={offer.productImageUrl} name={offer.offerName} />}
               endContent={
                 <Button
@@ -644,7 +645,7 @@ function TrackingSurface() {
             <ListItem
               key={row.key}
               label={row.displayName}
-              description={`${offerBrand(row.offer)?.name ?? 'Brand'} · ${row.clicks.toLocaleString()} clicks · ${row.offer.marketplace} ${row.offer.countryCode}`}
+              description={`${offerBrand(row.offer)?.name ?? 'Brand'} · ${row.clicks.toLocaleString()} clicks · ${marketplaceForKey(row.offer.marketplaceKey).name}`}
               startContent={
                 <ProductThumb src={row.offer.productImageUrl} name={row.offer.offerName} />
               }

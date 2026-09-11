@@ -31,6 +31,8 @@ The deterministic fixture contains 3 providers, 20 advertisers, 24 offers/progra
 
 ## Architecture
 
+The brand catalog (marketplaces, products, listings, brand storefronts) is designed in [marketplaces-and-listings.md](marketplaces-and-listings.md); vocabulary is in the root `CONTEXT.md` and decisions in `docs/adr`.
+
 - `src/features/network/`: feature modules for each workspace, navigation/search state, formatting, reporting, and messaging. Large portals are loaded on demand.
 - `src/features/network/ui/`: layout and interaction components adapted from the reference; basic controls use `@waverly/design-system`. Base UI supports the imported accessible selectors, popovers, tabs and messaging components.
 - `shared/`: deterministic fixtures used by both the browser and the seed.
