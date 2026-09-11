@@ -41,6 +41,20 @@ export function isAllowedDocsReturnUrl(value: string): boolean {
   return url.protocol === 'http:' && (host === 'localhost' || host === '127.0.0.1')
 }
 
+export function isAllowedAffiliateOrigin(value: string): boolean {
+  const url = parseUrl(value)
+  if (!url) return false
+  const host = url.hostname
+  if (url.protocol === 'https:') {
+    return (
+      host === `waverly-affiliate.${WORKERS_DEV}` ||
+      host.endsWith(`-waverly-affiliate.${WORKERS_DEV}`) ||
+      host === 'affiliate.waverly.localhost'
+    )
+  }
+  return url.protocol === 'http:' && (host === 'localhost' || host === '127.0.0.1')
+}
+
 function htmlError(title: string, message: string, status: number): Response {
   return new Response(
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title></head><body><h1>${title}</h1><p>${message}</p></body></html>`,
@@ -94,6 +108,9 @@ export async function handleDocsAccessGet(
     now?: () => number
   } = {},
 ): Promise<Response> {
+  const redeemTicket = new URL(request.url).searchParams.get('ticket')
+  if (redeemTicket) return handleDocsAccessRedeemTicket(redeemTicket, deps)
+
   const returnUrl = new URL(request.url).searchParams.get('return')
   if (!returnUrl || !isAllowedDocsReturnUrl(returnUrl)) {
     return htmlError(
@@ -175,9 +192,26 @@ export async function handleDocsAccessRedeem(
     return Response.json({ error: 'Invalid body' }, { status: 400 })
   }
   if (!ticket) return Response.json({ error: 'Missing ticket' }, { status: 400 })
+  return handleDocsAccessRedeemTicket(ticket, deps)
+}
+
+async function handleDocsAccessRedeemTicket(
+  ticket: string,
+  deps: { password?: string; now?: () => number } = {},
+): Promise<Response> {
+  const password = deps.password ?? process.env.WORKOS_COOKIE_PASSWORD
+  if (!password || password.length < 32) {
+    return Response.json({ error: 'Not configured' }, { status: 503 })
+  }
 
   const payload = verifyDocsAccessTicket(ticket, password, deps.now?.() ?? Date.now())
-  if (!payload || payload.iss !== new URL(request.url).origin) {
+  // Worker-to-worker fetch on workers.dev often presents the canonical worker
+  // hostname, not the preview alias baked into `iss`. HMAC is the real check.
+  if (
+    !payload ||
+    !isAllowedAffiliateOrigin(payload.iss) ||
+    !isAllowedDocsReturnUrl(`${payload.aud}/`)
+  ) {
     return Response.json({ error: 'Invalid ticket' }, { status: 401 })
   }
 

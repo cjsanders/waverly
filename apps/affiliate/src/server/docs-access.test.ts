@@ -133,4 +133,51 @@ describe('handleDocsAccessRedeem', () => {
     )
     expect(await response.json()).toEqual({ user: { id: 'user_1', email: 'ops@waverly.com' } })
   })
+
+  it('redeems a preview-alias ticket when the request host is the worker name', async () => {
+    const iss =
+      'https://branch-cursor-docs-use-case-nav-9b0c-b55dcb4e-waverly-affiliate.waverly-d46.workers.dev'
+    const ticket = signDocsAccessTicket(
+      {
+        id: 'user_1',
+        email: 'ops@waverly.com',
+        iss,
+        aud: 'https://cursor-docs-use-case-nav-9b0c-waverly-docs.waverly-d46.workers.dev',
+        exp: Date.now() + 60_000,
+        kind: 'operator',
+      },
+      password,
+    )
+    const response = await handleDocsAccessRedeem(
+      new Request('https://waverly-affiliate.waverly-d46.workers.dev/api/docs-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket }),
+      }),
+      { password },
+    )
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ user: { id: 'user_1', email: 'ops@waverly.com' } })
+  })
+
+  it('redeems via GET so docs workers can verify without a POST body', async () => {
+    const iss =
+      'https://branch-cursor-docs-use-case-nav-9b0c-b55dcb4e-waverly-affiliate.waverly-d46.workers.dev'
+    const ticket = signDocsAccessTicket(
+      {
+        id: 'user_1',
+        email: 'ops@waverly.com',
+        iss,
+        aud: 'https://docs.waverly.com',
+        exp: Date.now() + 60_000,
+        kind: 'operator',
+      },
+      password,
+    )
+    const response = await handleDocsAccessGet(
+      new Request(`${iss}/api/docs-access?ticket=${encodeURIComponent(ticket)}`),
+      { password },
+    )
+    expect(await response.json()).toEqual({ user: { id: 'user_1', email: 'ops@waverly.com' } })
+  })
 })

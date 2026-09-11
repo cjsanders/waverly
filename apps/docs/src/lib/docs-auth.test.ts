@@ -214,7 +214,10 @@ describe('handleDocsRequest', () => {
       .replaceAll('/', '_')
       .replaceAll('=', '')}.sig`
     const fetchImpl: typeof fetch = async (input) => {
-      expect(String(input)).toBe(`${affiliate}/api/docs-access`)
+      const url = new URL(String(input))
+      expect(url.origin).toBe(affiliate)
+      expect(url.pathname).toBe('/api/docs-access')
+      expect(url.searchParams.get('ticket')).toBe(ticket)
       return new Response(JSON.stringify({ user: { id: 'user_1', email: 'ops@waverly.com' } }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

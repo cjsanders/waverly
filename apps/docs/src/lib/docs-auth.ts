@@ -215,10 +215,11 @@ async function redeemOperatorTicket(
   if (!issuer || !isAllowedAffiliateOrigin(issuer)) return null
   const fetchImpl = options.fetch ?? fetch
   try {
-    const response = await fetchImpl(new URL('/api/docs-access', issuer), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticket }),
+    const dest = new URL('/api/docs-access', issuer)
+    dest.searchParams.set('ticket', ticket)
+    const response = await fetchImpl(dest, {
+      headers: { Accept: 'application/json' },
+      redirect: 'manual',
     })
     if (!response.ok) return null
     const body = (await response.json()) as { user?: { id?: string; email?: string } }
