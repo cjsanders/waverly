@@ -1,0 +1,46 @@
+---
+title: Cloud Agent environments
+description: Doppler CLI, per-app service tokens, and isolated affiliate backends.
+---
+
+Cursor Cloud Agents install the Doppler CLI during environment setup. Website and docs can load their Doppler `dev` configs. The affiliate terminal does not — it keeps isolated local WorkOS and Convex backends.
+
+## Install
+
+`.cursor/environment.json` runs `scripts/cloud-agent-install.sh`. That script installs Bun if needed, installs the Doppler CLI, scopes per-app tokens when present, then runs `bun install` and `bun run setup:agent`.
+
+## Per-app tokens
+
+Set read-only service tokens as Cloud Agent environment secrets. Each token belongs to one Doppler project:
+
+| Secret                    | Project / config        | Used by                                              |
+| ------------------------- | ----------------------- | ---------------------------------------------------- |
+| `DOPPLER_TOKEN_WEBSITE`   | `waverly-website/dev`   | Website terminal                                     |
+| `DOPPLER_TOKEN_DOCS`      | `waverly-docs/dev`      | Docs terminal                                        |
+| `DOPPLER_TOKEN_AFFILIATE` | `waverly-affiliate/dev` | Optional; not used by the default affiliate terminal |
+
+<Aside type="caution" title="Do not set DOPPLER_TOKEN">
+  A generic `DOPPLER_TOKEN` can only belong to one project. It would override the per-app scopes.
+</Aside>
+
+Website and docs currently have no application secrets, so those terminals still start without tokens. Add the read-only `dev` tokens when Doppler begins supplying values those apps need.
+
+## Terminals
+
+Do not start Cloud Agent servers with laptop `bun run dev`. That path uses portless hostnames. Cloud Agents bind fixed localhost ports:
+
+| App       | URL                     | How it starts                                                                                               |
+| --------- | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Website   | `http://localhost:4321` | `scripts/cloud-agent-dev.sh website` wraps `astro dev` in `doppler run` when `DOPPLER_TOKEN_WEBSITE` is set |
+| Docs      | `http://localhost:4322` | Same pattern with `DOPPLER_TOKEN_DOCS`                                                                      |
+| Affiliate | `http://localhost:5173` | `bun run dev:agent` only — isolated WorkOS Emulate and Convex                                               |
+
+The affiliate terminal stays off Doppler so agents cannot select the shared `waverly-affiliate/dev` Convex and WorkOS backends. Sign in through [agent login](/agent-login).
+
+If a docs or website terminal is down, restart it from the repository root:
+
+```sh
+ASTRO_DEV_BACKGROUND=1 bash scripts/cloud-agent-dev.sh docs -- ./node_modules/.bin/astro dev --host --port 4322
+```
+
+Laptop `doppler login` / `bun run dev` is a different path. See the root README.
