@@ -41,6 +41,18 @@ export function isAllowedDocsReturnUrl(value: string): boolean {
   return url.protocol === 'http:' && (host === 'localhost' || host === '127.0.0.1')
 }
 
+export function docsReturnPathFromUrl(returnUrl: string): string {
+  try {
+    const url = new URL(returnUrl)
+    const path = `${url.pathname}${url.search}`
+    if (!path.startsWith('/') || path.startsWith('//')) return '/'
+    if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return '/'
+    return path
+  } catch {
+    return '/'
+  }
+}
+
 export function isAllowedAffiliateOrigin(value: string): boolean {
   const url = parseUrl(value)
   if (!url) return false
@@ -111,7 +123,9 @@ export async function handleDocsAccessGet(
   const redeemTicket = new URL(request.url).searchParams.get('ticket')
   if (redeemTicket) return handleDocsAccessRedeemTicket(redeemTicket, deps)
 
-  const returnUrl = new URL(request.url).searchParams.get('return')
+  const requestUrl = new URL(request.url)
+  const returnUrl = requestUrl.searchParams.get('return')
+  const silent = requestUrl.searchParams.get('silent') === '1'
   if (!returnUrl || !isAllowedDocsReturnUrl(returnUrl)) {
     return htmlError(
       'Team docs sign-in failed',
@@ -120,8 +134,12 @@ export async function handleDocsAccessGet(
     )
   }
 
+  const bounceToDocs = () => new Response(null, { status: 302, headers: { Location: returnUrl } })
+
   const auth = await (deps.getAuth ?? (async () => getAuth()))()
   if (!auth.user) {
+    // Silent probes must not send public visitors (or a logged-out tab) to WorkOS.
+    if (silent) return bounceToDocs()
     const signIn = new URL('/api/auth/sign-in', request.url)
     signIn.searchParams.set(
       'returnPathname',
@@ -135,6 +153,7 @@ export async function handleDocsAccessGet(
 
   const memberships = await (deps.listMemberships ?? listWorkOSMemberships)(auth.user.id)
   if (!memberships.some((membership) => membership.organization.kind === 'operator')) {
+    if (silent) return bounceToDocs()
     return htmlError(
       'Team docs are restricted',
       'Team docs are only available to Waverly operators.',
@@ -166,12 +185,8 @@ export async function handleDocsAccessGet(
   )
 
   const next = new URL('/api/auth/operator', docsOrigin)
-  const returnPath = `${new URL(returnUrl).pathname}${new URL(returnUrl).search}`
   next.searchParams.set('ticket', ticket)
-  next.searchParams.set(
-    'returnPathname',
-    returnPath.startsWith('/internal') ? returnPath : '/internal',
-  )
+  next.searchParams.set('returnPathname', docsReturnPathFromUrl(returnUrl))
   return new Response(null, { status: 302, headers: { Location: next.href } })
 }
 

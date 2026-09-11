@@ -8,6 +8,7 @@ import {
   legacyRedirectPath,
   sanitizeReturnPath,
   sealSession,
+  shouldAttemptSilentOperatorSso,
   shouldShowDocsAuthWhen,
   unsealSession,
   type DocsAuthEnv,
@@ -42,9 +43,11 @@ describe('docs auth paths', () => {
     expect(legacyRedirectPath('/creators')).toBeNull()
   })
 
-  it('keeps return paths on the internal section', () => {
+  it('keeps same-origin return paths and rejects auth and off-site URLs', () => {
     expect(sanitizeReturnPath('/internal/workos')).toBe('/internal/workos')
-    expect(sanitizeReturnPath('/creators')).toBe('/internal')
+    expect(sanitizeReturnPath('/creators')).toBe('/creators')
+    expect(sanitizeReturnPath('/creators/discover/')).toBe('/creators/discover/')
+    expect(sanitizeReturnPath('/api/auth/session')).toBe('/internal')
     expect(sanitizeReturnPath('https://evil.example/internal')).toBe('/internal')
     expect(sanitizeReturnPath('//evil.example')).toBe('/internal')
   })
@@ -194,6 +197,7 @@ describe('handleDocsRequest', () => {
     expect(await response.json()).toEqual({
       user: { id: 'user_1', email: 'ops@waverly.com' },
       authEnabled: true,
+      silentSso: true,
     })
   })
 
@@ -203,7 +207,7 @@ describe('handleDocsRequest', () => {
       { AFFILIATE_ORIGIN: '' },
       async () => new Response('nope'),
     )
-    expect(await response.json()).toEqual({ user: null, authEnabled: false })
+    expect(await response.json()).toEqual({ user: null, authEnabled: false, silentSso: false })
   })
 
   it('exchanges an operator ticket for a docs session', async () => {
@@ -242,7 +246,39 @@ describe('handleDocsRequest', () => {
     const response = await handleDocsRequest(request('/api/auth/session'), {}, async () => {
       throw new Error('should not serve')
     })
-    expect(await response.json()).toEqual({ user: null, authEnabled: true })
+    expect(await response.json()).toEqual({ user: null, authEnabled: true, silentSso: true })
+  })
+
+  it('does not advertise silent SSO when auth is bypassed', async () => {
+    const response = await handleDocsRequest(
+      request('/api/auth/session'),
+      env,
+      async () => new Response('nope'),
+      { bypassAuth: true },
+    )
+    expect(await response.json()).toEqual({
+      user: null,
+      authEnabled: true,
+      silentSso: false,
+    })
+  })
+
+  it('forwards silent SSO to the affiliate docs-access endpoint', async () => {
+    const affiliate =
+      'https://branch-cursor-docs-use-case-nav-9b0c-b55dcb4e-waverly-affiliate.waverly-d46.workers.dev'
+    const response = await handleDocsRequest(
+      request('/api/auth/sign-in?returnPathname=/creators/discover/&silent=1'),
+      { AFFILIATE_ORIGIN: affiliate },
+      async () => {
+        throw new Error('should not serve')
+      },
+    )
+    expect(response.status).toBe(302)
+    const location = new URL(response.headers.get('Location') ?? '')
+    expect(location.origin).toBe(affiliate)
+    expect(location.pathname).toBe('/api/docs-access')
+    expect(location.searchParams.get('silent')).toBe('1')
+    expect(location.searchParams.get('return')).toBe('https://docs.waverly.com/creators/discover/')
   })
 })
 
@@ -265,6 +301,53 @@ describe('docs auth header controls', () => {
         user: { id: 'user_1', email: 'ops@waverly.com' },
         authEnabled: true,
       }),
+    ).toBe(true)
+  })
+})
+
+describe('silent operator SSO', () => {
+  it('probes once when docs has no session and affiliate SSO is available', () => {
+    expect(
+      shouldAttemptSilentOperatorSso(
+        { user: null, silentSso: true },
+        { pathname: '/creators/discover/' },
+      ),
+    ).toBe(true)
+  })
+
+  it('skips the probe when a session exists, SSO is off, or the tab opted out', () => {
+    expect(
+      shouldAttemptSilentOperatorSso(
+        { user: { id: 'user_1', email: 'ops@waverly.com' }, silentSso: true },
+        { pathname: '/creators' },
+      ),
+    ).toBe(false)
+    expect(
+      shouldAttemptSilentOperatorSso({ user: null, silentSso: false }, { pathname: '/creators' }),
+    ).toBe(false)
+    expect(
+      shouldAttemptSilentOperatorSso(
+        { user: null, silentSso: true },
+        { pathname: '/creators', optedOut: true },
+      ),
+    ).toBe(false)
+    expect(
+      shouldAttemptSilentOperatorSso(
+        { user: null, silentSso: true },
+        { pathname: '/api/auth/session' },
+      ),
+    ).toBe(false)
+    expect(
+      shouldAttemptSilentOperatorSso(
+        { user: null, silentSso: true },
+        { pathname: '/creators', probedAt: 1_700_000_000_000, now: 1_700_000_010_000 },
+      ),
+    ).toBe(false)
+    expect(
+      shouldAttemptSilentOperatorSso(
+        { user: null, silentSso: true },
+        { pathname: '/creators', probedAt: 1_700_000_000_000, now: 1_700_000_120_000 },
+      ),
     ).toBe(true)
   })
 })

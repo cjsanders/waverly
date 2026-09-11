@@ -63,8 +63,9 @@ export function sanitizeReturnPath(value: string | null | undefined): string {
   try {
     const url = new URL(value, 'http://localhost')
     if (url.origin !== 'http://localhost' || url.pathname.startsWith('//')) return INTERNAL_HOME
-    const path = `${url.pathname}${url.search}${url.hash}`
-    return path.startsWith(INTERNAL_HOME) ? path : INTERNAL_HOME
+    if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return INTERNAL_HOME
+    const path = `${url.pathname}${url.search}`
+    return path.startsWith('/') ? path : INTERNAL_HOME
   } catch {
     return INTERNAL_HOME
   }
@@ -273,10 +274,44 @@ function notFoundPage(): Response {
 export type DocsSessionJson = {
   user: DocsUser | null
   authEnabled: boolean
+  silentSso: boolean
 }
 
-export function docsSessionJson(user: DocsUser | null, env: DocsAuthEnv): DocsSessionJson {
-  return { user, authEnabled: isDocsAuthEnabled(env) }
+export function isSilentSsoEnabled(env: DocsAuthEnv, options?: DocsAuthOptions): boolean {
+  return Boolean(resolveAffiliateOrigin(env)) && !shouldBypassAuth(env, options)
+}
+
+export function docsSessionJson(
+  user: DocsUser | null,
+  env: DocsAuthEnv,
+  options?: DocsAuthOptions,
+): DocsSessionJson {
+  return {
+    user,
+    authEnabled: isDocsAuthEnabled(env),
+    silentSso: isSilentSsoEnabled(env, options),
+  }
+}
+
+export const SILENT_SSO_PROBE_TTL_MS = 60_000
+
+export function shouldAttemptSilentOperatorSso(
+  session: Pick<DocsSessionJson, 'user' | 'silentSso'>,
+  options: {
+    pathname?: string
+    now?: number
+    probedAt?: number | null
+    optedOut?: boolean
+  } = {},
+): boolean {
+  if (session.user || !session.silentSso || options.optedOut) return false
+  const pathname = options.pathname ?? '/'
+  if (pathname === '/api/auth' || pathname.startsWith('/api/auth/')) return false
+  if (options.probedAt != null) {
+    const now = options.now ?? Date.now()
+    if (now - options.probedAt < SILENT_SSO_PROBE_TTL_MS) return false
+  }
+  return true
 }
 
 export type DocsAuthWhen = 'signed-in' | 'signed-out' | 'auth-enabled'
@@ -296,12 +331,15 @@ async function handleSignIn(
   env: DocsAuthEnv,
   options: DocsAuthOptions,
 ): Promise<Response> {
-  const returnPath = sanitizeReturnPath(new URL(request.url).searchParams.get('returnPathname'))
+  const url = new URL(request.url)
+  const returnPath = sanitizeReturnPath(url.searchParams.get('returnPathname'))
+  const silent = url.searchParams.get('silent') === '1'
   const affiliate = resolveAffiliateOrigin(env)
   if (affiliate) {
     const docsReturn = new URL(returnPath, request.url).href
     const dest = new URL('/api/docs-access', affiliate)
     dest.searchParams.set('return', docsReturn)
+    if (silent) dest.searchParams.set('silent', '1')
     return redirect(dest.href)
   }
 
@@ -433,7 +471,7 @@ async function handleSession(
   options: DocsAuthOptions,
 ): Promise<Response> {
   const user = await readSession(request, env, options)
-  return json(docsSessionJson(user, env))
+  return json(docsSessionJson(user, env, options))
 }
 
 export async function handleDocsRequest(

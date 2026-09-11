@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  docsReturnPathFromUrl,
   handleDocsAccessGet,
   handleDocsAccessRedeem,
   isAllowedDocsReturnUrl,
@@ -20,6 +21,10 @@ describe('docs return URLs', () => {
     expect(
       isAllowedDocsReturnUrl('https://waverly-affiliate.waverly-d46.workers.dev/internal'),
     ).toBe(false)
+    expect(docsReturnPathFromUrl(`${new URL(docsReturn).origin}/creators/discover/`)).toBe(
+      '/creators/discover/',
+    )
+    expect(docsReturnPathFromUrl(`${new URL(docsReturn).origin}/api/auth/session`)).toBe('/')
   })
 })
 
@@ -51,6 +56,17 @@ describe('handleDocsAccessGet', () => {
     )
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toContain('/api/auth/sign-in?returnPathname=')
+  })
+
+  it('bounces silent anonymous probes back to docs without WorkOS', async () => {
+    const response = await handleDocsAccessGet(
+      new Request(
+        `https://preview-affiliate.example/api/docs-access?silent=1&return=${encodeURIComponent(docsReturn)}`,
+      ),
+      { getAuth: async () => ({ user: null }) },
+    )
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe(docsReturn)
   })
 
   it('issues a ticket for an operator and returns to docs', async () => {
@@ -105,6 +121,60 @@ describe('handleDocsAccessGet', () => {
       },
     )
     expect(response.status).toBe(403)
+  })
+
+  it('bounces silent creator probes back to docs without a 403 page', async () => {
+    const response = await handleDocsAccessGet(
+      new Request(
+        `https://preview-affiliate.example/api/docs-access?silent=1&return=${encodeURIComponent(docsReturn)}`,
+      ),
+      {
+        getAuth: async () => ({ user: { id: 'user_2', email: 'creator@waverly.com' } }),
+        listMemberships: async () => [
+          {
+            role: 'owner',
+            organization: {
+              workosOrganizationId: 'org_creator',
+              name: 'Studio',
+              kind: 'creator' as const,
+            },
+          },
+        ],
+        password,
+      },
+    )
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe(docsReturn)
+  })
+
+  it('returns an operator ticket to the public docs page they started on', async () => {
+    const discover =
+      'https://cursor-docs-use-case-nav-9b0c-waverly-docs.waverly-d46.workers.dev/creators/discover/'
+    const response = await handleDocsAccessGet(
+      new Request(
+        `https://branch-cursor-docs-use-case-nav-9b0c-b55dcb4e-waverly-affiliate.waverly-d46.workers.dev/api/docs-access?silent=1&return=${encodeURIComponent(discover)}`,
+      ),
+      {
+        getAuth: async () => ({ user: { id: 'user_1', email: 'ops@waverly.com' } }),
+        listMemberships: async () => [
+          {
+            role: 'owner',
+            organization: {
+              workosOrganizationId: 'org_operator',
+              name: 'Waverly',
+              kind: 'operator' as const,
+            },
+          },
+        ],
+        password,
+        now: () => 1_700_000_000_000,
+      },
+    )
+    expect(response.status).toBe(302)
+    const location = new URL(response.headers.get('Location') ?? '')
+    expect(location.pathname).toBe('/api/auth/operator')
+    expect(location.searchParams.get('returnPathname')).toBe('/creators/discover/')
+    expect(location.searchParams.get('ticket')).toBeTruthy()
   })
 })
 
