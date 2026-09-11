@@ -41,14 +41,13 @@ const linkClass = (active: boolean) => [
     ))
   }
   {
-    /* Hidden until /api/auth/session says auth is available (affiliate SSO or
-       docs WorkOS). Prefetch is off so hover does not start the sign-in
-       redirect. Once signed in, the same tab is just section navigation. */
+    /* Hidden until a docs session exists. Hover prefetch only fires on visible
+       links, so anonymous visitors do not prefetch /internal. Do not set
+       data-astro-prefetch="false": signed-in users need hover prefetch. */
     internalSection && (
       <a
         href={internalSection.href}
-        data-docs-when={internalSection.isActive ? undefined : "auth-enabled"}
-        data-astro-prefetch="false"
+        data-docs-when={internalSection.isActive ? undefined : "signed-in"}
         hidden={!internalSection.isActive}
         aria-current={internalSection.isActive ? "page" : undefined}
         class:list={linkClass(internalSection.isActive)}

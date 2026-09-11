@@ -11,7 +11,7 @@ banner:
 
 Every [workspace](/internal/workspaces) is a WorkOS organization. The affiliate app reads `metadata.kind` (`creator`, `brand`, or `operator`) and mirrors users, organizations, and memberships into Convex at sign-in.
 
-Internal docs on this site are for Waverly operators. Open Team on the docs site while signed into an operator workspace in the affiliate app. Docs redirects to the matching affiliate origin, which checks the operator membership and returns a short-lived ticket. Anonymous visitors can still see Team; clicking it starts affiliate sign-in instead of a configuration error.
+Internal docs on this site are for Waverly operators. Open `/internal` while signed into an operator workspace in the affiliate app. Docs redirects to the matching affiliate origin, which checks the operator membership and returns a short-lived ticket. The Team tab and Sign out appear only after that docs session exists.
 
 `/internal` stays gated. Local `astro dev` skips the gate so agents can read these pages without a docs session.
 

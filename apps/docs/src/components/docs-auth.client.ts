@@ -22,7 +22,7 @@ function initAuth(root: HTMLElement): () => void {
         el.hidden = !shouldShowDocsAuthWhen(when, data)
       }
     } catch {
-      // Keep Sign in / Sign out / Internal hidden when the session endpoint is unavailable.
+      // Keep Team / Sign out hidden when the session endpoint is unavailable.
     }
   })()
 

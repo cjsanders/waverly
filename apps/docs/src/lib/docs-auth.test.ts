@@ -247,7 +247,7 @@ describe('handleDocsRequest', () => {
 })
 
 describe('docs auth header controls', () => {
-  it('keeps Team hidden unless auth is available and the visitor is signed out', () => {
+  it('keeps signed-out-only controls off when the visitor is signed in', () => {
     expect(shouldShowDocsAuthWhen('signed-out', { user: null, authEnabled: false })).toBe(false)
     expect(shouldShowDocsAuthWhen('signed-out', { user: null, authEnabled: true })).toBe(true)
     expect(
@@ -258,18 +258,7 @@ describe('docs auth header controls', () => {
     ).toBe(false)
   })
 
-  it('shows the Team section tab whenever auth is available', () => {
-    expect(shouldShowDocsAuthWhen('auth-enabled', { user: null, authEnabled: false })).toBe(false)
-    expect(shouldShowDocsAuthWhen('auth-enabled', { user: null, authEnabled: true })).toBe(true)
-    expect(
-      shouldShowDocsAuthWhen('auth-enabled', {
-        user: { id: 'user_1', email: 'ops@waverly.com' },
-        authEnabled: true,
-      }),
-    ).toBe(true)
-  })
-
-  it('shows Team and Sign out only when a session exists', () => {
+  it('shows the Team section tab and Sign out only when a session exists', () => {
     expect(shouldShowDocsAuthWhen('signed-in', { user: null, authEnabled: true })).toBe(false)
     expect(
       shouldShowDocsAuthWhen('signed-in', {
