@@ -5,7 +5,7 @@ description: Build and operate the Waverly affiliate network.
 
 Start here for product, integration, and operational documentation.
 
-Cloud Agents run the credential-free local stack with `bun run setup:agent` and `bun run dev:agent`, then sign in through the [agent login](/agent-login) route. That path is dev-only and never ships in production.
+Cloud Agents install Doppler and serve website/docs on fixed ports, then run the credential-free affiliate stack with `bun run setup:agent` and `bun run dev:agent`. Sign in through the [agent login](/agent-login) route. That affiliate path is dev-only and never ships in production. See [Cloud Agent environments](/cloud-agents) for the per-app tokens and why affiliate stays off the shared Doppler `dev` backends.
 
 Waverly is an affiliate network. After you sign in to the affiliate app, you work inside a **workspace**. Each workspace is a WorkOS organization whose kind — creator, brand, or operator — picks the mode of the app and the URL you land on.
 
@@ -21,6 +21,9 @@ Waverly is an affiliate network. After you sign in to the affiliate app, you wor
   </Card>
   <Card title="SSR and prefetching" icon="ph:lightning">
     [Loaders, sidebar prefetch, and workspace-switch isolation](/ssr-and-prefetching) for new pages.
+  </Card>
+  <Card title="Cloud Agent environments" icon="ph:cloud">
+    [Doppler CLI, per-app tokens, and isolated affiliate backends](/cloud-agents).
   </Card>
 </CardGrid>
 Signed-in users with no workspace go to `/onboarding`. Everyone else opens the home of their active
