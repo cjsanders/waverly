@@ -9,6 +9,7 @@ function envFromProcess(): DocsAuthEnv {
     WORKOS_COOKIE_PASSWORD: process.env.WORKOS_COOKIE_PASSWORD,
     WORKOS_API_HOSTNAME: process.env.WORKOS_API_HOSTNAME,
     DOCS_AUTH_BYPASS: process.env.DOCS_AUTH_BYPASS,
+    AFFILIATE_ORIGIN: process.env.AFFILIATE_ORIGIN,
   }
 }
 

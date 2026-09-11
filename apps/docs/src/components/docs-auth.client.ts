@@ -16,11 +16,10 @@ function initAuth(root: HTMLElement): () => void {
       const signedIn = Boolean(data.user)
       root.dataset.signedIn = signedIn ? 'true' : 'false'
       root.dataset.authEnabled = data.authEnabled ? 'true' : 'false'
-      for (const el of root.querySelectorAll<HTMLElement>('[data-docs-when="signed-in"]')) {
-        el.hidden = !shouldShowDocsAuthWhen('signed-in', data)
-      }
-      for (const el of root.querySelectorAll<HTMLElement>('[data-docs-when="signed-out"]')) {
-        el.hidden = !shouldShowDocsAuthWhen('signed-out', data)
+      for (const el of root.querySelectorAll<HTMLElement>('[data-docs-when]')) {
+        const when = el.dataset.docsWhen
+        if (when !== 'signed-in' && when !== 'signed-out' && when !== 'auth-enabled') continue
+        el.hidden = !shouldShowDocsAuthWhen(when, data)
       }
     } catch {
       // Keep Sign in / Sign out / Internal hidden when the session endpoint is unavailable.

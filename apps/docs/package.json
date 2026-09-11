@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "doppler run -- portless docs.waverly astro dev",
+    "prebuild": "node ./scripts/write-affiliate-origin.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",

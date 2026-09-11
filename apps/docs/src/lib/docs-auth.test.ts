@@ -97,10 +97,14 @@ describe('handleDocsRequest', () => {
     expect(await response.text()).toBe('team')
   })
 
-  it('fails closed with a generic 404 when WorkOS is missing in production', async () => {
-    const response = await handleDocsRequest(request('/internal'), {}, async () => {
-      throw new Error('should not serve internal docs')
-    })
+  it('fails closed with a generic 404 when auth is not configured', async () => {
+    const response = await handleDocsRequest(
+      request('/internal'),
+      { AFFILIATE_ORIGIN: '' },
+      async () => {
+        throw new Error('should not serve internal docs')
+      },
+    )
     expect(response.status).toBe(404)
     const body = await response.text()
     expect(body).toContain('Page not found')
@@ -108,11 +112,31 @@ describe('handleDocsRequest', () => {
   })
 
   it('hides unconfigured sign-in as a generic 404', async () => {
-    const response = await handleDocsRequest(request('/api/auth/sign-in'), {}, async () => {
-      throw new Error('should not start WorkOS')
-    })
+    const response = await handleDocsRequest(
+      request('/api/auth/sign-in'),
+      { AFFILIATE_ORIGIN: '' },
+      async () => {
+        throw new Error('should not start WorkOS')
+      },
+    )
     expect(response.status).toBe(404)
     expect(await response.text()).not.toContain('WorkOS')
+  })
+
+  it('sends team sign-in to the matching affiliate origin', async () => {
+    const affiliate =
+      'https://branch-cursor-docs-use-case-nav-9b0c-b55dcb4e-waverly-affiliate.waverly-d46.workers.dev'
+    const response = await handleDocsRequest(
+      request('/api/auth/sign-in?returnPathname=/internal'),
+      { AFFILIATE_ORIGIN: affiliate },
+      async () => {
+        throw new Error('should not serve')
+      },
+    )
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe(
+      `${affiliate}/api/docs-access?return=${encodeURIComponent('https://docs.waverly.com/internal')}`,
+    )
   })
 
   it('redirects retired public URLs into the internal section', async () => {
@@ -173,18 +197,54 @@ describe('handleDocsRequest', () => {
     })
   })
 
-  it('reports that auth is disabled when WorkOS is missing', async () => {
+  it('reports that auth is disabled when WorkOS and affiliate SSO are missing', async () => {
     const response = await handleDocsRequest(
       request('/api/auth/session'),
-      {},
+      { AFFILIATE_ORIGIN: '' },
       async () => new Response('nope'),
     )
     expect(await response.json()).toEqual({ user: null, authEnabled: false })
   })
+
+  it('exchanges an operator ticket for a docs session', async () => {
+    const affiliate =
+      'https://branch-cursor-docs-use-case-nav-9b0c-b55dcb4e-waverly-affiliate.waverly-d46.workers.dev'
+    const ticket = `${btoa('{"iss":"' + affiliate + '"}')
+      .replaceAll('+', '-')
+      .replaceAll('/', '_')
+      .replaceAll('=', '')}.sig`
+    const fetchImpl: typeof fetch = async (input) => {
+      expect(String(input)).toBe(`${affiliate}/api/docs-access`)
+      return new Response(JSON.stringify({ user: { id: 'user_1', email: 'ops@waverly.com' } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    const response = await handleDocsRequest(
+      request(`/api/auth/operator?ticket=${ticket}&returnPathname=/internal`),
+      { AFFILIATE_ORIGIN: affiliate },
+      async () => new Response('nope'),
+      { fetch: fetchImpl },
+    )
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Location')).toBe('/internal')
+    const cookie = response.headers
+      .getSetCookie()
+      .find((value) => value.startsWith('wos-docs-session='))
+    expect(cookie).toContain('tkt.')
+    expect(cookie).toContain('HttpOnly')
+  })
+
+  it('enables Team from the baked affiliate origin when WorkOS is unset', async () => {
+    const response = await handleDocsRequest(request('/api/auth/session'), {}, async () => {
+      throw new Error('should not serve')
+    })
+    expect(await response.json()).toEqual({ user: null, authEnabled: true })
+  })
 })
 
 describe('docs auth header controls', () => {
-  it('keeps Sign in hidden unless WorkOS is configured and the visitor is signed out', () => {
+  it('keeps Team hidden unless auth is available and the visitor is signed out', () => {
     expect(shouldShowDocsAuthWhen('signed-out', { user: null, authEnabled: false })).toBe(false)
     expect(shouldShowDocsAuthWhen('signed-out', { user: null, authEnabled: true })).toBe(true)
     expect(
@@ -195,7 +255,18 @@ describe('docs auth header controls', () => {
     ).toBe(false)
   })
 
-  it('shows Internal and Sign out only when a session exists', () => {
+  it('shows the Team section tab whenever auth is available', () => {
+    expect(shouldShowDocsAuthWhen('auth-enabled', { user: null, authEnabled: false })).toBe(false)
+    expect(shouldShowDocsAuthWhen('auth-enabled', { user: null, authEnabled: true })).toBe(true)
+    expect(
+      shouldShowDocsAuthWhen('auth-enabled', {
+        user: { id: 'user_1', email: 'ops@waverly.com' },
+        authEnabled: true,
+      }),
+    ).toBe(true)
+  })
+
+  it('shows Team and Sign out only when a session exists', () => {
     expect(shouldShowDocsAuthWhen('signed-in', { user: null, authEnabled: true })).toBe(false)
     expect(
       shouldShowDocsAuthWhen('signed-in', {

@@ -1,7 +1,7 @@
 export const DOCS_SECTIONS = [
   { label: 'Creators', href: '/creators' },
   { label: 'Sellers', href: '/sellers' },
-  { label: 'Internal', href: '/internal' },
+  { label: 'Team', href: '/internal' },
 ] as const
 
 export function isSectionActive(href: string, currentSlug: string): boolean {

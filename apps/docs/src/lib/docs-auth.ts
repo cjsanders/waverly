@@ -1,5 +1,8 @@
+import { isAllowedAffiliateOrigin, resolveAffiliateOrigin } from './affiliate-origin'
+
 const SESSION_COOKIE = 'wos-docs-session'
 const STATE_COOKIE = 'wos-docs-state'
+const TICKET_PREFIX = 'tkt.'
 const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 7
 const STATE_MAX_AGE_SEC = 60 * 10
 const INTERNAL_HOME = '/internal'
@@ -19,6 +22,7 @@ export type DocsAuthEnv = {
   WORKOS_COOKIE_PASSWORD?: string
   WORKOS_API_HOSTNAME?: string
   DOCS_AUTH_BYPASS?: string
+  AFFILIATE_ORIGIN?: string
 }
 
 export type DocsUser = {
@@ -73,6 +77,10 @@ export function isAuthConfigured(env: DocsAuthEnv): boolean {
     env.WORKOS_COOKIE_PASSWORD &&
     env.WORKOS_COOKIE_PASSWORD.length >= 32,
   )
+}
+
+export function isDocsAuthEnabled(env: DocsAuthEnv): boolean {
+  return isAuthConfigured(env) || Boolean(resolveAffiliateOrigin(env))
 }
 
 export function shouldBypassAuth(env: DocsAuthEnv, options?: DocsAuthOptions): boolean {
@@ -186,10 +194,52 @@ export function readCookie(request: Request, name: string): string | null {
   return null
 }
 
-export async function readSession(request: Request, env: DocsAuthEnv): Promise<DocsUser | null> {
-  if (!isAuthConfigured(env) || !env.WORKOS_COOKIE_PASSWORD) return null
+export function ticketIssuer(ticket: string): string | null {
+  const packed = ticket.split('.')[0]
+  if (!packed) return null
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(base64UrlToBytes(packed))) as {
+      iss?: string
+    }
+    return typeof payload.iss === 'string' ? payload.iss : null
+  } catch {
+    return null
+  }
+}
+
+async function redeemOperatorTicket(
+  ticket: string,
+  options: DocsAuthOptions,
+): Promise<DocsUser | null> {
+  const issuer = ticketIssuer(ticket)
+  if (!issuer || !isAllowedAffiliateOrigin(issuer)) return null
+  const fetchImpl = options.fetch ?? fetch
+  try {
+    const response = await fetchImpl(new URL('/api/docs-access', issuer), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticket }),
+    })
+    if (!response.ok) return null
+    const body = (await response.json()) as { user?: { id?: string; email?: string } }
+    if (!body.user?.id || !body.user.email) return null
+    return { id: body.user.id, email: body.user.email }
+  } catch {
+    return null
+  }
+}
+
+export async function readSession(
+  request: Request,
+  env: DocsAuthEnv,
+  options: DocsAuthOptions = {},
+): Promise<DocsUser | null> {
   const token = readCookie(request, SESSION_COOKIE)
   if (!token) return null
+  if (token.startsWith(TICKET_PREFIX)) {
+    return redeemOperatorTicket(token.slice(TICKET_PREFIX.length), options)
+  }
+  if (!isAuthConfigured(env) || !env.WORKOS_COOKIE_PASSWORD) return null
   return unsealSession(token, env.WORKOS_COOKIE_PASSWORD)
 }
 
@@ -225,15 +275,18 @@ export type DocsSessionJson = {
 }
 
 export function docsSessionJson(user: DocsUser | null, env: DocsAuthEnv): DocsSessionJson {
-  return { user, authEnabled: isAuthConfigured(env) }
+  return { user, authEnabled: isDocsAuthEnabled(env) }
 }
 
+export type DocsAuthWhen = 'signed-in' | 'signed-out' | 'auth-enabled'
+
 export function shouldShowDocsAuthWhen(
-  when: 'signed-in' | 'signed-out',
+  when: DocsAuthWhen,
   session: Pick<DocsSessionJson, 'user' | 'authEnabled'>,
 ): boolean {
   const signedIn = Boolean(session.user)
   if (when === 'signed-in') return signedIn
+  if (when === 'auth-enabled') return session.authEnabled
   return session.authEnabled && !signedIn
 }
 
@@ -242,10 +295,16 @@ async function handleSignIn(
   env: DocsAuthEnv,
   options: DocsAuthOptions,
 ): Promise<Response> {
-  if (!isAuthConfigured(env)) return notFoundPage()
+  const returnPath = sanitizeReturnPath(new URL(request.url).searchParams.get('returnPathname'))
+  const affiliate = resolveAffiliateOrigin(env)
+  if (affiliate) {
+    const docsReturn = new URL(returnPath, request.url).href
+    const dest = new URL('/api/docs-access', affiliate)
+    dest.searchParams.set('return', docsReturn)
+    return redirect(dest.href)
+  }
 
-  const url = new URL(request.url)
-  const returnPath = sanitizeReturnPath(url.searchParams.get('returnPathname'))
+  if (!isAuthConfigured(env)) return notFoundPage()
   const nonce = bytesToBase64Url(getRandomBytes(16, options.randomBytes))
   const state = bytesToBase64Url(
     new TextEncoder().encode(JSON.stringify({ n: nonce, r: returnPath })),
@@ -337,8 +396,42 @@ function handleSignOut(request: Request): Response {
   return redirect(location, [clearCookie(request, SESSION_COOKIE)])
 }
 
-async function handleSession(request: Request, env: DocsAuthEnv): Promise<Response> {
-  const user = await readSession(request, env)
+async function handleOperator(
+  request: Request,
+  env: DocsAuthEnv,
+  options: DocsAuthOptions,
+): Promise<Response> {
+  const url = new URL(request.url)
+  const ticket = url.searchParams.get('ticket')
+  const returnPath = sanitizeReturnPath(url.searchParams.get('returnPathname'))
+  if (!ticket) return htmlError('Team docs sign-in failed', 'The operator ticket was missing.', 400)
+
+  const user = await redeemOperatorTicket(ticket, options)
+  if (!user) return htmlError('Team docs sign-in failed', 'The operator ticket was rejected.', 401)
+
+  if (isAuthConfigured(env) && env.WORKOS_COOKIE_PASSWORD) {
+    const now = options.now?.() ?? Date.now()
+    const token = await sealSession(
+      { id: user.id, email: user.email, exp: now + SESSION_MAX_AGE_SEC * 1000 },
+      env.WORKOS_COOKIE_PASSWORD,
+      options.randomBytes,
+    )
+    return redirect(returnPath, [
+      serializeCookie(request, SESSION_COOKIE, token, SESSION_MAX_AGE_SEC),
+    ])
+  }
+
+  return redirect(returnPath, [
+    serializeCookie(request, SESSION_COOKIE, `${TICKET_PREFIX}${ticket}`, SESSION_MAX_AGE_SEC),
+  ])
+}
+
+async function handleSession(
+  request: Request,
+  env: DocsAuthEnv,
+  options: DocsAuthOptions,
+): Promise<Response> {
+  const user = await readSession(request, env, options)
   return json(docsSessionJson(user, env))
 }
 
@@ -354,8 +447,9 @@ export async function handleDocsRequest(
   if (isAuthApiPath(path)) {
     if (path === '/api/auth/sign-in') return handleSignIn(request, env, options)
     if (path === '/api/auth/callback') return handleCallback(request, env, options)
+    if (path === '/api/auth/operator') return handleOperator(request, env, options)
     if (path === '/api/auth/sign-out') return handleSignOut(request)
-    if (path === '/api/auth/session') return handleSession(request, env)
+    if (path === '/api/auth/session') return handleSession(request, env, options)
     return json({ error: 'Not found' }, 404)
   }
 
@@ -364,9 +458,9 @@ export async function handleDocsRequest(
 
   if (!isInternalPath(path)) return next()
   if (bypass) return next()
-  if (!isAuthConfigured(env)) return notFoundPage()
+  if (!isDocsAuthEnabled(env)) return notFoundPage()
 
-  const user = await readSession(request, env)
+  const user = await readSession(request, env, options)
   if (!user) {
     const signIn = new URL('/api/auth/sign-in', request.url)
     signIn.searchParams.set('returnPathname', `${path}${new URL(request.url).search}`)

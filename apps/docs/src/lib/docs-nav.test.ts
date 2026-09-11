@@ -8,7 +8,7 @@ describe('docs sections', () => {
     expect(onWork.map((section) => [section.label, section.isActive])).toEqual([
       ['Creators', true],
       ['Sellers', false],
-      ['Internal', false],
+      ['Team', false],
     ])
     expect(isSectionActive('/internal', '/internal/workspaces')).toBe(true)
     expect(isSectionActive('/sellers', '/creators')).toBe(false)
